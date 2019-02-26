@@ -1,3 +1,5 @@
+#' Interpolation of ICA component of reference time series
+#' 
 #' function that fits a loess curve on an ICA component and returns predictions on given x series
 #' 
 #' @param ICA an ICA object (returned by icafast)
@@ -12,8 +14,9 @@
 get.spline <- function(ICA, time.series, comp, pred.x,
                        span=.25, plot=T)
 {
-  r <- loess(ICA$M[,comp]~time.series, span = span)
-  pred.y <- predict(r, newdata=pred.x)
+  requireNamespace("stats", quietly = T)
+  r <- stats::loess(ICA$M[,comp]~time.series, span = span)
+  pred.y <- stats::predict(r, newdata=pred.x)
   
   if(plot==T){
     plot(ICA$M[,comp]~time.series, main=paste("Comp.", comp))
@@ -76,6 +79,8 @@ interpol_refdata <- function(X, n.inter,
                              t.min=NULL, t.max=NULL, new.timepoints=NULL,
                              span=0.25, plot=F, return.fits=F)
 {
+  requireNamespace("stats", quietly = T)
+  requireNamespace("ica", quietly = T)
   if(n.inter<ncol(X)){
     stop("n.inter must be larger than ncol(X)")
   }
@@ -111,9 +116,8 @@ interpol_refdata <- function(X, n.inter,
     names(span) <- keep.c
   }
   
-  require(ica)
   # compute ICA
-  ICA <- icafast(X, ica.nc, center = F)
+  ICA <- ica::icafast(X, ica.nc, center = F)
   
   # get splines and predictions
   rs <- lapply(keep.c, function(i){

@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpol_refdata.R
 \name{get.spline}
 \alias{get.spline}
-\title{function that fits a loess curve on an ICA component and returns predictions on given x series}
+\title{Interpolation of ICA component of reference time series}
 \usage{
 get.spline(ICA, time.series, comp, pred.x, span = 0.25, plot = T)
 }
