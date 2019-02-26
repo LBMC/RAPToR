@@ -85,7 +85,7 @@ interpol_refdata <- function(X, n.inter,
   
   require(ica)
   # compute ICA
-  ICA <- icafast(X, ica.nc)
+  ICA <- icafast(X, ica.nc, center = F)
   
   # get splines and predictions
   rs <- lapply(keep.c, function(i){
