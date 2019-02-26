@@ -1,0 +1,15 @@
+Package: wormAge
+Title: Useful functions to estimate the developmental stage of C. elegans from gene expression
+Version: 0.1
+Authors@R: c(person("Romain", "Bulteau", email = "romain.bulteau@ens-lyon.fr",
+                  role = c("aut", "cre")),
+           person("Mirko", "Francesconi", email = "mirko.francesconi@ens-lyon.fr",
+                  role = c("aut")))
+Description: This package aims to recover the developmental stage of C. elegans worms based on their gene expression profiles.
+  Reference time series data is used for this purpose, but one can create their own reference from a time series.
+Depends: R (>= 3.4.0)
+Imports:
+  ica
+License: GPL-2
+LazyData: true
+RoxygenNote: 6.1.1

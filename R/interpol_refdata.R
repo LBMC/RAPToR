@@ -9,7 +9,6 @@
 #' 
 #' @export
 #' 
-#' @examples
 get.spline <- function(ICA, time.series, comp, pred.x,
                        span=.25, plot=T)
 {
@@ -25,6 +24,8 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 
 
 
+#' Interpolation of gene expression on time series from reference data
+#' 
 #' function that computes interpolated data from a reference time series
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns
@@ -41,7 +42,6 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' 
 #' @export
 #' 
-#' @examples
 interpol_refdata <- function(X, n.inter,
                              time.series=NULL,
                              ica.nc=16, keep.c=1:10,
