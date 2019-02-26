@@ -7,7 +7,7 @@
 #' @param refdata the reference time series matrix, same format as \code{samp}
 #' @param method \code{method} parameter passed on to the \code{\link{cor}} function
 #' 
-#' @return a \code{corg} object, being a matrix of correlation scores samples as columns, refdata as rows
+#' @return a \code{corg} object, being a matrix of correlation scores with samples as columns, refdata as rows
 #' 
 #' @export
 #' 
@@ -62,6 +62,8 @@ cor.gene_expr <- function(samp, refdata, method="pearson")
 #' 
 plot.corg <- function(cors, col=cm.colors(256), ...)
 { 
+  requireNamespace("graphics", quietly = T)
+  requireNamespace("grDevices", quietly = T)
   heatmap(cors, Rowv=NA, Colv=NA, 
           col = col, scale="column", ...)
 }

@@ -14,7 +14,7 @@ cor.gene_expr(samp, refdata, method = "pearson")
 \item{method}{\code{method} parameter passed on to the \code{\link{cor}} function}
 }
 \value{
-a \code{corg} object, being a matrix of correlation scores samples as columns, refdata as rows
+a \code{corg} object, being a matrix of correlation scores with samples as columns, refdata as rows
 }
 \description{
 Computes the correlation between the gene expressions of the sample 
