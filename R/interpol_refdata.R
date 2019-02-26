@@ -42,6 +42,34 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' 
 #' @export
 #' 
+#' @examples 
+#' 
+#' library(wormAge)
+#' data(oud_ref)
+#'
+#' interpold <- interpol_refdata(oud_ref$X, 200, 
+#'                               time.series = oud_ref$time.series, 
+#'                               t.min = min(oud_ref$time.series), 
+#'                               t.max = max(oud_ref$time.series),
+#'                               plot = TRUE)
+#'
+#' par(mfrow=c(2,2))
+#' \donttest{
+#' pb <- sapply(c(2,5,13,50), function(i){
+#'    plot(oud_ref$time.series, oud_ref$X[i,],
+#'         type = 'l', lwd=2, 
+#'         main=rownames(oud_ref$X)[i], xlab = 'time')
+#'    points(interpold$time.series, interpold$interpol.gene_expr[i,],
+#'           type = 'l', lwd=2, col='firebrick')
+#'   if(i==5){
+#'     legend('topright', legend = c("Initial ref. data", "Interpolated data"),
+#'            lwd=3, col=c('black', 'firebrick'), bty = "n")
+#'   }
+#' })
+#' }
+#'
+#' 
+#' 
 interpol_refdata <- function(X, n.inter,
                              time.series=NULL,
                              ica.nc=16, keep.c=1:10,
