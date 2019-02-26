@@ -2,5 +2,6 @@
 
 S3method(plot,corg)
 export(cor.gene_expr)
+export(format_to_ref)
 export(get.spline)
 export(interpol_refdata)

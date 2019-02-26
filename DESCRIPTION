@@ -8,7 +8,8 @@ Description: This package aims to recover the developmental stage of C. elegans 
 Depends: R (>= 3.4.0)
 Imports:
   ica,
-  stats
+  stats,
+  graphics
 License: GPL-2
 LazyData: true
 Encoding: UTF-8
