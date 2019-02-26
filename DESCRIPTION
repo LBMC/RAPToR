@@ -7,7 +7,8 @@ Description: This package aims to recover the developmental stage of C. elegans 
   Reference time series data is used for this purpose, but one can create their own reference from a time series.
 Depends: R (>= 3.4.0)
 Imports:
-  ica
+  ica,
+  stats
 License: GPL-2
 LazyData: true
 Encoding: UTF-8
