@@ -11,6 +11,6 @@ To install the package, download the repo, open a terminal in the repo folder an
 R CMD INSTALL .
 ```
 
-You may need to install the `GEOquery` package separately (see (https://bioconductor.org/packages/release/bioc/html/GEOquery.html)[Bioconductor website], or (https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html)[here], if you happen to have R<3.5).
+You may need to install the `GEOquery` package separately (see [Bioconductor website](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), or [here](https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html), if you happen to have R<3.5).
 
 
