@@ -91,6 +91,15 @@ interpol_refdata <- function(X, n.inter,
     warning("no time.series given, using 1:ncol(X) as reference")
     time.series <- 1:ncol(X)
   }
+  else{
+    if(is.null(t.min)){
+      t.min <- min(time.series)
+    }
+    if(is.null(t.max)){
+      t.max <- max(time.series)
+    }
+    
+  }
   if(length(keep.c)>ica.nc|any(!keep.c%in%(1:ica.nc))){
     stop("keep.c must be included in 1:ica.nc")
   }
@@ -103,11 +112,10 @@ interpol_refdata <- function(X, n.inter,
     stop("new.timepoints must be of length n.inter")
   }
   if(!is.null(new.timepoints)){
-    if(!is.null(t.min)|!is.null(t.max)){
-      warning("ignoring t.min and t.max, using new.timepoints as reference")
-    }
+    t.min <- min(new.timepoints)
+    t.max <- max(new.timepoints)
   }
-  if(!is.null(t.min)&!is.null(t.min)){
+  if(!is.null(t.min)&!is.null(t.min)&is.null(new.timepoints)){
     new.timepoints <- seq(t.min, t.max, length.out = n.inter)
   }
   
