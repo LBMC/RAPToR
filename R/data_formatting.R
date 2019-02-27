@@ -23,10 +23,14 @@ format_to_ref <- function(samp, refdata,
     stop("Rownames of samp don't hold gene IDs.")
   }
   
+  samp <- as.matrix(samp)
+  mode(samp) <- 'numeric'
+  
   if(na.rm){
     samp <- na.omit(samp)
     refdata <- na.omit(refdata)
   }
+
   
   l.r <- nrow(refdata)
   l.s <- nrow(samp)
