@@ -3,6 +3,7 @@
 S3method(plot,corg)
 export(GPL200_to_WB)
 export(cor.gene_expr)
+export(estimate.worm_age)
 export(format_to_ref)
 export(get.spline)
 export(interpol_refdata)
