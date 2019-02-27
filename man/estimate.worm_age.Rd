@@ -12,15 +12,15 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{refdata}{the reference time series matrix, same format as \code{samp}}
 
-\item{ref.time_series}{the reference time series (*e.g.* \code{colnames(refdata)} if using interpolated reference data)}
+\item{ref.time_series}{the reference time series (\textit{e.g.} \code{colnames(refdata)} if using interpolated reference data)}
 
 \item{est.time}{the approximate development time of the samples, must be in the same units than \code{ref.time_series}}
 
-\item{time.sd}{the std. deviation of the gaussian scoring distribution. *Note that setting this value too low can cause a significant bias in the age estimation.*}
+\item{time.sd}{the std. deviation of the gaussian scoring distribution. \textit{Note that setting this value too low can cause a significant bias in the age estimation.}}
 
 \item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}}
 
-\item{all.peaks}{logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores as a list for every individuals. If FALSE, only returns the best estimate for each individual, as a dataframe.}
+\item{all.peaks}{logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.}
 }
 \value{
 an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, and the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}).
