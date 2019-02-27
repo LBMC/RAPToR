@@ -5,7 +5,8 @@ Author: Romain Bulteau, Mirko Francesconi
 Maintainer: Romain Bulteau <romain.bulteau@ens-lyon.fr>
 Description: This package aims to recover the developmental stage of C. elegans worms based on their gene expression profiles.
   Reference time series data is used for this purpose, but one can create their own reference from a time series.
-Depends: R (>= 3.4.0)
+Depends: R (>= 3.4.0),
+  GEOquery
 Imports:
   ica,
   stats,
