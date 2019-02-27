@@ -47,6 +47,7 @@ cor.gene_expr <- function(samp, refdata, method="pearson")
 #' as a heatmap.
 #' 
 #' @param cors a \code{corg} object, as returned by \code{\link{cor.gene_expr}} 
+#' @param col a color scheme, passed on to \code{\link{heatmap}}
 #' @param ... additional arguments passed on to \code{\link{heatmap}}
 #' 
 #' @export

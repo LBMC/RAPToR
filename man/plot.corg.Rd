@@ -9,6 +9,8 @@
 \arguments{
 \item{cors}{a \code{corg} object, as returned by \code{\link{cor.gene_expr}}}
 
+\item{col}{a color scheme, passed on to \code{\link{heatmap}}}
+
 \item{...}{additional arguments passed on to \code{\link{heatmap}}}
 }
 \description{
