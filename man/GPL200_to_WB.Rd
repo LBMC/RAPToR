@@ -23,7 +23,9 @@ it to WBGene ids, or takes input Gene expression matrix *of GPL200 format* to do
 about 30% of the initial 22625 genes are lost.
 }
 \examples{
+\donttest{ 
 gorrepati_wb <- GPL200_to_WB(GEO_id="GSE52747")
 head(gorrepati_wb)
+}
 
 }

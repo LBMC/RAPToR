@@ -4,14 +4,14 @@
 \alias{cor.gene_expr}
 \title{Compute correlation between sample and reference data}
 \usage{
-cor.gene_expr(samp, refdata, method = "pearson")
+cor.gene_expr(samp, refdata, cor.method = "pearson")
 }
 \arguments{
 \item{samp}{the sample matrix, gene as rows, individuals as columns}
 
 \item{refdata}{the reference time series matrix, same format as \code{samp}}
 
-\item{method}{\code{method} parameter passed on to the \code{\link{cor}} function}
+\item{cor.method}{\code{method} parameter passed on to the \code{\link{cor}} function}
 }
 \value{
 a \code{corg} object, being a matrix of correlation scores with samples as columns, refdata as rows

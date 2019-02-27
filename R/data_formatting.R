@@ -67,9 +67,11 @@ format_to_ref <- function(samp, refdata,
 #' 
 #' @export
 #' 
-#' @examples 
+#' @examples
+#' \donttest{ 
 #' gorrepati_wb <- GPL200_to_WB(GEO_id="GSE52747")
 #' head(gorrepati_wb)
+#' }
 #'
 GPL200_to_WB <- function(GEO_id=NULL, expr.matrix=NULL, raw=F)
 {
