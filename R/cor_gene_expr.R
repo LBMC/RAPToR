@@ -56,9 +56,9 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
-#' @param ref.time_series the reference time series (\textit{e.g.} \code{colnames(refdata)} if using interpolated reference data)
+#' @param ref.time_series the reference time series (\emph{e.g.} \code{colnames(refdata)} if using interpolated reference data)
 #' @param est.time the approximate development time of the samples, must be in the same units than \code{ref.time_series}
-#' @param time.sd the std. deviation of the gaussian scoring distribution. \textit{Note that setting this value too low can cause a significant bias in the age estimation.}
+#' @param time.sd the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}
 #' @param all.peaks logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.
 #' 

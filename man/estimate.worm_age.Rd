@@ -12,11 +12,11 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{refdata}{the reference time series matrix, same format as \code{samp}}
 
-\item{ref.time_series}{the reference time series (\textit{e.g.} \code{colnames(refdata)} if using interpolated reference data)}
+\item{ref.time_series}{the reference time series (\emph{e.g.} \code{colnames(refdata)} if using interpolated reference data)}
 
 \item{est.time}{the approximate development time of the samples, must be in the same units than \code{ref.time_series}}
 
-\item{time.sd}{the std. deviation of the gaussian scoring distribution. \textit{Note that setting this value too low can cause a significant bias in the age estimation.}}
+\item{time.sd}{the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}}
 
 \item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}}
 
