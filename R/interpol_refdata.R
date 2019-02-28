@@ -36,6 +36,7 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' @param time.series timepoints of the reference (X). If none given, 1:ncol(X) is used.
 #' @param ica.nc number of components to keep in icafast
 #' @param keep.c indices of components to keep for interpolation
+#' @param center wether to perform a centered ICA (by individual).
 #' @param t.min start time of new time series (ignored if new.timepoints is given)
 #' @param t.max end time of new time series (ignored if new.timepoints is given)
 #' @param new.timepoints vector of length n.inter with the new time series (overrides t.min and t.max)
@@ -75,7 +76,7 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' 
 interpol_refdata <- function(X, n.inter,
                              time.series=NULL,
-                             ica.nc=16, keep.c=1:10,
+                             ica.nc=16, keep.c=1:10, center=F,
                              t.min=NULL, t.max=NULL, new.timepoints=NULL,
                              span=0.25, plot=F, return.fits=F)
 {
@@ -125,7 +126,10 @@ interpol_refdata <- function(X, n.inter,
   }
   
   # compute ICA
-  ICA <- ica::icafast(X, ica.nc, center = F)
+  ICA <- ica::icafast(X, ica.nc, center = center)
+  
+  X.av <- mean(apply(X, 2, mean))
+  
   
   # get splines and predictions
   rs <- lapply(keep.c, function(i){
@@ -139,7 +143,7 @@ interpol_refdata <- function(X, n.inter,
   }))
   
   # compute interpolated gene expression data
-  interpol.gene_expr <- tcrossprod(ICA$S[,keep.c], interpol.indivs)
+  interpol.gene_expr <- tcrossprod(ICA$S[,keep.c], interpol.indivs)+center*X.av
   colnames(interpol.gene_expr) <- new.timepoints
   
   

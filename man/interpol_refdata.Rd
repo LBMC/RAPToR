@@ -5,8 +5,8 @@
 \title{Interpolation of gene expression on time series from reference data}
 \usage{
 interpol_refdata(X, n.inter, time.series = NULL, ica.nc = 16,
-  keep.c = 1:10, t.min = NULL, t.max = NULL, new.timepoints = NULL,
-  span = 0.25, plot = F, return.fits = F)
+  keep.c = 1:10, center = F, t.min = NULL, t.max = NULL,
+  new.timepoints = NULL, span = 0.25, plot = F, return.fits = F)
 }
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns}
@@ -18,6 +18,8 @@ interpol_refdata(X, n.inter, time.series = NULL, ica.nc = 16,
 \item{ica.nc}{number of components to keep in icafast}
 
 \item{keep.c}{indices of components to keep for interpolation}
+
+\item{center}{wether to perform a centered ICA (by individual).}
 
 \item{t.min}{start time of new time series (ignored if new.timepoints is given)}
 
