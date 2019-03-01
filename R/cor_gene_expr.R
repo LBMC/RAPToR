@@ -63,7 +63,7 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
 #' @param all.peaks logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.
 #' 
 #' 
-#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, and the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}).
+#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}) and the reference time series.
 #' 
 #' @export
 #' 
@@ -97,31 +97,33 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
   
   age.estimates <- lapply(1:ncol(samp), function(i){
     # get correlation maxima (peaks) positions
-    cor.maxs.i <- which(diff(sign(diff(cors[,i])))==-2)+1
+    cor.maxs.i <- unique(c(which(diff(sign(diff(cors[,i])))==-2)+1, 
+                           which.max(cors[,i])))
     cor.maxs <- cors[cor.maxs.i, i]
     cor.maxs.times <- ref.time_series[cor.maxs.i]
     
-    #compute scores based on gaussian of reference time
+    # compute scores based on gaussian of reference time
     cor.maxs.scores <- round(ref.gauss[cor.maxs.i]/m.gauss, 4)
     
     age.estimate <- cbind(time=cor.maxs.times, 
-                            cor.score=cor.maxs,
-                            proba.score=cor.maxs.scores)
+                          cor.score=cor.maxs,
+                          proba.score=cor.maxs.scores)
     
+    # order by score & formatting
     age.estimate <- age.estimate[order(age.estimate[, "proba.score"], decreasing = T),]
+    if(length(cor.maxs)<2){age.estimate <- as.matrix(t(age.estimate))}
     
     return(age.estimate)
   })
-  
   names(age.estimates) <- colnames(samp)
   if(!all.peaks){
     # only keep best estimate
-    age.estimates <- sapply(age.estimates, function(a.e){a.e[1,]})
+    age.estimates <- simplify2array(lapply(age.estimates, 
+                                           function(a.e){return(a.e[1,])}))
   }
-  res <- list(cors=cors, age.estimates=age.estimates)
+  res <- list(cors=cors, age.estimates=age.estimates, ref.time_series=ref.time_series)
   class(res) <- "ae"
   return(res)
-  
   
 }
 
