@@ -23,7 +23,7 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 \item{all.peaks}{logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.}
 }
 \value{
-an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}) and the reference time series.
+an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}), the initial time estimates and the reference time series.
 }
 \description{
 This function estimates the developmental age of individuals based on given

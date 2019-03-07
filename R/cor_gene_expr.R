@@ -63,7 +63,7 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
 #' @param all.peaks logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.
 #' 
 #' 
-#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}) and the reference time series.
+#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}), the initial time estimates and the reference time series.
 #' 
 #' @export
 #' 
@@ -127,7 +127,10 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
     age.estimates <- simplify2array(lapply(age.estimates, 
                                            function(a.e){return(a.e[1,])}))
   }
-  res <- list(cors=cors, age.estimates=age.estimates, ref.time_series=ref.time_series)
+  res <- list(cors=cors, 
+              age.estimates=age.estimates, 
+              ref.time_series=ref.time_series,
+              init.est.times=est.time)
   class(res) <- "ae"
   return(res)
   
