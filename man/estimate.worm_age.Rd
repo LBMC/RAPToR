@@ -35,7 +35,9 @@ this gives correlation profiles according to reference time per individual.
 Then, the maxima of the correlation profiles are evaluated and scored according to 
 a gaussian distribution around the time estimate given as input. 
 The maxima scores range from 0 to 1, 1 being the case where a correlation peak is 
-exactly at the given approximate time.
+exactly at the given approximate time. 
+Do note that using interpolated reference data (from \code{\link{interpol_refdata}})
+gives the best results.
 }
 \examples{
 data(oud_ref)
