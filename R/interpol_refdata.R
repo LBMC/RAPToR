@@ -122,8 +122,8 @@ interpol_refdata <- function(X, n.inter,
   
   if(length(span)<length(keep.c)){
     span <- rep(span, length.out=length(keep.c))
-    names(span) <- keep.c
   }
+  names(span) <- keep.c
   
   # compute ICA
   ICA <- ica::icafast(X, ica.nc, center = center)
@@ -134,7 +134,7 @@ interpol_refdata <- function(X, n.inter,
   # get splines and predictions
   rs <- lapply(keep.c, function(i){
     get.spline(ICA, time.series, i, new.timepoints,
-               span = span[i], plot=plot)
+               span = span[as.character(i)], plot=plot)
   })
   
   # extract interpolated individual data
