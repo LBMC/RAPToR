@@ -53,6 +53,8 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
 #' a gaussian distribution around the time estimate given as input. 
 #' The maxima scores range from 0 to 1, 1 being the case where a correlation peak is 
 #' exactly at the given approximate time. 
+#' Do note that using interpolated reference data (from \code{\link{interpol_refdata}})
+#' gives the best results.
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
@@ -171,4 +173,86 @@ plot.corg <- function(cors, col=cm.colors(256), ...)
   requireNamespace("grDevices", quietly = T)
   heatmap(cors, Rowv=NA, Colv=NA, 
           col = col, scale="column", ...)
+}
+
+
+
+
+
+
+#' Plot an ae object
+#' 
+#' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
+#' as a heatmap.
+#' 
+#' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
+#' @param subset an index vector of the samples to plot (defaults to all)
+#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate on the plot
+#' @param show.other_estimates logical ; if TRUE and if \code{\link{estimate.worm_age}} was called with \code{all.peaks=TRUE}, displays the other maxima of the curve
+#' @param c.lwd line width for the correlation score curve
+#' @param bar.size cex of the maxima bars
+#' @param mx.col color of the best age estimate bar
+#' @param in.col color of the initial estimate bar
+#' @param ot.col color of the other maxima bars
+#' @param ... additional arguments passed on to \code{\link{plot}}
+#' 
+#' @export
+#' 
+#' @examples
+#' data(oud_ref)
+#' 
+#' samp <- oud_ref$X[,13:15]
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+#' \donttest{
+#' plot(age.est)
+#' }
+#' 
+plot.ae <- function(age.est, subset=1:ncol(age.est$cors),
+                    show.init_estimate=F, show.other_estimates=T,
+                    c.lwd=2, bar.size=2,
+                    mx.col='firebrick', in.col='royalblue', ot.col='grey50',
+                    ...){
+  
+  pb <- sapply(subset, function(i){
+    # plot corr.score curve
+    plot(age.est$ref.time_series, age.est$cors[,i], type = 'l', lwd=c.lwd,
+         main=colnames(age.est$cors)[i], 
+         xlab = 'reference time', ylab='corr.score', ...)
+    
+    if(is.list(age.est$age.estimates)){
+      # estimate.worm_ages called with all.peaks=T
+      
+      # get age.est df  
+      aes <- age.est$age.estimates[[colnames(age.est$cors)[i]]]
+      
+      # plot best estimate
+      ae.max <- t(aes[1, c(1,2)])
+      points(ae.max, pch='|', cex=bar.size, col=mx.col)
+      text(ae.max, pos=1, 
+           labels = paste(round(ae.max[1], 2), sep=''),
+           offset = 1)
+      
+      if(show.other_estimates){
+        # plot other estimates
+        points(aes[-1,1:2], pch='|', cex=bar.size/1.5, col=ot.col)
+      }
+      
+    }
+    else{
+      # get age estimation and plot
+      ae <- t(age.est$age.estimates[c(1,2),i])
+      points(ae, pch='|', cex=bar.size, col=mx.col)
+      text(ae, pos=1, 
+           labels = paste(round(ae[1], 2), sep=''),
+           offset = 1)
+    }
+    
+    if(show.init_estimate){
+      # show initial estimate
+      init.est <- age.est$init.est.times[i]
+      points(init.est, min(age.est$cors[,i]), pch='|', col=in.col, cex=bar.size)
+      text(init.est, min(age.est$cors[,i]), pos=3, offset = 1,
+           labels = paste(round(init.est, 2), '\n(initial estimate)', sep=''))
+    }
+  })
 }
