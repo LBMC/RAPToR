@@ -14,7 +14,7 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{ref.time_series}{the reference time series (\emph{e.g.} \code{colnames(refdata)} if using interpolated reference data)}
 
-\item{est.time}{the approximate development time of the samples, must be in the same units than \code{ref.time_series}}
+\item{est.time}{a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. The vector is recycled if its length is smaller than the number of samples}
 
 \item{time.sd}{the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}}
 

@@ -57,7 +57,7 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
 #' @param ref.time_series the reference time series (\emph{e.g.} \code{colnames(refdata)} if using interpolated reference data)
-#' @param est.time the approximate development time of the samples, must be in the same units than \code{ref.time_series}
+#' @param est.time a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. The vector is recycled if its length is smaller than the number of samples
 #' @param time.sd the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}
 #' @param all.peaks logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.
@@ -83,8 +83,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
   if(length(ref.time_series)!=ncol(refdata)){
     stop("Reference data and time series don't match")
   }
-  if(est.time>max(ref.time_series)|est.time<min(ref.time_series)){
-    stop("Estimated time is outside reference time series' range")
+  if(length(est.time)!=ncol(samp)){
+    est.time <- rep(est.time, ncol(samp))
+  }
+  if(any(est.time>max(ref.time_series)|est.time<min(ref.time_series))){
+    stop("Some estimated times are outside reference time series' range")
   }
   ref.time_series <-  as.numeric(ref.time_series)
   
@@ -92,8 +95,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
   cors <- cor.gene_expr(samp, refdata, cor.method = cor.method)
   
   # compute gaussian around estimated time
-  ref.gauss <- dnorm(ref.time_series, mean = est.time, sd = time.sd)
-  m.gauss <- max(ref.gauss)
+  ref.gauss <- lapply(est.time, 
+                      function(et){
+                        dnorm(ref.time_series, mean = et, sd = time.sd)
+                      })
+  m.gauss <- lapply(ref.gauss, max)
   
   age.estimates <- lapply(1:ncol(samp), function(i){
     # get correlation maxima (peaks) positions
@@ -103,7 +109,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
     cor.maxs.times <- ref.time_series[cor.maxs.i]
     
     # compute scores based on gaussian of reference time
-    cor.maxs.scores <- round(ref.gauss[cor.maxs.i]/m.gauss, 4)
+    cor.maxs.scores <- round(ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]], 4)
     
     age.estimate <- cbind(time=cor.maxs.times, 
                           cor.score=cor.maxs,
