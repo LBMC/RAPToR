@@ -7,8 +7,8 @@
 #' the sample and reference data are computed using \code{\link{cor.gene_expr}}; 
 #' this gives correlation profiles according to reference time per individual. 
 #' Then, the maxima of the correlation profiles are evaluated and scored according to 
-#' a gaussian distribution around the time estimate given as input. 
-#' The maxima scores range from 0 to 1, 1 being the case where a correlation peak is 
+#' a gaussian distribution around the time estimate given as input and their correlation score. 
+#' The maxima scores range from 0 to 1, 1 being the case where the highest correlation peak is 
 #' exactly at the given approximate time. 
 #' Do note that using interpolated reference data (from \code{\link{interpol_refdata}})
 #' gives the best results.
@@ -65,10 +65,13 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
     cor.maxs.i <- unique(c(which(diff(sign(diff(cors[,i])))==-2)+1, 
                            which.max(cors[,i])))
     cor.maxs <- cors[cor.maxs.i, i]
+    cor.max <- max(cor.maxs) #highest cor score
     cor.maxs.times <- ref.time_series[cor.maxs.i]
     
-    # compute scores based on gaussian of reference time
-    cor.maxs.scores <- round(ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]], 4)
+    # compute scores based on gaussian of reference time and corr.score
+    cor.maxs.scores <- round(
+      ((ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]])+(cor.maxs/cor.max))/2, 
+      4)
     
     age.estimate <- cbind(time=cor.maxs.times, 
                           cor.score=cor.maxs,
