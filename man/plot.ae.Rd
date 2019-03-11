@@ -5,9 +5,8 @@
 \title{Plot an ae object}
 \usage{
 \method{plot}{ae}(age.est, subset = 1:ncol(age.est$cors),
-  show.init_estimate = F, show.other_estimates = T, c.lwd = 2,
-  bar.size = 2, mx.col = "firebrick", in.col = "royalblue",
-  ot.col = "grey50", ...)
+  show.init_estimate = F, c.lwd = 2, bar.size = 2,
+  mx.col = "firebrick", in.col = "royalblue", ot.col = "grey50", ...)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
@@ -15,8 +14,6 @@
 \item{subset}{an index vector of the samples to plot (defaults to all)}
 
 \item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate on the plot}
-
-\item{show.other_estimates}{logical ; if TRUE and if \code{\link{estimate.worm_age}} was called with \code{all.peaks=TRUE}, displays the other maxima of the curve}
 
 \item{c.lwd}{line width for the correlation score curve}
 
