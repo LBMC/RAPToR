@@ -28,8 +28,7 @@
 \item{...}{additional arguments passed on to \code{\link{plot}}}
 }
 \description{
-Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
-as a heatmap.
+Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}}
 }
 \examples{
 data(oud_ref)

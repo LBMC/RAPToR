@@ -130,7 +130,6 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 #' Plot an ae object
 #' 
 #' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
-#' as a heatmap.
 #' 
 #' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
