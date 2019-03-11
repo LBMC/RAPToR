@@ -5,7 +5,8 @@
 \title{Estimate the developmental age of individuals}
 \usage{
 estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
-  cor.method = "pearson", all.peaks = F)
+  cor.method = "pearson", bootstrap.n = 50,
+  bootstrap.time_window = 2, cors = NULL)
 }
 \arguments{
 \item{samp}{the sample matrix, gene as rows, individuals as columns}
@@ -20,10 +21,14 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}}
 
-\item{all.peaks}{logical; if TRUE, returns all correlation peaks (potential age estimates) and their respective scores for every individuals, as a list. If FALSE, only returns the best estimate for each individual, as a dataframe.}
+\item{bootstrap.n}{the number of re-estimates done by the bootstrap}
+
+\item{bootstrap.time_window}{the width of the window in which bootstrap re-estimates occur}
+
+\item{cors}{the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}}
 }
 \value{
-an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates (either as list of individuals or dataframe, depending on \code{all.peaks}), the initial time estimates and the reference time series.
+an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the initial time estimates and the reference time series.
 }
 \description{
 This function estimates the developmental age of individuals based on given
@@ -36,6 +41,11 @@ Then, the maxima of the correlation profiles are evaluated and scored according 
 a gaussian distribution around the time estimate given as input and their correlation score. 
 The maxima scores range from 0 to 1, 1 being the case where the highest correlation peak is 
 exactly at the given approximate time. 
+The implemented bootstrap procedure re-estimates the age from the given times with a 
+random uniform noise and returns the average best time, as well as the 95% quantile 
+interval of the values.
+}
+\details{
 Do note that using interpolated reference data (from \code{\link{interpol_refdata}})
 gives the best results.
 }
