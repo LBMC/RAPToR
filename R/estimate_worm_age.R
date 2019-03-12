@@ -138,7 +138,6 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 #' @param bar.size cex of the maxima bars
 #' @param mx.col color of the best age estimate bar
 #' @param in.col color of the initial estimate bar
-#' @param ot.col color of the other maxima bars
 #' @param ... additional arguments passed on to \code{\link{plot}}
 #' 
 #' @export
@@ -155,7 +154,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 plot.ae <- function(age.est, subset=1:ncol(age.est$cors),
                     show.init_estimate=F, 
                     c.lwd=2, bar.size=2,
-                    mx.col='firebrick', in.col='royalblue', ot.col='grey50',
+                    mx.col='firebrick', in.col='royalblue',
                     ...){
   
   pb <- sapply(subset, function(i){

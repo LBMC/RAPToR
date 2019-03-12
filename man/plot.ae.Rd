@@ -6,7 +6,7 @@
 \usage{
 \method{plot}{ae}(age.est, subset = 1:ncol(age.est$cors),
   show.init_estimate = F, c.lwd = 2, bar.size = 2,
-  mx.col = "firebrick", in.col = "royalblue", ot.col = "grey50", ...)
+  mx.col = "firebrick", in.col = "royalblue", ...)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
@@ -22,8 +22,6 @@
 \item{mx.col}{color of the best age estimate bar}
 
 \item{in.col}{color of the initial estimate bar}
-
-\item{ot.col}{color of the other maxima bars}
 
 \item{...}{additional arguments passed on to \code{\link{plot}}}
 }
