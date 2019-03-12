@@ -2,7 +2,9 @@
 #'
 #' Data from a paper published by Oudenaarden et al.
 #' with C elegans gene expression levels (log+1 from rpkm) at 
-#' 26 time points.
+#' 26 time points. 
+#' This dataset is a reference time series for C. elegans development at 20C
+#' from hatching to late L4 (48h)
 #'
 #' @docType data
 #'
@@ -20,6 +22,6 @@
 #' @examples
 #' data(oud_ref)
 #' times <- attr(oud_ref, "time.series")
-#' gene1 <- oud_ref$X[,1]
+#' gene1 <- oud_ref$X[1,]
 #' \donttest{plot(times, gene1, type='l')}
 "oud_ref"
