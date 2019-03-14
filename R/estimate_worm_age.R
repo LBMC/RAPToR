@@ -23,7 +23,7 @@
 #' @param est.time a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. The vector is recycled if its length is smaller than the number of samples
 #' @param time.sd the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}
-#' @param bootstrap.n the number of re-estimates done by the bootstrap
+#' @param bootstrap.n the number of re-estimates done by the bootstrap. If set to 0, the 95% interval is computed from the reference time series' resolution
 #' @param bootstrap.time_window the width of the window in which bootstrap re-estimates occur
 #' @param cors the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}
 #' 
@@ -64,7 +64,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
   
   if(bootstrap.n>0){
     b.mod <- c(0, runif(bootstrap.n, -.5*bootstrap.time_window,
-                                      .5*bootstrap.time_window))
+                        .5*bootstrap.time_window))
   }
   else{
     b.mod <- 0
@@ -90,28 +90,31 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
       age.estimate <- cbind(time = cor.maxs.times, cor.score = cor.maxs, 
                             proba.score = cor.maxs.scores)
       age.estimate <- age.estimate[order(age.estimate[, "proba.score"], 
-                                         decreasing = T), ]
-      if (length(cor.maxs) < 2) {
-        age.estimate <- as.matrix(t(age.estimate))
-      }
+                                         decreasing = T), , drop=F]
+      
       return(age.estimate)
     })
-    
     # get best estimate
-    age.estimates <- simplify2array(lapply(age.estimates, 
-                                           function(a.e) {
-                                             return(a.e[1, ])
-                                           }))
+    age.estimates <- do.call('rbind',lapply(age.estimates, 
+                                            function(a.e) {
+                                              return(a.e[1, ,drop=F])
+                                            }))
     
     return(age.estimates)
   }, simplify = 'array')
   
-  # get average & IC95 over boostrap
-  age.estimates <- sapply(1:dim(boots)[1], function(i){rowMeans(boots[i,,])})
-  age.est95 <- t(sapply(1:dim(boots)[2], function(i){quantile(boots[1,i,], probs=c(0.025,0.975))}))
   
-  age.estimates <- cbind(age.estimate=age.estimates[,1], age.est95, 
-                         cor.score=age.estimates[,2], proba.score=age.estimates[,3])
+  # get average & IC95 over boostrap
+  age.estimates <- sapply(1:dim(boots)[1], function(i){apply(boots[i,,, drop=F],c(1,2),mean)})
+  
+  resolution <- mean(diff(ref.time_series))/2
+  age.est95 <- t(sapply(1:dim(boots)[1], function(i){
+    quantile(boots[i,1,], probs=c(0.025,0.975))+c(-1,1)*resolution
+  }))
+  
+  
+  age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95, 
+                         cor.score=age.estimates[2,], proba.score=age.estimates[3,])
   rownames(age.estimates) <- colnames(samp)
   
   res <- list(cors = cors, age.estimates = age.estimates, ref.time_series = ref.time_series, 
