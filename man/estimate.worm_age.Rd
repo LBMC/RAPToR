@@ -21,7 +21,7 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}}
 
-\item{bootstrap.n}{the number of re-estimates done by the bootstrap}
+\item{bootstrap.n}{the number of re-estimates done by the bootstrap. If set to 0, the 95% interval is computed from the reference time series' resolution}
 
 \item{bootstrap.time_window}{the width of the window in which bootstrap re-estimates occur}
 
