@@ -80,8 +80,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
     
     age.estimates <- lapply(1:ncol(samp), function(i) {
       
-      cor.maxs.i <- unique(c(which(diff(sign(diff(cors[, i]))) == 
-                                     -2) + 1, which.max(cors[, i])))
+      cor.maxs.i <- which(diff(sign(diff(cors[, i]))) == -2) + 1
       cor.maxs <- cors[cor.maxs.i, i]
       cor.max <- max(cor.maxs)
       cor.maxs.times <- ref.time_series[cor.maxs.i]
