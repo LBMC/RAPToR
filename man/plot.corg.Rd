@@ -4,7 +4,7 @@
 \alias{plot.corg}
 \title{Plot a corg object}
 \usage{
-\method{plot}{corg}(cors, col = cm.colors(256), ...)
+plot.corg(cors, col = cm.colors(256), ...)
 }
 \arguments{
 \item{cors}{a \code{corg} object, as returned by \code{\link{cor.gene_expr}}}
