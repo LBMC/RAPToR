@@ -81,16 +81,22 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
     age.estimates <- lapply(1:ncol(samp), function(i) {
       
       cor.maxs.i <- which(diff(sign(diff(cors[, i]))) == -2) + 1
-      cor.maxs <- cors[cor.maxs.i, i]
-      cor.max <- max(cor.maxs)
-      cor.maxs.times <- ref.time_series[cor.maxs.i]
-      cor.maxs.scores <- round(((ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]]) + 
-                                  (cor.maxs/cor.max))/2, 4)
-      age.estimate <- cbind(time = cor.maxs.times, cor.score = cor.maxs, 
-                            proba.score = cor.maxs.scores)
-      age.estimate <- age.estimate[order(age.estimate[, "proba.score"], 
-                                         decreasing = T), , drop=F]
-      
+      if(length(cor.maxs.i)==0){
+        # No maxima found 
+        age.estimate <- cbind(time = NA, cor.score = NA,
+                              proba.score = NA)
+      }
+      else{
+        cor.maxs <- cors[cor.maxs.i, i]
+        cor.max <- max(cor.maxs)
+        cor.maxs.times <- ref.time_series[cor.maxs.i]
+        cor.maxs.scores <- round(((ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]]) + 
+                                    (cor.maxs/cor.max))/2, 4)
+        age.estimate <- cbind(time = cor.maxs.times, cor.score = cor.maxs, 
+                              proba.score = cor.maxs.scores)
+        age.estimate <- age.estimate[order(age.estimate[, "proba.score"], 
+                                           decreasing = T), , drop=F]
+      }
       return(age.estimate)
     })
     # get best estimate
@@ -108,7 +114,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
   
   resolution <- mean(diff(ref.time_series))/2
   age.est95 <- t(sapply(1:dim(boots)[1], function(i){
-    quantile(boots[i,1,], probs=c(0.025,0.975))+c(-1,1)*resolution
+    quantile(boots[i,1,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
   }))
   
   
