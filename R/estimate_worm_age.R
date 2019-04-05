@@ -89,9 +89,10 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
       else{
         cor.maxs <- cors[cor.maxs.i, i]
         cor.max <- max(cor.maxs)
+        cor.min <- min(cors[,i])
         cor.maxs.times <- ref.time_series[cor.maxs.i]
         cor.maxs.scores <- round(((ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]]) + 
-                                    (cor.maxs/cor.max))/2, 4)
+                                    ((cor.maxs-cor.min)/(cor.max-cor.min)))/2, 4)
         age.estimate <- cbind(time = cor.maxs.times, cor.score = cor.maxs, 
                               proba.score = cor.maxs.scores)
         age.estimate <- age.estimate[order(age.estimate[, "proba.score"], 
