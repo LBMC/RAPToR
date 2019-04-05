@@ -47,7 +47,7 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
     
     interp.dat <- interpol_refdata(hash_ref$X, n.inter,
                                    time.series = hash_ref$time.series,
-                                   ica.nc = 16, plot=T, center = T,
+                                   ica.nc = 16, center = T,
                                    keep.c = keeps, span = sps)
   }
   
