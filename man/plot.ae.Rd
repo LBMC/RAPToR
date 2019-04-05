@@ -4,9 +4,9 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-plot.ae(age.est, subset = 1:ncol(age.est$cors), show.init_estimate = F,
-  c.lwd = 2, bar.size = 2, mx.col = "firebrick",
-  in.col = "royalblue", ...)
+\method{plot}{ae}(age.est, subset = 1:ncol(age.est$cors),
+  show.init_estimate = F, c.lwd = 2, bar.size = 2,
+  mx.col = "firebrick", in.col = "royalblue", ...)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
