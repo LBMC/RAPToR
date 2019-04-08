@@ -4,26 +4,26 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-\method{plot}{ae}(age.est, subset = 1:ncol(age.est$cors),
-  show.init_estimate = F, c.lwd = 2, bar.size = 2,
-  mx.col = "firebrick", in.col = "royalblue", ...)
+\method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = T,
+  col.i = 1, groups = NULL, pch = 16, cex = 1,
+  xlab = "Estimated ages", ...)
 }
 \arguments{
+\item{errbar.width}{the width of the error bars}
+
+\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate(s) on the plot}
+
+\item{col.i}{the color of the initial estimate marker.}
+
+\item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
+
+\item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
+
+\item{cex}{sizing parameter applied to various elements of the plot.}
+
+\item{...}{additional arguments passed on to \code{\link{dotchart}}}
+
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
-
-\item{subset}{an index vector of the samples to plot (defaults to all)}
-
-\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate on the plot}
-
-\item{c.lwd}{line width for the correlation score curve}
-
-\item{bar.size}{cex of the maxima bars}
-
-\item{mx.col}{color of the best age estimate bar}
-
-\item{in.col}{color of the initial estimate bar}
-
-\item{...}{additional arguments passed on to \code{\link{plot}}}
 }
 \description{
 Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}}

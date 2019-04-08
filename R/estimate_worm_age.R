@@ -143,6 +143,75 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 
 
 
+#' Plot an ae object
+#' 
+#' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
+#' 
+#' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
+#' @param errbar.width the width of the error bars
+#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot
+#' @param col.i the color of the initial estimate marker.
+#' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
+#' @param pch the pch parameter passed on to \code{\link{dotchart}}.
+#' @param cex sizing parameter applied to various elements of the plot.
+#' @param ... additional arguments passed on to \code{\link{dotchart}}
+#' 
+#' @export
+#' 
+#' @examples
+#' data(oud_ref)
+#' 
+#' samp <- oud_ref$X[,13:15]
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+#' \donttest{
+#' plot(age.est)
+#' }
+#' 
+plot.ae <- function(age_est, errbar.width=0.1, 
+                    show.init_estimate=T, col.i=1,
+                    groups=NULL, 
+                    pch=16, cex=1, 
+                    xlab="Estimated ages", ...)
+{
+  err.inf <- age_est$age.estimates[,2]
+  err.sup <- age_est$age.estimates[,3]
+  n <- nrow(age_est$age.estimates)
+  
+  dc <- dotchart(age_est$age.estimates[,1], 
+                 xlab=xlab, groups = groups,
+                 xlim=range(c(err.inf, err.sup, age_est$init.est.times)),
+                 pch=pch, cex=cex,
+                 ...)
+  
+  # Adjusting Y positions of error bars to dotchart layout
+  y <- 1L:n
+  o <- y
+  
+  if(!is.null(groups)){
+    o <- sort.list(as.numeric(groups), decreasing = TRUE)
+    err.inf <- err.inf[o]
+    err.sup <- err.sup[o]
+    groups <- groups[o]
+    offset <- cumsum(c(0, diff(as.numeric(groups)) != 0))
+    y <- 1L:n + 2 * offset
+  }
+  # plot error bars
+  arrows(err.sup, y,
+         err.inf, y,
+         angle=90, code=3, length=errbar.width)
+  
+  # adding initial estimate to plot
+  if(show.init_estimate){
+    inis <- age_est$init.est.times[o]
+    col.i <- rep(col.i, n)
+    col.i <- col.i[o]
+    points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
+    text(inis[n], y[n], labels = "initial estimate", pos = 3, col=col.i[n])
+  }
+}
+
+
+
 
 #' Plot an ae object
 #' 
@@ -168,11 +237,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 #' plot(age.est)
 #' }
 #' 
-plot.ae <- function(age.est, subset=1:ncol(age.est$cors),
-                    show.init_estimate=F, 
-                    c.lwd=2, bar.size=2,
-                    mx.col='firebrick', in.col='royalblue',
-                    ...){
+plot_cor.ae <- function(age.est, subset=1:ncol(age.est$cors),
+                        show.init_estimate=F, 
+                        c.lwd=2, bar.size=2,
+                        mx.col='firebrick', in.col='royalblue',
+                        ...){
   
   pb <- sapply(subset, function(i){
     # plot corr.score curve
