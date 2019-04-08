@@ -10,10 +10,10 @@ prepare_refdata(ref = c("larval_development", "embryonic_development",
 \arguments{
 \item{ref}{which reference dataset to load. Can be abbreviated.}
 
-\item{n.inter}{the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata()}}.}
+\item{n.inter}{the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata}}.}
 }
 \value{
-the interpolated reference dataset, as would \code{\link{interpol_refdata()}}
+the interpolated reference dataset, as would \code{\link{interpol_refdata}}
 }
 \description{
 This function loads the desired reference dataset from the package and

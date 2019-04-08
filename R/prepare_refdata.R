@@ -5,9 +5,9 @@
 #' Two available reference datasets are available (embryonic and larval development).
 #' 
 #' @param ref which reference dataset to load. Can be abbreviated.
-#' @param n.inter the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata()}}.
+#' @param n.inter the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata}}.
 #' 
-#' @return the interpolated reference dataset, as would \code{\link{interpol_refdata()}}
+#' @return the interpolated reference dataset, as would \code{\link{interpol_refdata}}
 #' 
 #' @seealso [interpol_refdata()]
 #' 
