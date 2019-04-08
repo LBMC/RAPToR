@@ -13,17 +13,17 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{refdata}{the reference time series matrix, same format as \code{samp}}
 
-\item{ref.time_series}{the reference time series (\emph{e.g.} \code{colnames(refdata)} if using interpolated reference data)}
+\item{ref.time_series}{the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)}
 
-\item{est.time}{a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. The vector is recycled if its length is smaller than the number of samples}
+\item{est.time}{a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples}
 
 \item{time.sd}{the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}}
 
 \item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}}
 
-\item{bootstrap.n}{the number of re-estimates done by the bootstrap. If set to 0, the 95% interval is computed from the reference time series' resolution}
+\item{bootstrap.n}{the number of re-estimates done by the bootstrap. If set to 0, the 95\% interval is computed from the reference time series' resolution}
 
-\item{bootstrap.time_window}{the width of the window in which bootstrap re-estimates occur}
+\item{bootstrap.time_window}{the width of the window in which bootstrap re-estimates occur.}
 
 \item{cors}{the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}}
 }
