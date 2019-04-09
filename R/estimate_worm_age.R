@@ -215,7 +215,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
 
 #' Plot an ae object
 #' 
-#' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
+#' Plots the correlation score curves from samples against the reference series.
 #' 
 #' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
