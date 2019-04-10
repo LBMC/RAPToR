@@ -22,7 +22,7 @@
 #' @param ref.time_series the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)
 #' @param est.time a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples
 #' @param time.sd the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
-#' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}
+#' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the spearman coefficient performs much better than the others.
 #' @param bootstrap.n the number of re-estimates done by the bootstrap. If set to 0, the 95\% interval is computed from the reference time series' resolution
 #' @param bootstrap.time_window the width of the window in which bootstrap re-estimates occur.
 #' @param cors the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}
@@ -42,7 +42,7 @@
 #' 
 #' 
 estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
-                              time.sd=5, cor.method="pearson",
+                              time.sd=5, cor.method="spearman",
                               bootstrap.n = 50, bootstrap.time_window = 2,
                               cors = NULL)
 {
