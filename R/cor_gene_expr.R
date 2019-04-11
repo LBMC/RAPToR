@@ -20,7 +20,7 @@
 #' plot(cc, margins=c(10,5))
 #' }
 #' 
-cor.gene_expr <- function(samp, refdata, cor.method="pearson")
+cor.gene_expr <- function(samp, refdata, cor.method="spearman")
 {
   requireNamespace("stats", quietly = T)
   if(all(rownames(samp)!=rownames(refdata))){
@@ -32,9 +32,19 @@ cor.gene_expr <- function(samp, refdata, cor.method="pearson")
     refdata <- refdata[rownames(samp),]
     warning(paste("NA values in samp, removed", na.rows, "rows with NA."))
   }
-  cors <- apply(samp,2, function(cb){
-    apply(refdata, 2, stats::cor, y=cb, method=cor.method)
-  })
+  if(cor.method=="spearman"){
+    # using a combination of data.table's frank
+    # and R's cor is much faster than the default 
+    # spearman method.
+    requireNamespace("data.table", quietly = T)
+    cors <- stats::cor(apply(refdata, 2, data.table::frank), 
+                       apply(samp, 2, data.table::frank), 
+                       method="pearson")
+  }
+  else{
+    cors <- stats::cor(refdata, samp, method=cor.method)
+  }
+  
   class(cors) <- 'corg'
   return(cors)
 }

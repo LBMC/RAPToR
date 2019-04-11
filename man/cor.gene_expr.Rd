@@ -4,7 +4,7 @@
 \alias{cor.gene_expr}
 \title{Compute correlation between sample and reference data}
 \usage{
-cor.gene_expr(samp, refdata, cor.method = "pearson")
+cor.gene_expr(samp, refdata, cor.method = "spearman")
 }
 \arguments{
 \item{samp}{the sample matrix, gene as rows, individuals as columns}
