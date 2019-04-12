@@ -168,7 +168,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 #' }
 #' 
 plot.ae <- function(age_est, errbar.width=0.1, 
-                    show.init_estimate=T, col.i=1,
+                    show.init_estimate=F, col.i=1,
                     groups=NULL, 
                     pch=16, cex=1, 
                     xlab="Estimated ages", ...)
@@ -206,7 +206,9 @@ plot.ae <- function(age_est, errbar.width=0.1,
     col.i <- rep(col.i, n)
     col.i <- col.i[o]
     points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
-    text(inis[n], y[n], labels = "initial estimate", pos = 3, col=col.i[n])
+    #text(inis[n], y[n], labels = "initial estimate", pos = 3, col=col.i[n])
+    legend('bottomleft', legend = ' Initial estimate', col = col.i[n], inset = .02,
+           pt.lwd=2, pch=1, bty = 'n', text.col = col.i[n])
   }
 }
 
@@ -221,8 +223,8 @@ plot.ae <- function(age_est, errbar.width=0.1,
 #' @param subset an index vector of the samples to plot (defaults to all)
 #' @param show.init_estimate logical ; if TRUE, shows the initial time estimate on the plot
 #' @param c.lwd line width for the correlation score curve
-#' @param bar.size cex of the maxima bars
-#' @param mx.col color of the best age estimate bar
+#' @param bar.size size of the estimate 95IC bars
+#' @param mx.col color of the age estimate bars
 #' @param in.col color of the initial estimate bar
 #' @param ... additional arguments passed on to \code{\link{plot}}
 #' 
@@ -232,38 +234,62 @@ plot.ae <- function(age_est, errbar.width=0.1,
 #' data(oud_ref)
 #' 
 #' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
 #' \donttest{
-#' plot(age.est)
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, verbose=F)
+#' plot_cor.ae(age.est)
 #' }
 #' 
-plot_cor.ae <- function(age.est, subset=1:ncol(age.est$cors),
-                        show.init_estimate=F, 
-                        c.lwd=2, bar.size=2,
-                        mx.col='firebrick', in.col='royalblue',
-                        ...){
-  
-  pb <- sapply(subset, function(i){
-    # plot corr.score curve
-    plot(age.est$ref.time_series, age.est$cors[,i], type = 'l', lwd=c.lwd,
-         main=colnames(age.est$cors)[i], 
-         xlab = 'reference time', ylab='corr.score', ...)
-
-    # get age estimation and plot
-    ae <- t(age.est$age.estimates[i,c("age.estimate","cor.score")])
-    ae[2] <- (age.est$cors[age.est$ref.time_series>ae[1],i])[1]
+plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors), 
+                         show.init_estimate = F,
+                         c.lwd = 2, bar.size = 1, 
+                         mx.col = "firebrick", in.col = "royalblue", 
+                         ...) 
+{
+  pb <- sapply(subset, function(i) {
+    # set ylim values
+    if(!is.null(age.est$cors.95))
+      yl <- range(age.est$cors.95[,,i])
+    else yl <- range(age.est$cors[,i])
     
-    points(ae, pch='|', cex=bar.size, col=mx.col)
-    text(ae, pos=1, 
-         labels = paste(round(ae[1], 2), sep=''),
-         offset = 1)
+    # plot corr. curve
+    plot(age.est$ref.time_series, age.est$cors[,i], type = "l", 
+         lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = "reference time",
+         ylim = yl*c(1,1.025), ylab = "corr.score", ...)
     
-    if(show.init_estimate){
-      # show initial estimate
+    # if bootstrap cor 95 IC was returned, plot cor curve 95 IC & median
+    if(!is.null(age.est$cors.95))
+      sapply(1:3, function(j){
+        points(age.est$ref.time_series, age.est$cors.95[j,,i], 
+               type = 'l', lwd=c(1,2,1)[j], lty=2)
+      })
+    
+    # get values for current sample
+    ae <- age.est$age.estimates[i, c("age.estimate", "cor.score", "2.5%", "97.5%")]
+    
+    # plot 95IC bars & band
+    seg.h <- ((yl[2]-yl[1])/10)*bar.size
+    xs <- c(ae[3], ae[4])
+    y0s <- rep(ae[2]-seg.h, 2)
+    y1s <- rep(ae[2]+seg.h, 2)
+    segments(xs, y0s, y1 = y1s, lwd=2.5, col = mx.col)
+    
+    yp <- c(y0s[1]+seg.h/2, y1s[1]-seg.h/2)
+    polygon(rep(xs, each=2), y=c(yp[1], yp[2], yp[2], yp[1]), 
+            col=makeTransparent(mx.col, alpha = 150), border = NA)
+    
+    
+    # add estimate as text
+    text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
+    
+    
+    if (show.init_estimate&!is.null(age.est$init.est.times)) {
+      # show initial estimate 
       init.est <- age.est$init.est.times[i]
-      points(init.est, min(age.est$cors[,i]), pch='|', col=in.col, cex=bar.size)
-      text(init.est, min(age.est$cors[,i]), pos=3, offset = 1,
-           labels = paste(round(init.est, 2), '\n(initial estimate)', sep=''))
+      points(init.est, min(age.est$cors[, i]), pch = "|", 
+             col = in.col, cex = bar.size)
+      text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
+           labels = paste(round(init.est, 2), "\n(initial estimate)", 
+                          sep = ""))
     }
   })
 }
