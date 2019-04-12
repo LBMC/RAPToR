@@ -44,7 +44,9 @@ cor.gene_expr <- function(samp, refdata, cor.method="spearman")
   else{
     cors <- stats::cor(refdata, samp, method=cor.method)
   }
-  
+  if(!is.matrix(cors)){
+    cors <- as.matrix(cors)
+  }
   class(cors) <- 'corg'
   return(cors)
 }
