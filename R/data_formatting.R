@@ -37,8 +37,8 @@ format_to_ref <- function(samp, refdata,
   
   inter.genes <- intersect(rownames(refdata), rownames(samp))
   
-  samp <- samp[inter.genes,]
-  refdata <- refdata[inter.genes,]
+  samp <- samp[inter.genes,, drop=F]
+  refdata <- refdata[inter.genes,, drop=F]
   
   if(verbose){
     to.print <- rbind(refdata=l.r, samp=l.s, 
