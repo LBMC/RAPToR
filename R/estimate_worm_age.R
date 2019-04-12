@@ -54,6 +54,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     stop("Reference data and time series don't match")
   }
   ref.time_series <- as.numeric(ref.time_series)
+
   
   ncs <- ncol(samp)
   dup <- FALSE
