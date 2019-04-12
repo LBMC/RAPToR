@@ -79,7 +79,9 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   if(is.null(bootstrap.set_size)){
     # default set size
     bootstrap.set_size <- round(nrow(samp)/3)
-    message(paste("Bootstrap set size is", bootstrap.set_size))
+    if(verbose){
+      message(paste("Bootstrap set size is", bootstrap.set_size))
+    }
   }
   if(bootstrap.set_size>nrow(samp)){
     stop("bootstrap.set_size must be smaller than the overlapping geneset between sample and reference")
@@ -154,8 +156,6 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     })
   }
   
-  print(age.estimates)
-  
   if(verbose){
     message("Bootstrapping...")
   }
@@ -189,6 +189,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
       age.estimate <- apply(bcors, 2, get.cor_peak)
     }))
   } else {
+    #with prior
     boots <- simplify2array(parallel::parLapply(cl, boot.seq,function(j){
       bcors <- boot.cors[,,j]
       age.estimate <- sapply(samp.seq, function(i){
