@@ -177,7 +177,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
   err.sup <- age_est$age.estimates[,3]
   n <- nrow(age_est$age.estimates)
   
-  dc <- dotchart(age_est$age.estimates[,1, drop=F], 
+  dc <- dotchart(age_est$age.estimates[,1], labels = rownames(age_est$age.estimates),
                  xlab=xlab, groups = groups,
                  xlim=range(c(err.inf, err.sup, age_est$init.est.times)),
                  pch=pch, cex=cex,
