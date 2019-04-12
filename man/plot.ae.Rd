@@ -4,7 +4,7 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-\method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = T,
+\method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = F,
   col.i = 1, groups = NULL, pch = 16, cex = 1,
   xlab = "Estimated ages", ...)
 }
@@ -32,7 +32,7 @@ Plots the correlation score curves from samples against a reference series \code
 data(oud_ref)
 
 samp <- oud_ref$X[,13:15]
-age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 \donttest{
 plot(age.est)
 }

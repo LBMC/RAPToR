@@ -5,7 +5,7 @@
 \title{Plot an ae object}
 \usage{
 plot_cor.ae(age.est, subset = 1:ncol(age.est$cors),
-  show.init_estimate = F, c.lwd = 2, bar.size = 2,
+  show.init_estimate = F, c.lwd = 2, bar.size = 1,
   mx.col = "firebrick", in.col = "royalblue", ...)
 }
 \arguments{
@@ -17,9 +17,9 @@ plot_cor.ae(age.est, subset = 1:ncol(age.est$cors),
 
 \item{c.lwd}{line width for the correlation score curve}
 
-\item{bar.size}{cex of the maxima bars}
+\item{bar.size}{size of the estimate 95IC bars}
 
-\item{mx.col}{color of the best age estimate bar}
+\item{mx.col}{color of the age estimate bars}
 
 \item{in.col}{color of the initial estimate bar}
 
@@ -32,9 +32,9 @@ Plots the correlation score curves from samples against the reference series.
 data(oud_ref)
 
 samp <- oud_ref$X[,13:15]
-age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
 \donttest{
-plot(age.est)
+age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+plot_cor.ae(age.est)
 }
 
 }
