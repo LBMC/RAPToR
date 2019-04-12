@@ -18,7 +18,7 @@ an expression matrix with WBGene IDs as row names
 }
 \description{
 This function either downloads a GPL200 GEO dataset from given accession number and transfers 
-it to WBGene ids, or takes input Gene expression matrix *of GPL200 format* to do the same thing.
+it to WBGene ids, or takes input Gene expression matrix \emph{of GPL200 format} to do the same thing.
 **Warning :** Since not all Affymetrix array probes (GPL200 format) have a WBGene equivalent,
 about 30% of the initial 22625 genes are lost.
 }
