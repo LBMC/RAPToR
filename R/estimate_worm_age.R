@@ -20,14 +20,15 @@
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
 #' @param ref.time_series the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)
-#' @param est.time a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples
-#' @param time.sd the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
-#' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the spearman coefficient performs much better than the others.
-#' @param bootstrap.n the number of re-estimates done by the bootstrap. If set to 0, the 95\% interval is computed from the reference time series' resolution
-#' @param bootstrap.time_window the width of the window in which bootstrap re-estimates occur.
-#' @param cors the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}
+#' @param nb.cores the number of cores on which to parallelize the process, defaults to 2.
+#' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the Spearman coefficient performs much better than Pearson (while a bit slower).
+#' @param bootstrap.n the number of bootstrap steps. Should ideally be >5
+#' @param bootstrap.set_size the size of the random sub genesets for the bootstrap, defaults to ngenes/3 (ngenes being the number of \emph{overlapping} genes between sample and reference).
+#' @param prior a vector with an approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples
+#' @param prior.params the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
+#' @param verbose boolean ; if TRUE, displays messages of the various steps of the method.
 #' 
-#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the initial time estimates and the reference time series.
+#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the reference time series as well as the bootstrap correlation matrices and age estimates.
 #' 
 #' @export
 #' 
@@ -35,104 +36,206 @@
 #' data(oud_ref)
 #' 
 #' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 #' age.est$age.estimates
 #' \donttest{
+#' plot(age.est)
 #' }
 #' 
 #' 
-estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
-                              time.sd=5, cor.method="spearman",
-                              bootstrap.n = 50, bootstrap.time_window = 2,
-                              cors = NULL)
+estimate.worm_age <- function(samp, refdata, ref.time_series,
+                              cor.method="spearman", nb.cores=2,
+                              bootstrap.n = 30, bootstrap.set_size = NULL,
+                              prior=NULL, prior.params=NULL,
+                              verbose=T)
 {
+  requireNamespace('parallel', quietly = T)
   if(length(ref.time_series)!=ncol(refdata)){
     stop("Reference data and time series don't match")
   }
-  if(length(est.time)!=ncol(samp)){
-    est.time <- rep(est.time, ncol(samp))
-  }
-  if(any(est.time>max(ref.time_series)|est.time<min(ref.time_series))){
-    stop("Some estimated times are outside reference time series' range")
-  }
   ref.time_series <- as.numeric(ref.time_series)
   
+  ncs <- ncol(samp)
+  dup <- FALSE
+  if(ncs<=1){
+    # if there is only one sample, double it to avoid 
+    # dimension problems with R
+    samp <- cbind(samp,dup=samp)
+    ncs <- 2
+    dup <- TRUE
+  }
+  
+  if(bootstrap.n<=5){
+    message("Note : bootstrap.n should ideally be > 5")
+  }
+  
+  # get matching geneset
   if(!identical(rownames(refdata),rownames(samp))){
-    overlap <- format_to_ref(samp, refdata)
+    overlap <- format_to_ref(samp, refdata, verbose = verbose)
     samp <- overlap$samp
     refdata <- overlap$refdata
-    rm(overlap); gc()
+    rm(overlap); gc(verbose = F)
+  }
+  if(is.null(bootstrap.set_size)){
+    # default set size
+    bootstrap.set_size <- round(nrow(samp)/3)
+    message(paste("Bootstrap set size is", bootstrap.set_size))
+  }
+  if(bootstrap.set_size>nrow(samp)){
+    stop("bootstrap.set_size must be smaller than the overlapping geneset between sample and reference")
   }
   
   
-  if(is.null(cors)){
-    # compute correlations
-    cors <- cor.gene_expr(samp, refdata, cor.method = cor.method)
-  }
-  
-  if(bootstrap.n>0){
-    b.mod <- c(0, runif(bootstrap.n, -.5*bootstrap.time_window,
-                        .5*bootstrap.time_window))
-  }
-  else{
-    b.mod <- 0
-  }
-  boots <- sapply(1:length(b.mod), function(j){
-    b.est_time <- est.time + b.mod[j]
+  if(!is.null(prior.params)){
+    if(is.null(prior)){
+      stop("prior value must be specified if prior.params are defined")
+    }
+    if(length(prior)!=ncs){
+      prior <- rep(prior, ncs)
+    }
+    prior.params <- rep(prior.params, ncs)
     
-    ref.gauss <- lapply(b.est_time, function(b.et){
-      dnorm(ref.time_series, mean = b.et, sd = time.sd)
+    if(any(prior>max(ref.time_series)|prior<min(ref.time_series))){
+      stop("Some estimated times are outside reference time series' range")
+    }
+    # build prior densities (normed)
+    range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+    priors <- lapply(1:ncs, function(i){
+      range01(dnorm(ref.time_series, mean = prior[i], sd = prior.params[i]))
     })
-    m.gauss <- lapply(ref.gauss, max)
     
-    
-    age.estimates <- lapply(1:ncol(samp), function(i) {
+    # function to get the cor peak with prior
+    get.cor_peak <- function(cor.s, i){
+      cor.maxs.i <- unique(c(which(diff(sign(diff(cor.s))) == -2) + 1, which.max(cor.s)))
+      cor.maxs <- cor.s[cor.maxs.i]
+      cor.max <- max(cor.maxs)
+      cor.min <- min(cor.s)
+      cor.maxs.times <- ref.time_series[cor.maxs.i]
+      cor.maxs.scores <- (priors[[i]][cor.maxs.i] + ((cor.maxs-cor.min)/(cor.max-cor.min)))/2
       
-      cor.maxs.i <- which(diff(sign(diff(cors[, i]))) == -2) + 1
-      if(length(cor.maxs.i)==0){
-        # No maxima found 
-        age.estimate <- cbind(time = NA, cor.score = NA,
-                              proba.score = NA)
-      }
-      else{
-        cor.maxs <- cors[cor.maxs.i, i]
-        cor.max <- max(cor.maxs)
-        cor.min <- min(cors[,i])
-        cor.maxs.times <- ref.time_series[cor.maxs.i]
-        cor.maxs.scores <- round(((ref.gauss[[i]][cor.maxs.i]/m.gauss[[i]]) + 
-                                    ((cor.maxs-cor.min)/(cor.max-cor.min)))/2, 4)
-        age.estimate <- cbind(time = cor.maxs.times, cor.score = cor.maxs, 
-                              proba.score = cor.maxs.scores)
-        age.estimate <- age.estimate[order(age.estimate[, "proba.score"], 
-                                           decreasing = T), , drop=F]
-      }
-      return(age.estimate)
-    })
-    # get best estimate
-    age.estimates <- do.call('rbind',lapply(age.estimates, 
-                                            function(a.e) {
-                                              return(a.e[1, ,drop=F])
-                                            }))
+      chosen <- which.max(cor.maxs.scores)
+      
+      return(cbind(time = cor.maxs.times[chosen], cor.score = cor.maxs[chosen]))
+    }
     
-    return(age.estimates)
-  }, simplify = 'array')
+  }
+  else {
+    
+    # function to get the cor peak
+    get.cor_peak <- function(cor.s){
+      
+      cor.max.i <- which.max(cor.s)
+      cor.max <- cor.s[cor.max.i]
+      cor.max.time <- ref.time_series[cor.max.i]
+      
+      return(cbind(time = cor.max.time, cor.score = cor.max))
+    }
+  }
   
+  # build clusters for parallel comp.
+  cl <- parallel::makeForkCluster(nb.cores)
   
-  # get average & IC95 over boostrap
-  age.estimates <- sapply(1:dim(boots)[1], function(i){apply(boots[i,,, drop=F],c(1,2),mean)})
+  samp.seq <- 1:ncol(samp)
+  boot.seq <- 1:bootstrap.n
   
-  resolution <- mean(diff(ref.time_series))/2
-  age.est95 <- t(sapply(1:dim(boots)[1], function(i){
-    quantile(boots[i,1,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
+  if(verbose){
+    message("Performing age estimation...")
+  }
+  
+  # do age estimation on whole dataset
+  cors <- cor.gene_expr(samp, refdata, cor.method = cor.method)
+  if(is.null(prior)){
+    #no prior
+    age.estimates <- parallel::parApply(cl, cors, 2, get.cor_peak)
+  } else {
+    #with prior
+    age.estimates <- parallel::parSapply(cl, samp.seq, function(i){
+      get.cor_peak(cors[,i], i)
+    })
+  }
+  
+  print(age.estimates)
+  
+  if(verbose){
+    message("Bootstrapping...")
+  }
+  ### Bootstrap
+  # generate gene subsets
+  if(verbose){
+    message("\tBuilding gene subsets...")
+  }
+  totalset <- 1:nrow(samp)
+  gene_subsets <- parallel::parLapply(cl, boot.seq, function(i){
+    sample(totalset, size = bootstrap.set_size, replace = F)
+  })
+  
+  # get bootstrap correlations 
+  if(verbose){
+    message("\tComputing correlations...")
+  }
+  boot.cors <- simplify2array(parallel::parLapply(cl, boot.seq, function(j){
+    cor.gene_expr(samp[gene_subsets[[j]], ,drop=F], refdata[gene_subsets[[j]], ,drop=F],
+                  cor.method=cor.method)
   }))
   
+  # get bootstrap age estimates
+  if(verbose){
+    message("\tPerforming age estimation...")
+  }
+  if(is.null(prior)){
+    #no prior
+    boots <- simplify2array(parallel::parLapply(cl, boot.seq,function(j){
+      bcors <- boot.cors[,,j]
+      age.estimate <- apply(bcors, 2, get.cor_peak)
+    }))
+  } else {
+    boots <- simplify2array(parallel::parLapply(cl, boot.seq,function(j){
+      bcors <- boot.cors[,,j]
+      age.estimate <- sapply(samp.seq, function(i){
+        get.cor_peak(bcors[,i], i)
+      })
+      age.estimate
+    }))
+  }
   
-  age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95, 
-                         cor.score=age.estimates[2,], proba.score=age.estimates[3,])
+  
+  if(verbose){
+    message("Computing summary statistics...")
+  }
+  # get average & IC95 over boostrap
+  resolution <- mean(diff(ref.time_series))/2
+  age.est95 <- t(parSapply(cl, 1:dim(boots)[2], function(i){
+    quantile(boots[1,i,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
+  }))
+  
+  # get IC95 and median on the bootstrap correlation curves
+  bc95 <- parallel::parApply(cl, boot.cors, c(1,2), quantile, probs=c(0.025, 0.5, 0.975), na.rm = T)
+  
+  
+  # data formatting
+  age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95,
+                         cor.score=age.estimates[2,])
   rownames(age.estimates) <- colnames(samp)
   
-  res <- list(cors = cors, age.estimates = age.estimates, ref.time_series = ref.time_series, 
-              init.est.times = est.time)
+  
+  # stop cluster and free space
+  parallel::stopCluster(cl)
+  rm(boot.cors, samp, refdata, get.cor_peak) ;  gc(verbose = F)
+  
+  res <- list(age.estimates = age.estimates, 
+              ref.time_series = ref.time_series, 
+              cors = cors,  cors.95 = bc95,
+              boots = boots,
+              init.est.times = prior)
+  
+  if(dup){
+    # if single sample was doubled, get only one result
+    res <- list(age.estimates = age.estimates[1,,drop=F], 
+                ref.time_series = ref.time_series, 
+                cors = cors[,1,drop=F],  cors.95 = bc95[,,1,drop=F],
+                boots = boots[,1,,drop=F],
+                init.est.times = prior[1])
+  }
   
   class(res) <- "ae"
   return(res)
@@ -162,7 +265,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series, est.time,
 #' data(oud_ref)
 #' 
 #' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 #' \donttest{
 #' plot(age.est)
 #' }
@@ -235,7 +338,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
 #' 
 #' samp <- oud_ref$X[,13:15]
 #' \donttest{
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, verbose=F)
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 #' plot_cor.ae(age.est)
 #' }
 #' 

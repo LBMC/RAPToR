@@ -4,9 +4,10 @@
 \alias{estimate.worm_age}
 \title{Estimate the developmental age of individuals}
 \usage{
-estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
-  cor.method = "spearman", bootstrap.n = 50,
-  bootstrap.time_window = 2, cors = NULL)
+estimate.worm_age(samp, refdata, ref.time_series,
+  cor.method = "spearman", nb.cores = 2, bootstrap.n = 30,
+  bootstrap.set_size = NULL, prior = NULL, prior.params = NULL,
+  verbose = T)
 }
 \arguments{
 \item{samp}{the sample matrix, gene as rows, individuals as columns}
@@ -15,20 +16,22 @@ estimate.worm_age(samp, refdata, ref.time_series, est.time, time.sd = 5,
 
 \item{ref.time_series}{the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)}
 
-\item{est.time}{a vector with the approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples}
+\item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the Spearman coefficient performs much better than Pearson (while a bit slower).}
 
-\item{time.sd}{the std. deviation of the gaussian scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}}
+\item{nb.cores}{the number of cores on which to parallelize the process, defaults to 2.}
 
-\item{cor.method}{correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the spearman coefficient performs much better than the others.}
+\item{bootstrap.n}{the number of bootstrap steps. Should ideally be >5}
 
-\item{bootstrap.n}{the number of re-estimates done by the bootstrap. If set to 0, the 95\% interval is computed from the reference time series' resolution}
+\item{bootstrap.set_size}{the size of the random sub genesets for the bootstrap, defaults to ngenes/3 (ngenes being the number of \emph{overlapping} genes between sample and reference).}
 
-\item{bootstrap.time_window}{the width of the window in which bootstrap re-estimates occur.}
+\item{prior}{a vector with an approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples}
 
-\item{cors}{the correlation matrix between sample and reference data. \bold{This must be exactly} \code{cor.gene_expr(samp, refdata, cor.method = cor.method)}}
+\item{prior.params}{the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}}
+
+\item{verbose}{boolean ; if TRUE, displays messages of the various steps of the method.}
 }
 \value{
-an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the initial time estimates and the reference time series.
+an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the reference time series as well as the bootstrap correlation matrices and age estimates.
 }
 \description{
 This function estimates the developmental age of individuals based on given
@@ -53,9 +56,10 @@ gives the best results.
 data(oud_ref)
 
 samp <- oud_ref$X[,13:15]
-age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series, 26)
+age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 age.est$age.estimates
 \donttest{
+plot(age.est)
 }
 
 
