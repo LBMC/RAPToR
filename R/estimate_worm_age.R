@@ -226,7 +226,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
               ref.time_series = ref.time_series, 
               cors = cors,  cors.95 = bc95,
               boots = boots,
-              init.est.times = prior)
+              prior = prior)
   
   if(dup){
     # if single sample was doubled, get only one result
@@ -234,7 +234,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
                 ref.time_series = ref.time_series, 
                 cors = cors[,1,drop=F],  cors.95 = bc95[,,1,drop=F],
                 boots = boots[,1,,drop=F],
-                init.est.times = prior[1])
+                prior = prior[1])
   }
   
   class(res) <- "ae"
@@ -282,7 +282,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
   
   dc <- dotchart(age_est$age.estimates[,1], labels = rownames(age_est$age.estimates),
                  xlab=xlab, groups = groups,
-                 xlim=range(c(err.inf, err.sup, age_est$init.est.times)),
+                 xlim=range(c(err.inf, err.sup, age_est$prior)),
                  pch=pch, cex=cex,
                  ...)
   
@@ -305,7 +305,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
   
   # adding initial estimate to plot
   if(show.init_estimate){
-    inis <- age_est$init.est.times[o]
+    inis <- age_est$prior[o]
     col.i <- rep(col.i, n)
     col.i <- col.i[o]
     points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
@@ -385,9 +385,9 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
     
     
-    if (show.init_estimate&!is.null(age.est$init.est.times)) {
+    if (show.init_estimate&!is.null(age.est$prior)) {
       # show initial estimate 
-      init.est <- age.est$init.est.times[i]
+      init.est <- age.est$prior[i]
       points(init.est, min(age.est$cors[, i]), pch = "|", 
              col = in.col, cex = bar.size)
       text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
