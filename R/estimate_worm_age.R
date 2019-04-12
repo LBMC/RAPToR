@@ -396,3 +396,25 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     }
   })
 }
+
+#' Make a color transparent
+#' 
+#' Makes any given color(s) transparent
+#' 
+#' @param color any color.
+#' @param alpha the alpha channel value, (0:255) - from fully transparent to opaque
+#' 
+#' @export
+#' 
+#' @examples
+#' \donttest{
+#' plot(1:10, col=makeTransparent('firebrick', 120), pch=16, cex=2)
+#' }
+#' 
+makeTransparent<-function(color, alpha=100)
+{
+  newColor<-col2rgb(color)
+  apply(newColor, 2, function(curcoldata){
+    rgb(red=curcoldata[1], green=curcoldata[2],
+        blue=curcoldata[3],alpha=alpha, maxColorValue=255)})
+}
