@@ -1,21 +1,19 @@
 #' Estimate the developmental age of individuals
 #' 
-#' This function estimates the developmental age of individuals based on given
-#' reference data as well as an approximate time estimate of the age.
-#' This is achieved using a two-step process.
-#' First, simple correlation between the gene expression profiles of
-#' the sample and reference data are computed using \code{\link{cor.gene_expr}}; 
-#' this gives correlation profiles according to reference time per individual. 
-#' Then, the maxima of the correlation profiles are evaluated and scored according to 
-#' a gaussian distribution around the time estimate given as input and their correlation score. 
-#' The maxima scores range from 0 to 1, 1 being the case where the highest correlation peak is 
-#' exactly at the given approximate time. 
-#' The implemented bootstrap procedure re-estimates the age from the given times with a 
-#' random uniform noise and returns the average best time, as well as the 95% quantile 
-#' interval of the values.
+#' This function estimates the developmental age of sample individuals based on 
+#' correlation with given reference data. The correlation is computed through
+#' the \code{\link{cor.gene_expr}} function.
 #' 
-#' Do note that using interpolated reference data (from \code{\link{interpol_refdata}})
-#' gives the best results.
+#' A prior can be given to help with the estimate, in which case the peaks 
+#' of the correlation profiles will be scored according to a gaussian
+#' of the specified parameters.
+#' 
+#' The implemented bootstrap procedure re-estimates the age on random gene subsets
+#' of fixed size to evaluate the robustness of the estimate, given in the form of
+#' an interval holding 95 \% of the bootstrap age estimates. 
+#' 
+#' Using interpolated reference data (from \code{\link{interpol_refdata}})
+#' gives best (more precise) results.
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
