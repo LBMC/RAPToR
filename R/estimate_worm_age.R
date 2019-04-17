@@ -255,6 +255,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot
 #' @param col.i the color of the initial estimate marker.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
+#' @param subset an index vector of the samples to plot (defaults to all)
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
 #' @param ... additional arguments passed on to \code{\link{dotchart}}
@@ -272,10 +273,18 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 plot.ae <- function(age_est, errbar.width=0.1, 
                     show.init_estimate=F, col.i=1,
-                    groups=NULL, 
+                    groups=NULL, subset=NULL,
                     pch=16, cex=1, 
                     xlab="Estimated ages", ...)
 {
+  if(!is.null(subset)){
+    # subset the data to plot
+    age_est$age.estimates <- age_est$age.estimates[subset,,drop=F]
+    age_est$prior <- age_est$prior[subset,,drop=F]
+    if(!is.null(groups)){
+      groups <- groups[subset]
+    }
+  }
   err.inf <- age_est$age.estimates[,2]
   err.sup <- age_est$age.estimates[,3]
   n <- nrow(age_est$age.estimates)

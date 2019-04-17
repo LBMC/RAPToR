@@ -5,7 +5,7 @@
 \title{Plot an ae object}
 \usage{
 plot.ae(age_est, errbar.width = 0.1, show.init_estimate = F,
-  col.i = 1, groups = NULL, pch = 16, cex = 1,
+  col.i = 1, groups = NULL, subset = NULL, pch = 16, cex = 1,
   xlab = "Estimated ages", ...)
 }
 \arguments{
@@ -16,6 +16,8 @@ plot.ae(age_est, errbar.width = 0.1, show.init_estimate = F,
 \item{col.i}{the color of the initial estimate marker.}
 
 \item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
+
+\item{subset}{an index vector of the samples to plot (defaults to all)}
 
 \item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
 
