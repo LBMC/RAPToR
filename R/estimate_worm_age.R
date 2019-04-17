@@ -97,7 +97,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     prior.params <- rep(prior.params, ncs)
     
     if(any(prior>max(ref.time_series)|prior<min(ref.time_series))){
-      stop("Some estimated times are outside reference time series' range")
+      stop("Some priors are outside reference time series' range")
     }
     # build prior densities (normed)
     range01 <- function(x){(x-min(x))/(max(x)-min(x))}
