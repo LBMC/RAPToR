@@ -21,9 +21,11 @@
 #' plot(cc, margins=c(10,5))
 #' }
 #' 
+#' @importFrom stats cor
+#' @importFrom data.table frank
+#' 
 cor.gene_expr <- function(samp, refdata, cor.method="spearman")
 {
-  requireNamespace("stats", quietly = T)
   if(all(rownames(samp)!=rownames(refdata))){
     stop("Sample and reference matrices do not contain the same gene set.")
   }
@@ -37,7 +39,6 @@ cor.gene_expr <- function(samp, refdata, cor.method="spearman")
     # using a combination of data.table's frank
     # and R's cor is much faster than the default 
     # spearman method.
-    requireNamespace("data.table", quietly = T)
     cors <- stats::cor(apply(refdata, 2, data.table::frank), 
                        apply(samp, 2, data.table::frank), 
                        method="pearson")
