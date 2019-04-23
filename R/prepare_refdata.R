@@ -27,14 +27,16 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
   if(ref=="larval_development"|ref=="oudenaarden"){
     message("Loading the Oudenaarden reference dataset for larval development")
     data("oud_ref")
+    # join the 20 and 25C series (and quantile normalize)
+    X <- limma::normalizeBetweenArrays(cbind(oud_ref$X, oud_ref$X.25), method = "quantile")
     # ICA components with relevant time dynamics
-    keeps <- (1:20)[-c(11,17,19,20)]
+    keeps <- (1:20)[-c(11,12,14,18,19)]
     # span values for loess regression of components
-    sps <- c(.2,.3,.2,.25,.2,.2,.2,.3,.25,.3,.25,.3,.3,.25,.2,.2)
-    
-    interp.dat <- interpol_refdata(oud_ref$X, n.inter,
-                                   time.series = oud_ref$time.series,
-                                   ica.nc = 20, 
+    sps <- c(.4,.3,.35,.3,.25,.25,.25,.3,.3,.25,.25, .2,.25, .3,.2)
+      
+    interp.dat <- interpol_refdata(X[,names(oud_ref$est.time.series)], n.inter,
+                                   time.series = oud_ref$est.time.series,
+                                   ica.nc = 20, center=T,
                                    keep.c = keeps, span = sps)
   }
   if(ref=="embryonic_development"|ref=="hashimshony"){
