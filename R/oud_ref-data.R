@@ -1,16 +1,16 @@
 #' Oudenaarden reference data time series
 #'
 #' Data from a paper published by Oudenaarden et al.
-#' with C elegans gene expression levels (log+1 from rpkm) at 
-#' 26 time points. 
-#' This dataset is a reference time series for C. elegans development at 20C
-#' from hatching to late L4 (48h)
+#' with C elegans gene expression levels (log+1 from rpkm).
+#'  
+#' This dataset is a reference time series for C. elegans development at both 20C and 25C
+#' from hatching to late L4 (48h at 20C)
 #'
 #' @docType data
 #'
 #' @usage data(oud_ref)
 #'
-#' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours)
+#' @format a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).
 #'
 #' @keywords datasets
 #'
@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' data(oud_ref)
-#' times <- attr(oud_ref, "time.series")
+#' times <- oud_ref$time.series
 #' gene1 <- oud_ref$X[1,]
 #' \donttest{plot(times, gene1, type='l')}
 "oud_ref"
