@@ -16,6 +16,7 @@ Imports:
   parallel,
   data.table,
   beeswarm,
+  Biobase,
   GEOquery
 License: GPL-2
 LazyData: true
