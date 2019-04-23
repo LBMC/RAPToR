@@ -44,6 +44,8 @@
 #' plot(age.est)
 #' }
 #' 
+#' @importFrom parallel parApply parSapply parLapply stopCluster makeForkCluster
+#' @importFrom stats quantile dnorm
 #' 
 estimate.worm_age <- function(samp, refdata, ref.time_series,
                               cor.method="spearman", nb.cores=2,
@@ -51,12 +53,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
                               prior=NULL, prior.params=NULL,
                               verbose=T)
 {
-  requireNamespace('parallel', quietly = T)
   if(length(ref.time_series)!=ncol(refdata)){
     stop("Reference data and time series don't match")
   }
   ref.time_series <- as.numeric(ref.time_series)
-
+  
   
   ncs <- ncol(samp)
   dup <- FALSE
@@ -106,7 +107,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     # build prior densities (normed)
     range01 <- function(x){(x-min(x))/(max(x)-min(x))}
     priors <- lapply(1:ncs, function(i){
-      range01(dnorm(ref.time_series, mean = prior[i], sd = prior.params[i]))
+      range01(stats::dnorm(ref.time_series, mean = prior[i], sd = prior.params[i]))
     })
     
     # function to get the cor peak with prior
@@ -209,7 +210,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   # get average & IC95 over boostrap
   resolution <- mean(diff(ref.time_series))/2
   age.est95 <- t(parSapply(cl, 1:dim(boots)[2], function(i){
-    quantile(boots[1,i,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
+    stats::quantile(boots[1,i,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
   }))
   
   # get IC95 and median on the bootstrap correlation curves
@@ -287,6 +288,9 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' plot(age.est)
 #' }
 #' 
+#' @importFrom graphics plot dotchart points arrows legend
+#' @importFrom beeswarm swarmy
+#' 
 plot.ae <- function(age_est, errbar.width=0.1, 
                     show.init_estimate=F, col.i=1,
                     show.boot_estimates=F, col.b=2,
@@ -307,11 +311,11 @@ plot.ae <- function(age_est, errbar.width=0.1,
   err.sup <- age_est$age.estimates[,3]
   n <- nrow(age_est$age.estimates)
   
-  dc <- dotchart(age_est$age.estimates[,1], labels = rownames(age_est$age.estimates),
-                 xlab=xlab, groups = groups,
-                 xlim=range(c(err.inf, err.sup, age_est$prior)),
-                 pch=pch, cex=cex,
-                 ...)
+  dc <- graphics::dotchart(age_est$age.estimates[,1], labels = rownames(age_est$age.estimates),
+                           xlab=xlab, groups = groups,
+                           xlim=range(c(err.inf, err.sup, age_est$prior)),
+                           pch=pch, cex=cex,
+                           ...)
   
   # Adjusting Y positions of error bars to dotchart layout
   y <- 1L:n
@@ -341,7 +345,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
         
         yi <- rep(y[i], nboot)
         sw <- beeswarm::swarmy(xs[i,], yi, cex=.08*cex)
-        points(sw, pch=16, cex=.3*cex, col=col.b[i])
+        graphics::points(sw, pch=16, cex=.3*cex, col=col.b[i])
       })
     )
   }
@@ -351,10 +355,9 @@ plot.ae <- function(age_est, errbar.width=0.1,
     inis <- age_est$prior[o]
     col.i <- rep(col.i, n)
     col.i <- col.i[o]
-    points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
-    #text(inis[n], y[n], labels = "initial estimate", pos = 3, col=col.i[n])
-    legend('bottomleft', legend = ' Initial estimate', col = col.i[n], inset = .02,
-           pt.lwd=2, pch=1, bty = 'n', text.col = col.i[n])
+    graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
+    graphics::legend('bottomleft', legend = ' Initial estimate', col = col.i[n], inset = .02,
+                     pt.lwd=2, pch=1, bty = 'n', text.col = col.i[n])
   }
 }
 
