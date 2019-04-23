@@ -111,7 +111,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     })
     
     # function to get the cor peak with prior
-    get.cor_peak <- function(cor.s, i){
+    get.cor_peak.prior <- function(cor.s, i){
       cor.maxs.i <- unique(c(which(diff(sign(diff(cor.s))) == -2) + 1, which.max(cor.s)))
       cor.maxs <- cor.s[cor.maxs.i]
       cor.max <- max(cor.maxs)
@@ -156,7 +156,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   } else {
     #with prior
     age.estimates <- parallel::parSapply(cl, samp.seq, function(i){
-      get.cor_peak(cors[,i], i)
+      get.cor_peak.prior(cors[,i], i)
     })
   }
   
@@ -197,7 +197,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     boots <- simplify2array(parallel::parLapply(cl, boot.seq,function(j){
       bcors <- boot.cors[,,j]
       age.estimate <- sapply(samp.seq, function(i){
-        get.cor_peak(bcors[,i], i)
+        get.cor_peak.prior(bcors[,i], i)
       })
       age.estimate
     }))
