@@ -5,8 +5,8 @@
 \title{Plot an ae object}
 \usage{
 \method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = F,
-  col.i = 1, groups = NULL, subset = NULL, pch = 16, cex = 1,
-  xlab = "Estimated ages", ...)
+  col.i = 1, show.boot_estimates = F, col.b = 2, groups = NULL,
+  subset = NULL, pch = 16, cex = 1, xlab = "Estimated ages", ...)
 }
 \arguments{
 \item{errbar.width}{the width of the error bars}
@@ -14,6 +14,10 @@
 \item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate(s) on the plot}
 
 \item{col.i}{the color of the initial estimate marker.}
+
+\item{show.boot_estimates}{logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms}
+
+\item{col.b}{the color of the bootstrapped estimates.}
 
 \item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
 

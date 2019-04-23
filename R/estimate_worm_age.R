@@ -268,6 +268,8 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @param errbar.width the width of the error bars
 #' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot
 #' @param col.i the color of the initial estimate marker.
+#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms
+#' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
 #' @param subset an index vector of the samples to plot (defaults to all)
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
@@ -287,6 +289,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 plot.ae <- function(age_est, errbar.width=0.1, 
                     show.init_estimate=F, col.i=1,
+                    show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
                     pch=16, cex=1, 
                     xlab="Estimated ages", ...)
@@ -295,6 +298,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
     # subset the data to plot
     age_est$age.estimates <- age_est$age.estimates[subset,,drop=F]
     age_est$prior <- age_est$prior[subset,,drop=F]
+    age_est$boots <- age_est$boots[,subset, ,drop=F]
     if(!is.null(groups)){
       groups <- groups[subset]
     }
@@ -325,6 +329,22 @@ plot.ae <- function(age_est, errbar.width=0.1,
   arrows(err.sup, y,
          err.inf, y,
          angle=90, code=3, length=errbar.width)
+  
+  # adding individual bootstrap estimates as swarms
+  if(show.boot_estimates){
+    nboot <- dim(age_est$boots)[3]
+    xs <- age_est$boots[1,o,]
+    col.b <- rep(col.b, n)
+    col.b <- col.b[o]
+    invisible(
+      sapply(1:n, function(i){
+        
+        yi <- rep(y[i], nboot)
+        sw <- beeswarm::swarmy(xs[i,], yi, cex=.08*cex)
+        points(sw, pch=16, cex=.3*cex, col=col.b[i])
+      })
+    )
+  }
   
   # adding initial estimate to plot
   if(show.init_estimate){
