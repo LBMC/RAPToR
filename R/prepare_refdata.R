@@ -19,6 +19,8 @@
 #' interpol.oudenaarden <- prepare_refdata(ref="larval")
 #' }
 #'
+#' @importFrom utils data
+#' @importFrom limma normalizeBetweenArrays
 prepare_refdata <- function(ref = c("larval_development", "embryonic_development",
                                     "oudenaarden", "hashimshony", 
                                     "young_adult", "reinke"),
@@ -28,14 +30,14 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
   
   if(ref=="larval_development"|ref=="oudenaarden"){
     message("Loading the Oudenaarden reference dataset for larval development")
-    data("oud_ref")
+    utils::data("oud_ref", envir = environment())
     # join the 20 and 25C series (and quantile normalize)
     X <- limma::normalizeBetweenArrays(cbind(oud_ref$X, oud_ref$X.25), method = "quantile")
     # ICA components with relevant time dynamics
     keeps <- (1:20)[-c(11,12,14,18,19)]
     # span values for loess regression of components
     sps <- c(.4,.3,.35,.3,.25,.25,.25,.3,.3,.25,.25, .2,.25, .3,.2)
-      
+    
     interp.dat <- interpol_refdata(X[,names(oud_ref$est.time.series)], n.inter,
                                    time.series = oud_ref$est.time.series,
                                    ica.nc = 20, center=T,
@@ -43,7 +45,7 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
   }
   if(ref=="embryonic_development"|ref=="hashimshony"){
     message("Loading the Hashimshony reference dataset for embryonic development")
-    data("hash_ref")    
+    utils::data("hash_ref", envir = environment())    
     # ICA components with relevant time dynamics
     keeps <- (1:16)[-c(6,10,14:16)]
     # span values for loess regression of components
@@ -56,7 +58,7 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
   }
   if(ref=="young_adult"|ref=="reinke"){
     message()
-    data("reinke_ref")
+    utils::data("reinke_ref", envir = environment())
     # Reinke data is already reconstructed from interpolated data, all 8 first
     # components are good.
     interp.dat <- interpol_refdata(reinke_ref$X, n.inter, 
