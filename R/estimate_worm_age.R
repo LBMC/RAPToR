@@ -164,7 +164,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     message("\tBuilding gene subsets...")
   }
   totalset <- 1:nrow(samp)
-  gene_subsets <- parallel::parLapply(cl, boot.seq, function(i){
+  gene_subsets <- lapply(boot.seq, function(i){
     sample(totalset, size = bootstrap.set_size, replace = F)
   })
   
