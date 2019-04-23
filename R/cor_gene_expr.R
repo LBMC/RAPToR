@@ -21,7 +21,7 @@
 #' plot(cc, margins=c(10,5))
 #' }
 #' 
-#' @importFrom stats cor
+#' @importFrom stats cor na.omit
 #' @importFrom data.table frank
 #' 
 cor.gene_expr <- function(samp, refdata, cor.method="spearman")
@@ -30,7 +30,7 @@ cor.gene_expr <- function(samp, refdata, cor.method="spearman")
     stop("Sample and reference matrices do not contain the same gene set.")
   }
   if(any(is.na(samp))){
-    na.rows <- nrow(samp)-nrow(na.omit(samp))
+    na.rows <- nrow(samp)-nrow(stats::na.omit(samp))
     samp <- na.omit(samp)
     refdata <- refdata[rownames(samp),]
     warning(paste("NA values in samp, removed", na.rows, "rows with NA."))
