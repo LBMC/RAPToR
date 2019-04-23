@@ -458,10 +458,11 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
 #' plot(1:10, col=makeTransparent('firebrick', 120), pch=16, cex=2)
 #' }
 #' 
+#' @importFrom grDevices rgb col2rgb
 makeTransparent<-function(color, alpha=100)
 {
-  newColor<-col2rgb(color)
+  newColor<-grDevices::col2rgb(color)
   apply(newColor, 2, function(curcoldata){
-    rgb(red=curcoldata[1], green=curcoldata[2],
-        blue=curcoldata[3],alpha=alpha, maxColorValue=255)})
+    grDevices::rgb(red=curcoldata[1], green=curcoldata[2],
+                   blue=curcoldata[3],alpha=alpha, maxColorValue=255)})
 }
