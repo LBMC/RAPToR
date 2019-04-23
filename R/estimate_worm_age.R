@@ -265,7 +265,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 #' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
 #' 
-#' @param age_est an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
 #' @param errbar.width the width of the error bars.
 #' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot.
 #' @param col.i the color of the initial estimate marker.
@@ -292,7 +292,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @importFrom graphics plot dotchart points arrows legend
 #' @importFrom beeswarm swarmy
 #' 
-plot.ae <- function(age_est, errbar.width=0.1, 
+plot.ae <- function(x, errbar.width=0.1, 
                     show.init_estimate=F, col.i=1,
                     show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
@@ -301,20 +301,20 @@ plot.ae <- function(age_est, errbar.width=0.1,
 {
   if(!is.null(subset)){
     # subset the data to plot
-    age_est$age.estimates <- age_est$age.estimates[subset,,drop=F]
-    age_est$prior <- age_est$prior[subset,,drop=F]
-    age_est$boots <- age_est$boots[,subset, ,drop=F]
+    x$age.estimates <- x$age.estimates[subset,,drop=F]
+    x$prior <- x$prior[subset,,drop=F]
+    x$boots <- x$boots[,subset, ,drop=F]
     if(!is.null(groups)){
       groups <- groups[subset]
     }
   }
-  err.inf <- age_est$age.estimates[,2]
-  err.sup <- age_est$age.estimates[,3]
-  n <- nrow(age_est$age.estimates)
+  err.inf <- x$age.estimates[,2]
+  err.sup <- x$age.estimates[,3]
+  n <- nrow(x$age.estimates)
   
-  dc <- graphics::dotchart(age_est$age.estimates[,1], labels = rownames(age_est$age.estimates),
+  dc <- graphics::dotchart(x$age.estimates[,1], labels = rownames(x$age.estimates),
                            xlab=xlab, groups = groups,
-                           xlim=range(c(err.inf, err.sup, age_est$prior)),
+                           xlim=range(c(err.inf, err.sup, x$prior)),
                            pch=pch, cex=cex,
                            ...)
   
@@ -337,8 +337,8 @@ plot.ae <- function(age_est, errbar.width=0.1,
   
   # adding individual bootstrap estimates as swarms
   if(show.boot_estimates){
-    nboot <- dim(age_est$boots)[3]
-    xs <- age_est$boots[1,o,]
+    nboot <- dim(x$boots)[3]
+    xs <- x$boots[1,o,]
     col.b <- rep(col.b, n)
     col.b <- col.b[o]
     invisible(
@@ -353,7 +353,7 @@ plot.ae <- function(age_est, errbar.width=0.1,
   
   # adding initial estimate to plot
   if(show.init_estimate){
-    inis <- age_est$prior[o]
+    inis <- x$prior[o]
     col.i <- rep(col.i, n)
     col.i <- col.i[o]
     graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.i)

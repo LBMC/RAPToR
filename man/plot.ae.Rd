@@ -4,12 +4,12 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-\method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = F,
+\method{plot}{ae}(x, errbar.width = 0.1, show.init_estimate = F,
   col.i = 1, show.boot_estimates = F, col.b = 2, groups = NULL,
   subset = NULL, pch = 16, cex = 1, xlab = "Estimated ages", ...)
 }
 \arguments{
-\item{age_est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
+\item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
 
 \item{errbar.width}{the width of the error bars.}
 

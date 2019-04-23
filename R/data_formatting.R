@@ -12,7 +12,6 @@
 #' 
 #' @export
 #' 
-#' 
 format_to_ref <- function(samp, refdata, 
                           na.rm=T, verbose=T)
 {
@@ -73,6 +72,8 @@ format_to_ref <- function(samp, refdata,
 #' head(gorrepati_wb)
 #' }
 #'
+#' @importFrom GEOquery getGEO Table
+#' @importFrom Biobase exprs
 GPL200_to_WB <- function(GEO_id=NULL, expr.matrix=NULL, raw=F)
 {
   requireNamespace("GEOquery", quietly = T)
@@ -86,10 +87,10 @@ GPL200_to_WB <- function(GEO_id=NULL, expr.matrix=NULL, raw=F)
   }
   
   # get GEO Platform GPL200 from GEO with GEOquery
-  gpl <- getGEO("GPL200", getGPL=FALSE)
+  gpl <- GEOquery::getGEO("GPL200", getGPL=FALSE)
   
   # select GPL200 ID and Gene symbols from table
-  gpl_sub <-  Table(gpl)[,c(1,13)]
+  gpl_sub <-  GEOquery::Table(gpl)[,c(1,13)]
   
   # free space
   rm(gpl)
@@ -106,7 +107,7 @@ GPL200_to_WB <- function(GEO_id=NULL, expr.matrix=NULL, raw=F)
   if(!is.null(GEO_id)){
     gds <- getGEO(GEO_id, GSEMatrix = T, getGPL = F)
     gds <- gds[[1]]
-    expr.matrix <- exprs(gds)
+    expr.matrix <- Biobase::exprs(gds)
     
   }
 
