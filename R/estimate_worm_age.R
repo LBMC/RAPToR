@@ -11,9 +11,13 @@
 #' The implemented bootstrap procedure re-estimates the age on random gene subsets
 #' of fixed size to evaluate the robustness of the estimate, given in the form of
 #' an interval holding 95 \% of the bootstrap age estimates. 
+#' Since estimates can sometimes 'jump' from peak to peak during the bootstrap,
+#' an \emph{imbalance} measure is computed on the intervals from the ratio of the 
+#' distances from the global estimate (whole gene set) to the egdes of the interval.
+#' If this ratio exceeds 5, it may be useful to give a prior for a more robust estimate. 
 #' 
 #' Using interpolated reference data (from \code{\link{interpol_refdata}})
-#' gives best (more precise) results.
+#' gives more precise results.
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
@@ -211,10 +215,20 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   # get IC95 and median on the bootstrap correlation curves
   bc95 <- parallel::parApply(cl, boot.cors, c(1,2), quantile, probs=c(0.025, 0.5, 0.975), na.rm = T)
   
+  # look for multipeak estimates on samples by computing 'unevenness' on large sample IC95
+  IC.imbalance <- parallel::parSapply(cl, 1:dim(boots)[2], function(i){
+    dotest <- (age.est95[i,2]-age.est95[i,1])>(10*resolution)
+    if(dotest){
+      l <- age.estimates[1,i]-age.est95[i,1]
+      r <- age.est95[i,2] - age.estimates[1,i]
+      return(ifelse(l>r, l/r, r/l))
+    }
+    return(1)
+  })
   
   # data formatting
   age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95,
-                         cor.score=age.estimates[2,])
+                         cor.score=age.estimates[2,], IC.imbalance=IC.imbalance)
   rownames(age.estimates) <- colnames(samp)
   
   
