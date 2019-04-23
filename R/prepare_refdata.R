@@ -2,7 +2,8 @@
 #' 
 #' This function loads the desired reference dataset from the package and
 #' performs the interpolation with optimal parameters.
-#' Two available reference datasets are available (embryonic and larval development).
+#' Three available reference datasets are available
+#' (embryonic development, larval development and young adult/adult).
 #' 
 #' @param ref which reference dataset to load. Can be abbreviated.
 #' @param n.inter the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata}}.
@@ -19,7 +20,8 @@
 #' }
 #'
 prepare_refdata <- function(ref = c("larval_development", "embryonic_development",
-                                    "oudenaarden", "hashimshony"),
+                                    "oudenaarden", "hashimshony", 
+                                    "young_adult", "reinke"),
                             n.inter = 200)
 {
   ref <- match.arg(ref)
@@ -51,6 +53,16 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
                                    time.series = hash_ref$time.series,
                                    ica.nc = 16, center = T,
                                    keep.c = keeps, span = sps)
+  }
+  if(ref=="young_adult"|ref=="reinke"){
+    message()
+    data("reinke_ref")
+    # Reinke data is already reconstructed from interpolated data, all 8 first
+    # components are good.
+    interp.dat <- interpol_refdata(reinke_ref$X, n.inter, 
+                                   time.series = reinke_ref$time.series,
+                                   ica.nc = 8, center=T,
+                                   keep.c = 1:8, span = .1)
   }
   
   return(interp.dat)
