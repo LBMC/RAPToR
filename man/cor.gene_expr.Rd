@@ -14,11 +14,12 @@ cor.gene_expr(samp, refdata, cor.method = "spearman")
 \item{cor.method}{\code{method} parameter passed on to the \code{\link{cor}} function}
 }
 \value{
-a \code{corg} object, being a matrix of correlation scores with samples as columns, refdata as rows
+a matrix of correlation scores with samples as columns, refdata as rows
 }
 \description{
 Computes the correlation between the gene expressions of the sample 
-and the reference data using the \code{\link{cor}} function.
+and the reference data using the \code{\link{cor}} function ;
+default correlation index is spearman.
 }
 \examples{
 data(oud_ref)

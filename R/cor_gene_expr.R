@@ -1,13 +1,14 @@
 #' Compute correlation between sample and reference data
 #' 
 #' Computes the correlation between the gene expressions of the sample 
-#' and the reference data using the \code{\link{cor}} function.
+#' and the reference data using the \code{\link{cor}} function ;
+#' default correlation index is spearman.
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
 #' @param cor.method \code{method} parameter passed on to the \code{\link{cor}} function
 #' 
-#' @return a \code{corg} object, being a matrix of correlation scores with samples as columns, refdata as rows
+#' @return a matrix of correlation scores with samples as columns, refdata as rows
 #' 
 #' @export
 #' 
@@ -47,40 +48,10 @@ cor.gene_expr <- function(samp, refdata, cor.method="spearman")
   if(!is.matrix(cors)){
     cors <- as.matrix(cors)
   }
-  class(cors) <- 'corg'
+  
   return(cors)
 }
 
-
-
-
-#' Plot a corg object
-#' 
-#' Plots the correlation matrix returned by \code{\link{cor.gene_expr}} 
-#' as a heatmap.
-#' 
-#' @param cors a \code{corg} object, as returned by \code{\link{cor.gene_expr}} 
-#' @param col a color scheme, passed on to \code{\link{heatmap}}
-#' @param ... additional arguments passed on to \code{\link{heatmap}}
-#' 
-#' @export
-#' 
-#' @examples
-#' data(oud_ref)
-#' 
-#' samp <- oud_ref$X[,c(3,8,12,20)]
-#' cc <- cor.gene_expr(samp, oud_ref$X)
-#' \donttest{
-#' plot(cc, margins=c(10,5))
-#' }
-#' 
-plot.corg <- function(cors, col=cm.colors(256), ...)
-{ 
-  requireNamespace("graphics", quietly = T)
-  requireNamespace("grDevices", quietly = T)
-  heatmap(cors, Rowv=NA, Colv=NA, 
-          col = col, scale="column", ...)
-}
 
 
 

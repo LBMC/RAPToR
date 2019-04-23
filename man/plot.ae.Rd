@@ -4,7 +4,7 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-plot.ae(age_est, errbar.width = 0.1, show.init_estimate = F,
+\method{plot}{ae}(age_est, errbar.width = 0.1, show.init_estimate = F,
   col.i = 1, groups = NULL, subset = NULL, pch = 16, cex = 1,
   xlab = "Estimated ages", ...)
 }
