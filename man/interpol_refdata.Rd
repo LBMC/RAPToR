@@ -38,7 +38,7 @@ function that computes interpolated data from a reference time series
 }
 \examples{
 
-library(wormAge)
+\donttest{
 data(oud_ref)
 
 interpold <- interpol_refdata(oud_ref$X, 200, 
@@ -48,7 +48,6 @@ interpold <- interpol_refdata(oud_ref$X, 200,
                               plot = TRUE)
 
 par(mfrow=c(2,2))
-\donttest{
 pb <- sapply(c(2,5,13,50), function(i){
    plot(oud_ref$time.series, oud_ref$X[i,],
         type = 'l', lwd=2, 
@@ -61,7 +60,6 @@ pb <- sapply(c(2,5,13,50), function(i){
   }
 })
 }
-
 
 
 }

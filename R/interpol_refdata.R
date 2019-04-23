@@ -11,6 +11,8 @@
 #' 
 #' @export
 #' 
+#' @importFrom stats loess predict
+#' @importFrom graphics plot lines
 get.spline <- function(ICA, time.series, comp, pred.x,
                        span=.25, plot=T)
 {
@@ -19,8 +21,8 @@ get.spline <- function(ICA, time.series, comp, pred.x,
   pred.y <- stats::predict(r, newdata=pred.x)
   
   if(plot==T){
-    plot(ICA$M[,comp]~time.series, main=paste("Comp.", comp))
-    lines(pred.x, pred.y, lwd=2)
+    graphics::plot(ICA$M[,comp]~time.series, main=paste("Comp.", comp))
+    graphics::lines(pred.x, pred.y, lwd=2)
   }
   return(list(reg=r, curve=data.frame(x=pred.x, y=pred.y)))
 }
@@ -48,7 +50,7 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' 
 #' @examples 
 #' 
-#' library(wormAge)
+#' \donttest{
 #' data(oud_ref)
 #'
 #' interpold <- interpol_refdata(oud_ref$X, 200, 
@@ -58,7 +60,6 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #'                               plot = TRUE)
 #'
 #' par(mfrow=c(2,2))
-#' \donttest{
 #' pb <- sapply(c(2,5,13,50), function(i){
 #'    plot(oud_ref$time.series, oud_ref$X[i,],
 #'         type = 'l', lwd=2, 
@@ -73,15 +74,13 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' }
 #'
 #' 
-#' 
+#' @importFrom ica icafast
 interpol_refdata <- function(X, n.inter,
                              time.series=NULL,
                              ica.nc=16, keep.c=1:10, center=F,
                              t.min=NULL, t.max=NULL, new.timepoints=NULL,
                              span=0.25, plot=F, return.fits=F)
 {
-  requireNamespace("stats", quietly = T)
-  requireNamespace("ica", quietly = T)
   if(n.inter<ncol(X)){
     stop("n.inter must be larger than ncol(X)")
   }

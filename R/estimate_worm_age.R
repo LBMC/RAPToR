@@ -389,6 +389,8 @@ plot.ae <- function(age_est, errbar.width=0.1,
 #' plot_cor.ae(age.est)
 #' }
 #' 
+#' @importFrom graphics plot points segments text polygon
+#' 
 plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors), 
                          show.init_estimate = F,
                          c.lwd = 2, bar.size = 1, 
@@ -402,15 +404,15 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     else yl <- range(age.est$cors[,i])
     
     # plot corr. curve
-    plot(age.est$ref.time_series, age.est$cors[,i], type = "l", 
-         lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = "reference time",
-         ylim = yl*c(1,1.025), ylab = "corr.score", ...)
+    graphics::plot(age.est$ref.time_series, age.est$cors[,i], type = "l", 
+                   lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = "reference time",
+                   ylim = yl*c(1,1.025), ylab = "corr.score", ...)
     
     # if bootstrap cor 95 IC was returned, plot cor curve 95 IC & median
     if(!is.null(age.est$cors.95))
       sapply(1:3, function(j){
-        points(age.est$ref.time_series, age.est$cors.95[j,,i], 
-               type = 'l', lwd=c(1,2,1)[j], lty=2)
+        graphics::points(age.est$ref.time_series, age.est$cors.95[j,,i], 
+                         type = 'l', lwd=c(1,2,1)[j], lty=2)
       })
     
     # get values for current sample
@@ -421,25 +423,25 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     xs <- c(ae[3], ae[4])
     y0s <- rep(ae[2]-seg.h, 2)
     y1s <- rep(ae[2]+seg.h, 2)
-    segments(xs, y0s, y1 = y1s, lwd=2.5, col = mx.col)
+    graphics::segments(xs, y0s, y1 = y1s, lwd=2.5, col = mx.col)
     
     yp <- c(y0s[1]+seg.h/2, y1s[1]-seg.h/2)
-    polygon(rep(xs, each=2), y=c(yp[1], yp[2], yp[2], yp[1]), 
-            col=makeTransparent(mx.col, alpha = 150), border = NA)
+    graphics::polygon(rep(xs, each=2), y=c(yp[1], yp[2], yp[2], yp[1]), 
+                      col=makeTransparent(mx.col, alpha = 150), border = NA)
     
     
     # add estimate as text
-    text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
+    graphics::text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
     
     
     if (show.init_estimate&!is.null(age.est$prior)) {
       # show initial estimate 
       init.est <- age.est$prior[i]
-      points(init.est, min(age.est$cors[, i]), pch = "|", 
-             col = in.col, cex = bar.size)
-      text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
-           labels = paste(round(init.est, 2), "\n(initial estimate)", 
-                          sep = ""))
+      graphics::points(init.est, min(age.est$cors[, i]), pch = "|", 
+                       col = in.col, cex = bar.size)
+      graphics::text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
+                     labels = paste(round(init.est, 2), 
+                                    "\n(initial estimate)", sep = ""))
     }
   })
 }
