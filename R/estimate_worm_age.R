@@ -265,17 +265,18 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 #' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
 #' 
-#' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
-#' @param errbar.width the width of the error bars
-#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot
+#' @param age_est an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param errbar.width the width of the error bars.
+#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot.
 #' @param col.i the color of the initial estimate marker.
-#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms
+#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.
 #' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
-#' @param subset an index vector of the samples to plot (defaults to all)
+#' @param subset an index vector of the samples to plot (defaults to all).
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
-#' @param ... additional arguments passed on to \code{\link{dotchart}}
+#' @param xlab the x axis label, passed on to \code{\link{dotchart}}.
+#' @param ... additional arguments passed on to \code{\link{dotchart}}.
 #' 
 #' @export
 #' 

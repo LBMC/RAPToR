@@ -9,27 +9,29 @@
   subset = NULL, pch = 16, cex = 1, xlab = "Estimated ages", ...)
 }
 \arguments{
-\item{errbar.width}{the width of the error bars}
+\item{age_est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
 
-\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate(s) on the plot}
+\item{errbar.width}{the width of the error bars.}
+
+\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate(s) on the plot.}
 
 \item{col.i}{the color of the initial estimate marker.}
 
-\item{show.boot_estimates}{logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms}
+\item{show.boot_estimates}{logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.}
 
 \item{col.b}{the color of the bootstrapped estimates.}
 
 \item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
 
-\item{subset}{an index vector of the samples to plot (defaults to all)}
+\item{subset}{an index vector of the samples to plot (defaults to all).}
 
 \item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
 
 \item{cex}{sizing parameter applied to various elements of the plot.}
 
-\item{...}{additional arguments passed on to \code{\link{dotchart}}}
+\item{xlab}{the x axis label, passed on to \code{\link{dotchart}}.}
 
-\item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
+\item{...}{additional arguments passed on to \code{\link{dotchart}}.}
 }
 \description{
 Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}}
