@@ -2,6 +2,7 @@
 
 S3method(plot,ae)
 S3method(print,ae)
+S3method(summary,ae)
 export(GPL200_to_WB)
 export(cor.gene_expr)
 export(estimate.worm_age)

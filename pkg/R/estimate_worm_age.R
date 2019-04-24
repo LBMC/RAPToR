@@ -493,3 +493,47 @@ makeTransparent<-function(color, alpha=100)
 print.ae <- function(x, digits=3, ...){
   print(round(x$age.estimates, digits = digits), ...)
 }
+
+
+
+#' Print an ae object summary
+#' 
+#' Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
+#' 
+#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param digits the number of digits passed on to \code{\link{round}}
+#' 
+#' @export
+#' 
+#' @examples
+#' data(oud_ref)
+#' 
+#' samp <- oud_ref$X[,13:15]
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+#' 
+#' summary(age.est)
+#' 
+summary.ae <- function(x, digits=3){
+  # rank the samples by age
+  ord <- order(x$age.estimates[,1]) 
+  ae_tab <-  cbind(round(x$age.estimates[ord,1:3], digits = digits),
+                   w=sapply(x$age.estimates[ord,'IC.imbalance'],
+                            function(im){ifelse(im>5, '*','')}))
+  colnames(ae_tab)[4] <- ' '
+  
+  bar <- paste0(rep('-', 50+digits*3), collapse = '')
+  
+  # Display timespan of samples
+  mn <- as.numeric(min(ae_tab[,1], na.rm = T))
+  mx <- as.numeric(max(ae_tab[,1], na.rm = T))
+  
+  cat(paste0('\nSpan of samples : ',
+             round(mx-mn, digits = digits),
+             '\nRange of samples :  [ ',mn,' , ',mx,' ]',
+             '\n', bar, '\n'))
+  # Print the sample table
+  print(ae_tab, quote = F, right = T)
+  cat(bar)
+  cat('\n\t* : Warning, estimate jumps around on bootstrap')
+  
+}
