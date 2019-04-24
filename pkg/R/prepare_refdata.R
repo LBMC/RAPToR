@@ -57,7 +57,7 @@ prepare_refdata <- function(ref = c("larval_development", "embryonic_development
                                    keep.c = keeps, span = sps)
   }
   if(ref=="young_adult"|ref=="reinke"){
-    message()
+    message("Loading the Reinke reference dataset for young adult/adult worms")
     utils::data("reinke_ref", envir = environment())
     # Reinke data is already reconstructed from interpolated data, all 8 first
     # components are good.
