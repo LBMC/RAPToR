@@ -468,3 +468,28 @@ makeTransparent<-function(color, alpha=100)
     grDevices::rgb(red=curcoldata[1], green=curcoldata[2],
                    blue=curcoldata[3],alpha=alpha, maxColorValue=255)})
 }
+
+
+
+
+
+#' Print an ae object
+#' 
+#' Prints the \code{age.estimates} dataframe of an \code{ae} object
+#' 
+#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param digits the number of digits passed on to \code{\link{round}}
+#' 
+#' @export
+#' 
+#' @examples
+#' data(oud_ref)
+#' 
+#' samp <- oud_ref$X[,13:15]
+#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+#' 
+#' print(age.est)
+#' 
+print.ae <- function(x, digits=3, ...){
+  print(round(x$age.estimates, digits = digits), ...)
+}
