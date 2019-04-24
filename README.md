@@ -2,19 +2,33 @@
 
 
 This package aims to recover the developmental stage of C. elegans worms based on their gene expression profiles.
-Reference time series data is used for this purpose, but one can create their own reference from a time series.
+Reference time series data is provided from the litterature for this purpose, but one can create their own reference from a time series.
 
 ## Installation
 
 To install the package, download the repo, open a terminal in the repo folder and type
 ```
-R CMD INSTALL .
+R CMD INSTALL pkg/
+```
+
+Or, using the `devtools` R package, you can also do this in R (with the correct path) :
+```
+> library(devtools)
+> devtools::install("/path_to_downloaded_repo/pkg/")
 ```
 
 You may need to install the `GEOquery` package separately (see [Bioconductor website](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), or [here](https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html), if you happen to have R<3.5).
 
 
 ## Update info
+
+### v0.3
+ 
+ - Added *IC imbalance* information on age estimates to help determine if the estimate 'jumps' between peaks during bootstrap
+ - Added possibility to show bootstrap estimates on the `ae` plot function and subset the samples, as in `plot_cor.ae()`
+ - Added a reference dataset for young adult to adult worms (Reinke *et al*)
+ - Cleaned up all devtools warnings
+ - Removed the `corg` object and its plotting function (unused)
 
 ### v0.2
 
