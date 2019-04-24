@@ -10,6 +10,8 @@
 \item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
 
 \item{digits}{the number of digits passed on to \code{\link{round}}}
+
+\item{...}{arguments passed on to \code{\link{print}}}
 }
 \description{
 Prints the \code{age.estimates} dataframe of an \code{ae} object

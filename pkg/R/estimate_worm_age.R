@@ -479,6 +479,7 @@ makeTransparent<-function(color, alpha=100)
 #' 
 #' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
+#' @param ... arguments passed on to \code{\link{print}}
 #' 
 #' @export
 #' 
@@ -500,8 +501,9 @@ print.ae <- function(x, digits=3, ...){
 #' 
 #' Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
 #' 
-#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param object an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
+#' @param ... ignored (needed to match the S3 standard)
 #' 
 #' @export
 #' 
@@ -513,11 +515,11 @@ print.ae <- function(x, digits=3, ...){
 #' 
 #' summary(age.est)
 #' 
-summary.ae <- function(x, digits=3){
+summary.ae <- function(object, digits=3, ...){
   # rank the samples by age
-  ord <- order(x$age.estimates[,1]) 
-  ae_tab <-  cbind(round(x$age.estimates[ord,1:3], digits = digits),
-                   w=sapply(x$age.estimates[ord,'IC.imbalance'],
+  ord <- order(object$age.estimates[,1]) 
+  ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits),
+                   w=sapply(object$age.estimates[ord,'IC.imbalance'],
                             function(im){ifelse(im>5, '*','')}))
   colnames(ae_tab)[4] <- ' '
   

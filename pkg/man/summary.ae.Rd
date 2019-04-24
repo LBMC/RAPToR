@@ -4,12 +4,14 @@
 \alias{summary.ae}
 \title{Print an ae object summary}
 \usage{
-\method{summary}{ae}(x, digits = 3)
+\method{summary}{ae}(object, digits = 3, ...)
 }
 \arguments{
-\item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
+\item{object}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
 
 \item{digits}{the number of digits passed on to \code{\link{round}}}
+
+\item{...}{ignored (needed to match the S3 standard)}
 }
 \description{
 Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
