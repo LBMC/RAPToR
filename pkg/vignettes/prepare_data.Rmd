@@ -17,8 +17,8 @@ knitr::opts_chunk$set(
 
 ```{r setup, message=FALSE, results='hide'}
 library(wormAge)
-library(biomaRt)
-library(GEOquery)
+requireNamespace("biomaRt", quietly = T)
+requireNamespace("GEOquery", quietly = T)
 ```
 
 ## Which data can be used ?
@@ -38,18 +38,25 @@ head(gene_ids)
 ```
 
 One can also use the `biomaRt` Bioconductor package to convert gene IDs, as shown in the example below.
-```{r biomart_ex}
+```{r biomart_ex, eval=FALSE}
 # establish connection with the biomart
-mart <- useMart("ensembl", dataset = "celegans_gene_ensembl")
+mart <- biomaRt::useMart("ensembl", dataset = "celegans_gene_ensembl")
 
 # Perform bm query
-gene_ids_bm <- getBM(attributes = c("wormbase_gene",
-                                 "ensembl_gene_id",
-                                 "external_gene_name"), 
-                     filters = "external_gene_name", # return matched gene names
-                     values = head(gene_ids$Public.Name), # inputing public gene names
-                     mart = mart)
+gene_ids_bm <- biomaRt::getBM(attributes = c("wormbase_gene",
+                                             "ensembl_gene_id",
+                                             "external_gene_name"), 
+                              filters = "external_gene_name", # return matched gene names
+                              values = head(gene_ids$Public.Name), # query IDs
+                              mart = mart)
 head(gene_ids_bm)
+#>    wormbase_gene ensembl_gene_id external_gene_name
+#> 1 WBGene00000001  WBGene00000001              aap-1
+#> 2 WBGene00000002  WBGene00000002              aat-1
+#> 3 WBGene00000003  WBGene00000003              aat-2
+#> 4 WBGene00000004  WBGene00000004              aat-3
+#> 5 WBGene00000005  WBGene00000005              aat-4
+#> 6 WBGene00000006  WBGene00000006              aat-5
 ```
 The biomart holds an extensive amount of different gene or probe IDs, which should be able to cover all needs for conversion. 
 Getting these lists can also be done manually via the [biomart website](https://www.ensembl.org/biomart)
@@ -58,7 +65,7 @@ Getting these lists can also be done manually via the [biomart website](https://
 
 ## Example loading a dataset
 
-We'll be fetching a GEO dataset and time series are good examples since we can easily check if age estimates are correct. 
+We'll fetch a GEO dataset to use for examples and time series make good references since we can easily check if age estimates are correct. 
 Let's load [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861), a dataset from @hendriks2014extensive.
 
 ```{r load_hendriks, eval=FALSE}
@@ -78,11 +85,11 @@ To transform our dataset, we need to get the gene lengths which we can also do u
 
 ```{r load_hendriks2, eval=FALSE}
 # get the gene position info from the biomart
-mart <- useMart("ensembl", dataset = "celegans_gene_ensembl")
-gene_coords <- getBM(attributes = c("wormbase_gene",
-                                    "start_position","end_position"), 
-                     filters = "wormbase_gene", values = rownames(geno.hendriks), 
-                     mart = mart)
+mart <- biomaRt::useMart("ensembl", dataset = "celegans_gene_ensembl")
+gene_coords <- biomaRt::getBM(attributes = c("wormbase_gene",
+                                             "start_position","end_position"), 
+                              filters = "wormbase_gene", values = rownames(geno.hendriks), 
+                              mart = mart)
 # compute size
 gene_coords$size <- gene_coords$end_position - gene_coords$start_position
 # filter genes we have lengths of
@@ -113,8 +120,8 @@ It's also a good idea to get some meta/pheno data. We can use the `GEOquery` pac
 
 ```{r pheno_hendriks, eval=FALSE}
 # Get pheno data on the worms
-geo_hend <- getGEO("GSE52861", getGPL = F)[[1]]
-pheno.hendriks <- pData(geo_hend)
+geo_hend <- GEOquery::getGEO("GSE52861", getGPL = F)[[1]]
+pheno.hendriks <- GEOquery::pData(geo_hend)
 pheno.hendriks <- pheno.hendriks[, c("title", "geo_accession", "growth protocol:ch1", 
                                      "strain:ch1", "time in development:ch1")]
 # Extract age as hours
@@ -123,9 +130,13 @@ pheno.hendriks$age <- sapply(pheno.hendriks$`time in development:ch1`, function(
 })
 
 # formatting...
-pheno.hendriks$title <- gsub('-', '.', fixed = T,as.character(pheno.hendriks$title))
+pheno.hendriks$title <- gsub('-', '.', fixed = T, as.character(pheno.hendriks$title))
 pheno.hendriks$title <- gsub('hr', 'h', pheno.hendriks$title)
 rm(geo_hend)
 ```
+
+
+<br>
+See how to estimate the age of the samples in this data in the [`estimate_age`](estimate_age.html) vignette.
 
 ## References

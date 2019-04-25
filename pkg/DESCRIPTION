@@ -20,7 +20,8 @@ Imports:
   data.table,
   beeswarm,
   Biobase,
-  GEOquery
+  GEOquery,
+  biomaRt
 License: GPL-2
 LazyData: true
 Encoding: UTF-8
