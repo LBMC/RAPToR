@@ -22,6 +22,12 @@ You may need to install the `GEOquery` package separately (see [Bioconductor web
 
 ## Update info
 
+### v0.4
+
+ - Added a `summary()` and `print()` default functions for `ae` objects
+ - Added vignette `prepare_data` on what data to use and example
+ - Added vignette `estimate_age` on how to perform a simple estimate on example data
+
 ### v0.3
  
  - Added *IC imbalance* information on age estimates to help determine if the estimate 'jumps' between peaks during bootstrap
