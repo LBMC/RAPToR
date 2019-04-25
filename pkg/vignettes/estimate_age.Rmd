@@ -1,0 +1,24 @@
+---
+title: "Performing a simple age estimate"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{estimate_age}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: refs.bib
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(wormAge)
+```
+
+
+This document assumes you already have an appropriate dataset on hand. 
+The data used in the examples is loaded in the [`prepare_data`](prepare_data.html) vignette
