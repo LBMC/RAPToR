@@ -4,18 +4,18 @@
 \alias{plot.ae}
 \title{Plot an ae object}
 \usage{
-\method{plot}{ae}(x, errbar.width = 0.1, show.init_estimate = F,
-  col.i = 1, show.boot_estimates = F, col.b = 2, groups = NULL,
-  subset = NULL, pch = 16, cex = 1, xlab = "Estimated ages", ...)
+\method{plot}{ae}(x, errbar.width = 0.1, show.prior = F, col.p = 1,
+  show.boot_estimates = F, col.b = 2, groups = NULL, subset = NULL,
+  pch = 16, cex = 1, xlim = NULL, xlab = "Estimated ages", ...)
 }
 \arguments{
 \item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
 
 \item{errbar.width}{the width of the error bars.}
 
-\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate(s) on the plot.}
+\item{show.prior}{logical ; if TRUE, shows the input prior(s) on the plot.}
 
-\item{col.i}{the color of the initial estimate marker.}
+\item{col.p}{the color of the prior estimate marker.}
 
 \item{show.boot_estimates}{logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.}
 
@@ -28,6 +28,8 @@
 \item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
 
 \item{cex}{sizing parameter applied to various elements of the plot.}
+
+\item{xlim}{horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example}
 
 \item{xlab}{the x axis label, passed on to \code{\link{dotchart}}.}
 

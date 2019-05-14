@@ -267,14 +267,15 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 #' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
 #' @param errbar.width the width of the error bars.
-#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate(s) on the plot.
-#' @param col.i the color of the initial estimate marker.
+#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
+#' @param col.p the color of the prior estimate marker.
 #' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.
 #' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
 #' @param subset an index vector of the samples to plot (defaults to all).
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
+#' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
 #' @param xlab the x axis label, passed on to \code{\link{dotchart}}.
 #' @param ... additional arguments passed on to \code{\link{dotchart}}.
 #' 
@@ -293,10 +294,10 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @importFrom beeswarm swarmy
 #' 
 plot.ae <- function(x, errbar.width=0.1, 
-                    show.init_estimate=F, col.i=1,
+                    show.prior=F, col.p=1,
                     show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
-                    pch=16, cex=1, 
+                    pch=16, cex=1, xlim=NULL,
                     xlab="Estimated ages", ...)
 {
   if(!is.null(subset)){
@@ -312,9 +313,13 @@ plot.ae <- function(x, errbar.width=0.1,
   err.sup <- x$age.estimates[,3]
   n <- nrow(x$age.estimates)
   
+  if(is.null(xlim)){
+    xlim <- range(c(err.inf, err.sup, x$prior))
+  }
+  
   dc <- graphics::dotchart(x$age.estimates[,1], labels = rownames(x$age.estimates),
                            xlab=xlab, groups = groups,
-                           xlim=range(c(err.inf, err.sup, x$prior)),
+                           xlim=xlim,
                            pch=pch, cex=cex,
                            ...)
   
@@ -352,13 +357,13 @@ plot.ae <- function(x, errbar.width=0.1,
   }
   
   # adding initial estimate to plot
-  if(show.init_estimate){
+  if(show.prior){
     inis <- x$prior[o]
-    col.i <- rep(col.i, n)
-    col.i <- col.i[o]
-    graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.i)
-    graphics::legend('bottomleft', legend = ' Initial estimate', col = col.i[n], inset = .02,
-                     pt.lwd=2, pch=1, bty = 'n', text.col = col.i[n])
+    col.p <- rep(col.p, n)
+    col.p <- col.p[o]
+    graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.p)
+    graphics::legend('bottomleft', legend = ' Initial estimate', col = col.p[n], inset = .02,
+                     pt.lwd=2, pch=1, bty = 'n', text.col = col.p[n])
   }
 }
 
