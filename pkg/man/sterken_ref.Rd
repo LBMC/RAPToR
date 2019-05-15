@@ -9,7 +9,7 @@
 \href{https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-7574/}{ArrayExpress dataset}
 }
 \usage{
-data(reinke_ref)
+data(sterken_ref)
 }
 \description{
 Data from the ArrayExpress submitted by Mark G. Sterken in 2014, 

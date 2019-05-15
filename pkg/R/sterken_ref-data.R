@@ -11,7 +11,7 @@
 #'
 #' @docType data
 #'
-#' @usage data(reinke_ref)
+#' @usage data(sterken_ref)
 #'
 #' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours post-hatching)
 #'
