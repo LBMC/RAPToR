@@ -4,7 +4,7 @@
 \name{reinke_ref}
 \alias{reinke_ref}
 \title{Reinke reference data time series}
-\format{a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in minutes)}
+\format{a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours post-hatching)}
 \source{
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE737}{GEO dataset}
 }

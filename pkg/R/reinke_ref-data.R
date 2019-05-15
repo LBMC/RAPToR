@@ -11,7 +11,7 @@
 #'
 #' @usage data(reinke_ref)
 #'
-#' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in minutes)
+#' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours post-hatching)
 #'
 #' @keywords datasets
 #'
