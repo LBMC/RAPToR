@@ -12,11 +12,13 @@
 data(sterken_ref)
 }
 \description{
-Data from the ArrayExpress submitted by Mark G. Sterken in 2014, 
-recently published by Van Sluijs et al. (2019).
-Only samples of Standard N2 strain were kept here.
+Data from the ArrayExpress submitted by Mark G. Sterken in 2014
+(recently published by Van Sluijs et al. (2019)), with C elegans gene expression
+levels (log+1 from intensities).
 }
 \details{
+Only samples of Standard N2 strain were kept here.
+
 Time is in hours from hatching, scaled on the Oudenaarden 20C time series, 
 re-estimated on the Reinke and Oudenaarden references.
 }
