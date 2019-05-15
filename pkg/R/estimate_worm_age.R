@@ -235,7 +235,12 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   
   # stop cluster and free space
   parallel::stopCluster(cl)
-  rm(boot.cors, samp, refdata, get.cor_peak) ;  gc(verbose = F)
+  rm(boot.cors, samp, refdata)
+  if(is.null(prior))
+    rm(get.cor_peak)
+  else
+    rm(get.cor_peak.prior)
+  gc(verbose = F)
   
   res <- list(age.estimates = age.estimates, 
               ref.time_series = ref.time_series, 
