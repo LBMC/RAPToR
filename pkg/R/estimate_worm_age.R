@@ -282,6 +282,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @param cex sizing parameter applied to various elements of the plot.
 #' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
 #' @param xlab the x axis label, passed on to \code{\link{dotchart}}.
+#' @param l.pos the position of the legend when show.prior is \code{TRUE}, as passed on to \code{\link[graphics]{legend}}
 #' @param ... additional arguments passed on to \code{\link{dotchart}}.
 #' 
 #' @export
@@ -303,7 +304,8 @@ plot.ae <- function(x, errbar.width=0.1,
                     show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
                     pch=16, cex=1, xlim=NULL,
-                    xlab="Estimated ages", ...)
+                    xlab="Estimated ages", 
+                    l.pos='bottomright', ...)
 {
   if(!is.null(subset)){
     # subset the data to plot
@@ -367,7 +369,7 @@ plot.ae <- function(x, errbar.width=0.1,
     col.p <- rep(col.p, n)
     col.p <- col.p[o]
     graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.p)
-    graphics::legend('bottomleft', legend = ' Initial estimate', col = col.p[n], inset = .02,
+    graphics::legend(l.pos, legend = ' Initial estimate', col = col.p[n], inset = .02,
                      pt.lwd=2, pch=1, bty = 'n', text.col = col.p[n])
   }
 }

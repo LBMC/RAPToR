@@ -6,7 +6,8 @@
 \usage{
 \method{plot}{ae}(x, errbar.width = 0.1, show.prior = F, col.p = 1,
   show.boot_estimates = F, col.b = 2, groups = NULL, subset = NULL,
-  pch = 16, cex = 1, xlim = NULL, xlab = "Estimated ages", ...)
+  pch = 16, cex = 1, xlim = NULL, xlab = "Estimated ages",
+  l.pos = "bottomright", ...)
 }
 \arguments{
 \item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
@@ -32,6 +33,8 @@
 \item{xlim}{horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example}
 
 \item{xlab}{the x axis label, passed on to \code{\link{dotchart}}.}
+
+\item{l.pos}{the position of the legend when show.prior is \code{TRUE}, as passed on to \code{\link[graphics]{legend}}}
 
 \item{...}{additional arguments passed on to \code{\link{dotchart}}.}
 }
