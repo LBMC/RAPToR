@@ -8,13 +8,13 @@ Reference time series data is provided from the litterature for this purpose, bu
 
 To install the package, download the repo, open a terminal in the repo folder and type
 ```
-R CMD INSTALL pkg/
+R CMD INSTALL .
 ```
 
 Or, using the `devtools` R package, you can also do this in R (with the correct path) :
 ```
 > library(devtools)
-> devtools::install("/path_to_downloaded_repo/pkg/")
+> devtools::install("/path_to_downloaded_repo/")
 ```
 
 You may need to install the `GEOquery` package separately (see [Bioconductor website](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), or [here](https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html), if you happen to have R<3.5).

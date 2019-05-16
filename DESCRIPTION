@@ -21,12 +21,12 @@ Imports:
   beeswarm,
   Biobase,
   GEOquery,
-  biomaRt
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    biomaRt
 VignetteBuilder: knitr
