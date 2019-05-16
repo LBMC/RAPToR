@@ -70,9 +70,9 @@ prepare_refdata <- function(ref = c("young_adult", "sterken",
                                           method = "quantile")
     
     # ICA components with relevant time dynamics
-    keeps <- (1:20)[-c(3,8,11,13,16,18,19,20)]
+    keeps <- (1:20)[-c(3, 7, 13, 14, 15, 19, 20)]
     # span values for loess regression of components
-    sps <- c(0.6, 0.25, 0.4, 0.3, 0.3, 0.15, 0.2, 0.2, 0.25, 0.25, 0.15, 0.2)
+    sps <- c(0.6, 0.25, 0.4, 0.3, 0.15, 0.4, 0.3, 0.2, 0.2, 0.25, 0.25, 0.2, 0.15)
     
     interp.dat <- interpol_refdata(X.os, n.inter, 
                                    time.series = c(oud_ref$est.time.series, 
