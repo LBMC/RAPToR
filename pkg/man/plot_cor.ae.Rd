@@ -4,16 +4,16 @@
 \alias{plot_cor.ae}
 \title{Plot an ae object}
 \usage{
-plot_cor.ae(age.est, subset = 1:ncol(age.est$cors),
-  show.init_estimate = F, c.lwd = 2, bar.size = 1,
-  mx.col = "firebrick", in.col = "royalblue", ...)
+plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
+  c.lwd = 2, bar.size = 1, mx.col = "firebrick",
+  col.p = "royalblue", ...)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
 
 \item{subset}{an index vector of the samples to plot (defaults to all)}
 
-\item{show.init_estimate}{logical ; if TRUE, shows the initial time estimate on the plot}
+\item{show.prior}{logical ; if TRUE, shows the input prior(s) on the plot.}
 
 \item{c.lwd}{line width for the correlation score curve}
 
@@ -21,7 +21,7 @@ plot_cor.ae(age.est, subset = 1:ncol(age.est$cors),
 
 \item{mx.col}{color of the age estimate bars}
 
-\item{in.col}{color of the initial estimate bar}
+\item{col.p}{color of the prior bar}
 
 \item{...}{additional arguments passed on to \code{\link{plot}}}
 }

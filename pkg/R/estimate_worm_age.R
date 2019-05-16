@@ -369,7 +369,7 @@ plot.ae <- function(x, errbar.width=0.1,
     col.p <- rep(col.p, n)
     col.p <- col.p[o]
     graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.p)
-    graphics::legend(l.pos, legend = ' Initial estimate', col = col.p[n], inset = .02,
+    graphics::legend(l.pos, legend = ' Prior', col = col.p[n], inset = .02,
                      pt.lwd=2, pch=1, bty = 'n', text.col = col.p[n])
   }
 }
@@ -383,11 +383,11 @@ plot.ae <- function(x, errbar.width=0.1,
 #' 
 #' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
-#' @param show.init_estimate logical ; if TRUE, shows the initial time estimate on the plot
+#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
 #' @param c.lwd line width for the correlation score curve
 #' @param bar.size size of the estimate 95IC bars
 #' @param mx.col color of the age estimate bars
-#' @param in.col color of the initial estimate bar
+#' @param col.p color of the prior bar
 #' @param ... additional arguments passed on to \code{\link{plot}}
 #' 
 #' @export
@@ -404,9 +404,9 @@ plot.ae <- function(x, errbar.width=0.1,
 #' @importFrom graphics plot points segments text polygon
 #' 
 plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors), 
-                         show.init_estimate = F,
+                         show.prior = F,
                          c.lwd = 2, bar.size = 1, 
-                         mx.col = "firebrick", in.col = "royalblue", 
+                         mx.col = "firebrick", col.p = "royalblue", 
                          ...) 
 {
   pb <- sapply(subset, function(i) {
@@ -446,14 +446,14 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     graphics::text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
     
     
-    if (show.init_estimate&!is.null(age.est$prior)) {
+    if (show.prior&!is.null(age.est$prior)) {
       # show initial estimate 
       init.est <- age.est$prior[i]
       graphics::points(init.est, min(age.est$cors[, i]), pch = "|", 
-                       col = in.col, cex = bar.size)
+                       col = col.p, cex = bar.size)
       graphics::text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
                      labels = paste(round(init.est, 2), 
-                                    "\n(initial estimate)", sep = ""))
+                                    "\n(prior)", sep = ""))
     }
   })
 }
