@@ -14,11 +14,12 @@ R CMD INSTALL .
 Or, using the `devtools` R package, you can also do this in R (with the correct path) :
 ```
 > library(devtools)
-> devtools::install("/path_to_downloaded_repo/")
+> devtools::install("/path_to_downloaded_repo/", build_vignettes = T)
 ```
 
 You may need to install the `GEOquery` package separately (see [Bioconductor website](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), or [here](https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html), if you happen to have R<3.5).
 
+Also, note that the vignette may take a couple minutes to build.
 
 ## Update info
 
