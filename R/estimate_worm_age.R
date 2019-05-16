@@ -517,6 +517,8 @@ print.ae <- function(x, digits=3, ...){
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
+#' @return a list holding a data frame of ordered age estimates and 95% IC, the span of estimates and the range.
+#' 
 #' @export
 #' 
 #' @examples
@@ -538,16 +540,20 @@ summary.ae <- function(object, digits=3, ...){
   bar <- paste0(rep('-', 50+digits*3), collapse = '')
   
   # Display timespan of samples
-  mn <- as.numeric(min(ae_tab[,1], na.rm = T))
-  mx <- as.numeric(max(ae_tab[,1], na.rm = T))
+  mn <- as.numeric(min(object$age.estimates[,1], na.rm = T))
+  mx <- as.numeric(max(object$age.estimates[,1], na.rm = T))
   
   cat(paste0('\nSpan of samples : ',
              round(mx-mn, digits = digits),
-             '\nRange of samples :  [ ',mn,' , ',mx,' ]',
+             '\nRange of samples :  [ ', 
+             round(mn, digits = digits),' , ',round(mx, digits = digits),
+             ' ]',
              '\n', bar, '\n'))
   # Print the sample table
   print(ae_tab, quote = F, right = T)
   cat(bar)
-  cat('\n\t* : Warning, estimate jumps around on bootstrap')
+  if(any(ae_tab[,4]=='*'))
+    cat('\n\t* : Warning, estimate jumps around on bootstrap')
   
+  invisible(list(age.estimates=object$age.estimates[ord,1:3], span=c(mn,mx), range=mx-mn))
 }
