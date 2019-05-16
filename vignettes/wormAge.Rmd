@@ -5,7 +5,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{wormAge}
+  %\VignetteIndexEntry{wormAge-usage}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: ../inst/REFERENCES.bib
@@ -133,11 +133,17 @@ head(pheno.hendriks[,-1])
 This means you have to select the proper dataset to run your samples against.
 Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the Oudenaarden 20$^\circ$C reference series).
 
-<ADD THE PLOT HERE>
+```{r plot_ref_timelines, fig.height=7, fig.width=9}
+plot_ref_timelines()
+```
 
-While the Sterken time series is interpolated on together with the Oudenaarden time series (and thus covers the whole spectrum), it's advised to use the Oudenaarden reference alone if your samples are estimated below the start of the Sterkens series (40h). 
+
+While the Sterken time series is interpolated on together with the Oudenaarden time series (and thus actually covers the whole spectrum), it's advised to use the Oudenaarden reference alone if your samples are estimated below the start of the Sterkens series (40h). 
 This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage. 
 Maximizing the geneset on which the estimate is performed means more robust estimates.
+
+We advise not to use the Reinke reference unless absolutely necessary as it is very old and noisy ; the data available in the package is already reconstructed from the few dynamics we were able to pick up.
+
 
 ### Loading the reference
 To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series to increase resolution.
@@ -151,7 +157,7 @@ ref <- prepare_refdata("sterken", n.inter = 600)
 ```
 
 ## Performing a simple age estimate
-We'll select the non-dauer and N2 worms from our dataset to age and run the `estimate.worm_age()` function.
+We'll select the worms that are non-dauer and N2 from our dataset and run the `estimate.worm_age()` function.
 
 ```{r perform_ae}
 sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
@@ -320,6 +326,8 @@ ae_hend_prior <- estimate.worm_age(samp = geno.hendriks[,sel],
 ```{r plot_ae_prior, fig.height=5, fig.width=9, fig.align='center'}
 plot(ae_hend_prior, main="Age estimates with priors on Hendriks", 
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
+
+all(ae_hend_prior$age.estimates[,1]==ae_hendriks$age.estimates[,1])
 ```
 
 As you can see, here the estimates are the same as without the prior. 
