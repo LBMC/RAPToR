@@ -23,6 +23,15 @@ Also, note that the vignette may take a couple minutes to build.
 
 ## Update info
 
+### v0.5
+
+ - Added a reference dataset for young adult to adult worms of better quality than the Reinke dataset (Sterken)
+ - Restructured the `ref_tables` object
+ - Added a `plot_ref_timelines()` function to plot the datasets' coverage and map key developmental stages
+ - Joined both previous vignettes into one `wormAge` vignette and expanded the usage information (still in progress)
+ - Updated the `ae` object to include a `$call` output with its call for reproducibility
+ - Changed the `show.init_estimates` and `col.i` parameters to `show.prior` and `col.p` in the `ae` plot functions
+
 ### v0.4
 
  - Added a `summary()` and `print()` default functions for `ae` objects

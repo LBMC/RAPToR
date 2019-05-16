@@ -1,6 +1,6 @@
 Package: wormAge
 Title: Estimate the developmental stage of C. elegans from gene expression
-Version: 0.4
+Version: 0.5
 Authors@R: c(
   person("Romain", "Bulteau", email = "romain.bulteau@ens-lyon.fr",
     role = c("aut", "cre")),
