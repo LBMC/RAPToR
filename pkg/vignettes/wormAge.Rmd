@@ -1,0 +1,212 @@
+---
+title: "Preparing data for `wormAge` use"
+output: 
+  rmarkdown::html_vignette :
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{wormAge}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: ../inst/REFERENCES.bib
+author: Romain Bulteau
+---
+  
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, message=FALSE, results='hide'}
+library(wormAge)
+requireNamespace("GEOquery", quietly = T)
+requireNamespace("Biobase", quietly = T)
+```
+
+
+`wormAge` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
+This is a known problem in the field of *C. elegans*, where many factors can impact development speed.
+
+
+# What data can be used ?
+The `wormAge` package allows one to estimate the developmental age of samples from their *gene expression profiles*.
+This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
+
+**The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
+
+
+## Converting IDs
+The only transformation the data may need is to convert its probe IDs or gene IDs to WormBase Gene IDs (*e.g.* `WBGene00016153`)
+
+To help with this conversion, a gene ID reference table is included in the package, with `WormBase.Gene.ID`, `Public.Name` and `Sequence.Name`, obtained through [WormBase](http://www.wormbase.org).
+
+```{r gene_ids}
+data("gene_ids")
+head(gene_ids)
+```
+
+One can also use the `biomaRt` Bioconductor package to convert gene IDs, as shown in the example below.
+```{r biomart_ex, eval=FALSE}
+# establish connection with the biomart
+mart <- biomaRt::useMart("ensembl", dataset = "celegans_gene_ensembl")
+
+# Perform bm query
+gene_ids_bm <- biomaRt::getBM(attributes = c("wormbase_gene",
+                                             "ensembl_gene_id",
+                                             "external_gene_name"), 
+                              filters = "external_gene_name", # return matched gene names
+                              values = head(gene_ids$Public.Name), # query IDs
+                              mart = mart)
+head(gene_ids_bm)
+#>    wormbase_gene ensembl_gene_id external_gene_name
+#> 1 WBGene00000001  WBGene00000001              aap-1
+#> 2 WBGene00000002  WBGene00000002              aat-1
+#> 3 WBGene00000003  WBGene00000003              aat-2
+#> 4 WBGene00000004  WBGene00000004              aat-3
+#> 5 WBGene00000005  WBGene00000005              aat-4
+#> 6 WBGene00000006  WBGene00000006              aat-5
+```
+The biomart holds an extensive amount of different gene or probe IDs, which should be able to cover all needs for conversion. 
+Getting these lists can also be done manually via the [biomart website](https://www.ensembl.org/biomart)
+
+
+
+## Example loading a dataset
+
+We'll fetch a GEO dataset to use for examples from here on. Time series make for good tests since we can easily check if age estimates are correct. 
+Let's load [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861), a dataset from @hendriks2014.
+
+```{r load_hendriks}
+temp <- tempfile() # make a temporary file for unzipping the data
+# The data we need is in the supplementary files of this dataset
+download.file(
+  "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE52861&format=file&file=GSE52861_ce_geneExpression_polyA_normalized.txt.gz", temp)
+
+geno.hendriks <- read.table(gzfile(temp), h=T, sep = '\t', row.names = 1)
+unlink(temp) # close temporary file connection
+
+```
+
+This data is in the form of normalized log counts.
+```{r head_hend}
+head(geno.hendriks[,1:2])
+```
+
+
+It's also a good idea to get some meta/pheno data. We can use the `GEOquery` package for that.
+
+```{r pheno_hendriks, message=FALSE}
+# Get pheno data on the worms
+geo_hend <- GEOquery::getGEO("GSE52861", getGPL = F)[[1]]
+pheno.hendriks <- Biobase::pData(geo_hend)
+# Filter the relevant fields
+pheno.hendriks <- pheno.hendriks[, c("title", "growth protocol:ch1", 
+                                     "strain:ch1", "time in development:ch1")]
+# Extract age as hours from the corresponding field
+pheno.hendriks$age <- sapply(pheno.hendriks$`time in development:ch1`, function(s){
+  as.integer(strsplit(s, split = ' ')[[1]][1])
+})
+
+# formatting...
+pheno.hendriks$title <- gsub('-', '.', fixed = T, as.character(pheno.hendriks$title))
+pheno.hendriks$title <- gsub('hr', 'h', pheno.hendriks$title)
+rm(geo_hend)
+head(pheno.hendriks[,-1])
+```
+
+# Performing an age estimate
+
+## Choosing a reference dataset
+
+`wormAge` estimates the developmental age of samples based on correlation with reference time series datasets. 
+This means you have to select the proper dataset to run your samples against.
+Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the Oudenaarden 20$^\circ$C reference series).
+
+<ADD THE PLOT HERE>
+
+While the Sterken time series is interpolated on together with the Oudenaarden time series (and thus covers the whole spectrum), it's advised to use the Oudenaarden reference alone if your samples are estimated below the start of the Sterkens series (40h). 
+This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage. 
+Maximizing the geneset on which the estimate is performed means more robust estimates.
+
+### Loading the reference
+To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series to increase resolution.
+You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
+
+Alternatively, if you know what you're doing, you can take a look at the `r interpol_refdata()` function to build your own reference series.
+
+For our example, the Sterken dataset is appropriate since our samples go from late L3 to young adult.
+```{r prep_ref}
+ref <- prepare_refdata("sterken", n.inter = 600)
+```
+
+## Performing the age estimate
+We'll select the non-dauer and N2 worms from our dataset to age and run the `estimate.worm_age()` function.
+
+```{r perform_ae}
+sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
+  pheno.hendriks$`strain:ch1`=="N2" # select N2s
+
+ae_hendriks <- estimate.worm_age(samp = geno.hendriks[, sel], 
+                                 refdata = ref$interpol.gene_expr,
+                                 ref.time_series = ref$time.series)
+```
+
+
+
+## Understanding the output
+The output of the `estimate.worm_age()` is an `ae` object including various elements such as the age estimate and a 95% confidence interval obtained through booststrapping (age estimate on random gene subsets).
+
+<br>
+General information can be accessed via the `summary()` function.
+```{r summ_ae}
+summary(ae_hendriks)
+```
+
+
+<br>
+If you want to retreive the estimates and their confidence intervals, they are accessible through `$age.estimates`.
+```{r show_ae}
+head(ae_hendriks$age.estimates)
+```
+
+The table holds the following :
+
+ - `age.estimate`, the global estimate for the sample (whole gene set)
+ - `2.5%`, the lower bound of the bootstrapped age estimates' confidence interval
+ - `97.5%`, the upper bound...
+ - `cor.score`, the correlation score of the global estimate
+ - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`
+
+### Plots
+
+Estimates and confidence intervals can also be displayed in the form of a dotchart with the default plot function.
+
+```{r plot_ae, fig.height=5, fig.width=7, fig.align='center'}
+plot(ae_hendriks, main="Age estimates on Hendriks development series")
+```
+
+
+The `ae` object also holds the correlation scores of the samples against the reference series and their 95% intervals accross the bootstrap. 
+You can also plot these correlation profiles with `plot_cor.ae()`
+
+```{r plot_cor, fig.height=4, fig.width=7, fig.align='center'}
+par(mfrow=c(2,2))
+plot_cor.ae(ae_hendriks, subset = 1:4)
+```
+
+The 95 % interval is represented for both the estimate (red bars) and the correlation scores along the reference series (black dotted lines). 
+The global estimate is also given below the interval.
+
+
+
+
+
+
+
+
+
+
+
+# References
