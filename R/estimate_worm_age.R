@@ -30,7 +30,9 @@
 #' @param prior.params the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param verbose boolean ; if TRUE, displays messages of the various steps of the method.
 #' 
-#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, the reference time series as well as the bootstrap correlation matrices and age estimates.
+#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, 
+#' the reference time series as well as the bootstrap correlation matrices and age estimates.
+#' There are plot, print and summary methods for this object.
 #' 
 #' @export
 #' 
@@ -46,6 +48,7 @@
 #' 
 #' @importFrom parallel parApply parSapply parLapply stopCluster makeForkCluster
 #' @importFrom stats quantile dnorm
+#' @importFrom pryr standardise_call
 #' 
 estimate.worm_age <- function(samp, refdata, ref.time_series,
                               cor.method="spearman", nb.cores=2,
@@ -257,6 +260,8 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
                 prior = prior[1])
   }
   
+  res$call <- deparse(pryr::standardise_call(sys.call()))
+  
   class(res) <- "ae"
   return(res)
   
@@ -283,14 +288,20 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' @export
 #' 
 #' @examples
+#' \donttest{
 #' data(oud_ref)
 #' 
 #' samp <- oud_ref$X[,13:15]
 #' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 #' 
 #' print(age.est)
+#' }
 #' 
 print.ae <- function(x, digits=3, ...){
+  cat("ae object\n\n")
+  cat("Call : \n")
+  sapply(x$call, function(s){cat(paste0('\t',s,'\n'))})
+  cat('\n')
   print(round(x$age.estimates, digits = digits), ...)
 }
 
@@ -309,12 +320,14 @@ print.ae <- function(x, digits=3, ...){
 #' @export
 #' 
 #' @examples
+#' \donttest{
 #' data(oud_ref)
 #' 
 #' samp <- oud_ref$X[,13:15]
 #' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 #' 
 #' summary(age.est)
+#' }
 #' 
 summary.ae <- function(object, digits=3, ...){
   # rank the samples by age

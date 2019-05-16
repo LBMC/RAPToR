@@ -20,11 +20,13 @@ a list holding a data frame of ordered age estimates and 95% IC, the span of est
 Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
 }
 \examples{
+\donttest{
 data(oud_ref)
 
 samp <- oud_ref$X[,13:15]
 age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 
 summary(age.est)
+}
 
 }

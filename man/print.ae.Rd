@@ -17,11 +17,13 @@
 Prints the \code{age.estimates} dataframe of an \code{ae} object
 }
 \examples{
+\donttest{
 data(oud_ref)
 
 samp <- oud_ref$X[,13:15]
 age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
 
 print(age.est)
+}
 
 }

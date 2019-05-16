@@ -15,6 +15,7 @@ Imports:
   utils,
   graphics,
   ica,
+  pryr,
   limma,
   parallel,
   data.table,
