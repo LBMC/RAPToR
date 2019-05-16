@@ -134,7 +134,7 @@ Maximizing the geneset on which the estimate is performed means more robust esti
 To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series to increase resolution.
 You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
 
-Alternatively, if you know what you're doing, you can take a look at the `r interpol_refdata()` function to build your own reference series.
+Alternatively, if you know what you're doing, you can take a look at the `interpol_refdata()` function to build your own reference series.
 
 For our example, the Sterken dataset is appropriate since our samples go from late L3 to young adult.
 ```{r prep_ref}
