@@ -4,7 +4,7 @@
 \name{ref_tables}
 \alias{ref_tables}
 \title{Reference time tables}
-\format{a list of dataframes for the reference datasets with the developmental stage and its time.}
+\format{a list of data frames with the developmental stages and times.}
 \source{
 The timings for developmental stages are taken from the datasets' papers.
 }
@@ -13,10 +13,11 @@ data(ref_tables)
 }
 \description{
 A list of reference tables giving the approximate timings of key developmental 
-stages in the reference datasets.
+stages in the reference datasets, as well as the dataset spans.
 }
 \examples{
-data(ref_tables)
-head(ref_tables)
+\donttest{
+plot_timelines()
+}
 }
 \keyword{datasets}
