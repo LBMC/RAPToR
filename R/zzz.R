@@ -2,7 +2,7 @@
   # CRAN Note avoidance
   if(getRversion() >= "2.15.1"){
     
-    utils::globalVariables(c("oud_ref", "hash_ref", "reinke_ref", "sterken_ref"))
+    utils::globalVariables(c("oud_ref", "hash_ref", "reinke_ref", "sterken_ref", "ref_tables"))
   }
   
 }

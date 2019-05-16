@@ -53,9 +53,9 @@ add.timeline <- function(x0, x1, y, notch.height=.5, padd.x=0, ...){
 #' }
 #' 
 #' @importFrom utils data
-#' @importFrom graphics plot layout text
+#' @importFrom graphics plot layout text par
 plot_ref_timelines <- function(){
-  par.save <- par(mar=c(4,2,3,2), mfrow=c(2,1))
+  par.save <- graphics::par(mar=c(4,2,3,2), mfrow=c(2,1))
   utils::data("ref_tables", envir = environment())
   graphics::layout(matrix(1:2), heights = c(.6,.4))
   
