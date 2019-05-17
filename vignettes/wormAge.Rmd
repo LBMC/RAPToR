@@ -180,6 +180,7 @@ summary(ae_hendriks)
 ```
 
 
+
 <br>
 If you want to retreive the estimates and their confidence intervals, they are accessible through `$age.estimates`.
 ```{r show_ae}
