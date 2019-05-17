@@ -6,20 +6,20 @@ Reference time series data is provided from the litterature for this purpose, bu
 
 ## Installation
 
-To install the package, download the repo, open a terminal in the repo folder and type
+To install the package, you can use the `devtools` R package. This should be done in your R console :
+```
+> library(devtools)
+> devtools::install_github("LBMC/wormAge", build_vignettes = T)
+```
+
+You can also install the package, by downloading the repo, opening a terminal in the repo folder and typing :
 ```
 R CMD INSTALL .
 ```
 
-Or, using the `devtools` R package, you can also do this in R (with the correct path) :
-```
-> library(devtools)
-> devtools::install("/path_to_downloaded_repo/", build_vignettes = T)
-```
+You may need to install the `GEOquery` and `limma` packages separately as they are not on CRAN (see [Bioconductor website](https://bioconductor.org/packages/)).
 
-You may need to install the `GEOquery` package separately (see [Bioconductor website](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), or [here](https://bioconductor.org/packages/3.4/bioc/html/GEOquery.html), if you happen to have R<3.5).
-
-Also, note that the vignette may take a couple minutes to build.
+Also, note that the vignette may take a couple of minutes to build.
 
 ## Update info
 
