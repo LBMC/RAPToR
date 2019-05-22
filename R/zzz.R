@@ -2,7 +2,8 @@
   # CRAN Note avoidance
   if(getRversion() >= "2.15.1"){
     
-    utils::globalVariables(c("oud_ref", "hash_ref", "reinke_ref", "sterken_ref", "ref_tables"))
+    utils::globalVariables(c("Cel_embryo", "Cel_larval",  "Cel_YA_adult1", 
+                             "Cel_YA_adult2", "ref_tables"))
   }
   
 }
