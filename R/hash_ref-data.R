@@ -1,4 +1,4 @@
-#' Hashimshony reference data time series
+#' C. elegans Embryonic development reference data time series
 #'
 #' Data from a paper published by Hashimshony et al.
 #' with C elegans gene expression levels (log+1 from rpkm) at 
@@ -9,7 +9,7 @@
 #'
 #' @docType data
 #'
-#' @usage data(hash_ref)
+#' @usage data(Cel_embryo)
 #'
 #' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in minutes)
 #'
@@ -21,8 +21,8 @@
 #' @source \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE50548}{GEO dataset}
 #'
 #' @examples
-#' data(hash_ref)
-#' times <- attr(hash_ref, "time.series")
-#' gene1 <- hash_ref$X[500,]
+#' data(Cel_embryo)
+#' times <- attr(Cel_embryo, "time.series")
+#' gene1 <- Cel_embryo$X[500,]
 #' \donttest{plot(times, gene1, type='l')}
-"hash_ref"
+"Cel_embryo"
