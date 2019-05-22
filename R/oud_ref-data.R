@@ -1,4 +1,4 @@
-#' Oudenaarden reference data time series
+#' C. elegans Larval development reference data time series
 #'
 #' Data from a paper published by Oudenaarden et al.
 #' with C elegans gene expression levels (log+1 from rpkm).
@@ -8,7 +8,7 @@
 #'
 #' @docType data
 #'
-#' @usage data(oud_ref)
+#' @usage data(Cel_larval)
 #'
 #' @format a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).
 #'
@@ -20,8 +20,8 @@
 #' @source \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49043}{GEO dataset}
 #'
 #' @examples
-#' data(oud_ref)
-#' times <- oud_ref$time.series
-#' gene1 <- oud_ref$X[1,]
+#' data(Cel_larval)
+#' times <- Cel_larval$time.series
+#' gene1 <- Cel_larval$X[1,]
 #' \donttest{plot(times, gene1, type='l')}
-"oud_ref"
+"Cel_larval"
