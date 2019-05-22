@@ -37,10 +37,10 @@
 #' @export
 #' 
 #' @examples 
-#' data(oud_ref)
+#' data(Cel_larval)
 #' 
-#' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+#' samp <- Cel_larval$X[,13:15]
+#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 #' age.est$age.estimates
 #' \donttest{
 #' plot(age.est)
@@ -289,10 +289,10 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
 #' 
 #' @examples
 #' \donttest{
-#' data(oud_ref)
+#' data(Cel_larval)
 #' 
-#' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+#' samp <- Cel_larval$X[,13:15]
+#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 #' 
 #' print(age.est)
 #' }
@@ -321,10 +321,10 @@ print.ae <- function(x, digits=3, ...){
 #' 
 #' @examples
 #' \donttest{
-#' data(oud_ref)
+#' data(Cel_larval)
 #' 
-#' samp <- oud_ref$X[,13:15]
-#' age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+#' samp <- Cel_larval$X[,13:15]
+#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 #' 
 #' summary(age.est)
 #' }

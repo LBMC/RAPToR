@@ -29,11 +29,11 @@ plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
 Plots the correlation score curves from samples against the reference series.
 }
 \examples{
-data(oud_ref)
+data(Cel_larval)
 
-samp <- oud_ref$X[,13:15]
+samp <- Cel_larval$X[,13:15]
 \donttest{
-age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 plot_cor.ae(age.est)
 }
 

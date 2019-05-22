@@ -79,7 +79,8 @@ plot_ref_timelines <- function(){
                notch.height = .4, padd.x = .2)
   
   graphics::text((ds$from[is.ph]+ds$to[is.ph])/2, y.ph, pos=3, 
-                 labels = paste(ds$name[is.ph], 'reference'), font=2)
+                 labels = paste(ds$data.name[is.ph], ' (', ds$name[is.ph], ')', sep=''), 
+                 font=2)
   
   # reference timepoints
   add.timeline(rf.ph$from, rf.ph$to, 1, lwd=3, col='grey30', 
@@ -107,7 +108,8 @@ plot_ref_timelines <- function(){
                notch.height = .4, padd.x = .2)
   
   graphics::text((ds$from[is.e]+ds$to[is.e])/2, y.e, pos=3, offset = .5,
-                 labels = paste(ds$name[is.e], 'reference'), font=2)
+                 labels = paste(ds$data.name[is.e], ' (', ds$name[is.e], ')', sep=''),
+                 font=2)
   
   # reference timepoints
   add.timeline(rf.e$from, rf.e$to, 1, lwd=3, col='grey30', 

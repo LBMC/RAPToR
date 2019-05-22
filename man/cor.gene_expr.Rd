@@ -22,10 +22,10 @@ and the reference data using the \code{\link{cor}} function ;
 default correlation index is spearman.
 }
 \examples{
-data(oud_ref)
+data(Cel_larval)
 
-samp <- oud_ref$X[,c(3,8,12,20)]
-cc <- cor.gene_expr(samp, oud_ref$X)
+samp <- Cel_larval$X[,c(3,8,12,20)]
+cc <- cor.gene_expr(samp, Cel_larval$X)
 \donttest{
 plot(cc, margins=c(10,5))
 }

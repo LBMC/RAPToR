@@ -39,19 +39,19 @@ function that computes interpolated data from a reference time series
 \examples{
 
 \donttest{
-data(oud_ref)
+data(Cel_larval)
 
-interpold <- interpol_refdata(oud_ref$X, 200, 
-                              time.series = oud_ref$time.series, 
-                              t.min = min(oud_ref$time.series), 
-                              t.max = max(oud_ref$time.series),
+interpold <- interpol_refdata(Cel_larval$X, 200, 
+                              time.series = Cel_larval$time.series, 
+                              t.min = min(Cel_larval$time.series), 
+                              t.max = max(Cel_larval$time.series),
                               plot = TRUE)
 
 par(mfrow=c(2,2))
 pb <- sapply(c(2,5,13,50), function(i){
-   plot(oud_ref$time.series, oud_ref$X[i,],
+   plot(Cel_larval$time.series, Cel_larval$X[i,],
         type = 'l', lwd=2, 
-        main=rownames(oud_ref$X)[i], xlab = 'time')
+        main=rownames(Cel_larval$X)[i], xlab = 'time')
    points(interpold$time.series, interpold$interpol.gene_expr[i,],
           type = 'l', lwd=2, col='firebrick')
   if(i==5){

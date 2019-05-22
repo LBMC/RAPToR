@@ -21,10 +21,10 @@ Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
 }
 \examples{
 \donttest{
-data(oud_ref)
+data(Cel_larval)
 
-samp <- oud_ref$X[,13:15]
-age.est <- estimate.worm_age(samp, oud_ref$X, oud_ref$time.series)
+samp <- Cel_larval$X[,13:15]
+age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 
 summary(age.est)
 }
