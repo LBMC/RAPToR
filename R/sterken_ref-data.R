@@ -1,4 +1,4 @@
-#' Sterken reference data time series
+#' C. elegans Young Adult/Adult reference data time series (1)
 #'
 #' Data from the ArrayExpress submitted by Mark G. Sterken in 2014
 #' (recently published by Van Sluijs et al. (2019)), with C elegans gene expression
@@ -13,7 +13,7 @@
 #'
 #' @docType data
 #'
-#' @usage data(sterken_ref)
+#' @usage data(Cel_YA_adult1)
 #'
 #' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours post-hatching)
 #'
@@ -25,8 +25,8 @@
 #' @source \href{https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-7574/}{ArrayExpress dataset}
 #'
 #' @examples
-#' data(sterken_ref)
-#' times <- sterken_ref$time.series
-#' gene1 <- sterken_ref$X[700,]
+#' data(Cel_YA_adult1)
+#' times <- Cel_YA_adult1$time.series
+#' gene1 <- Cel_YA_adult1$X[700,]
 #' \donttest{plot(times, gene1, type='b')}
-"sterken_ref"
+"Cel_YA_adult1"

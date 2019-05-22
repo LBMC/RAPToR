@@ -1,4 +1,4 @@
-#' Reinke reference data time series
+#' C. elegans Young Adult/Adult reference data time series (2)
 #'
 #' Reconstructed data from a dataset published by Reinke et al.
 #' Time is in hours, scaled on the Oudenaarden 20C time series.
@@ -9,7 +9,7 @@
 #'
 #' @docType data
 #'
-#' @usage data(reinke_ref)
+#' @usage data(Cel_YA_adult2)
 #'
 #' @format a list with \code{X} being the gene expression matrix and \code{time.series} being the timepoints (in hours post-hatching)
 #'
@@ -21,8 +21,8 @@
 #' @source \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE737}{GEO dataset}
 #'
 #' @examples
-#' data(reinke_ref)
-#' times <- reinke_ref$time.series
-#' gene1 <- reinke_ref$X[500,]
+#' data(Cel_YA_adult2)
+#' times <- Cel_YA_adult2$time.series
+#' gene1 <- Cel_YA_adult2$X[500,]
 #' \donttest{plot(times, gene1, type='l')}
-"reinke_ref"
+"Cel_YA_adult2"
