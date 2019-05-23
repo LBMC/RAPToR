@@ -10,7 +10,7 @@
 #'
 #' @usage data(Cel_larval)
 #'
-#' @format a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).
+#' @format a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours post-hatching). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).
 #'
 #' @keywords datasets
 #'

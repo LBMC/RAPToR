@@ -4,7 +4,7 @@
 \name{Cel_larval}
 \alias{Cel_larval}
 \title{C. elegans Larval development reference data time series}
-\format{a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).}
+\format{a list with \code{X} and \code{X.25} being the gene expression matrices, \code{time.series} and \code{time.series.25} being the timepoints (in hours post-hatching). \code{est.time.series} is the re-estimated age for timepoints of both time series together (scaled on the 20C time).}
 \source{
 \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49043}{GEO dataset}
 }
