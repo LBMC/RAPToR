@@ -131,14 +131,14 @@ head(pheno.hendriks[,-1])
 
 `wormAge` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper dataset to run your samples against.
-Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the Oudenaarden 20$^\circ$C reference series).
+Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the larval 20$^\circ$C reference series from @oudenaarden2013).
 
 ```{r plot_ref_timelines, fig.height=7, fig.width=9}
 plot_ref_timelines()
 ```
 
 
-While the Sterken time series is interpolated on together with the Oudenaarden time series (and thus actually covers the whole spectrum), it's advised to use the Oudenaarden reference alone if your samples are estimated below the start of the Sterkens series (40h). 
+While the `Cel_YA_adult1` time series is interpolated on together with the `Cel_larval` time series (and thus actually covers the whole larval spectrum), it's advised to use the `Cel_larval` reference alone if your samples are matched before the start of the young adult series (40h). 
 This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage. 
 Maximizing the geneset on which the estimate is performed means more robust estimates.
 
@@ -151,9 +151,9 @@ You can load a reference dataset with optimal parameters using the `prepare_refd
 
 Alternatively, if you know what you're doing, you can take a look at the `interpol_refdata()` function to build your own reference series.
 
-For our example, the Sterken dataset is appropriate since our samples go from late L3 to young adult.
+For our example, the `Cel_YA_adult1` dataset is appropriate since our samples go from late L3 to young adult.
 ```{r prep_ref}
-ref <- prepare_refdata("sterken", n.inter = 600)
+ref <- prepare_refdata("Cel_YA_adult1", n.inter = 600)
 ```
 
 ## Performing a simple age estimate
