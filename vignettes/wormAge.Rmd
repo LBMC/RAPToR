@@ -159,7 +159,7 @@ ref <- prepare_refdata("Cel_YA_adult1", n.inter = 600)
 ## Performing a simple age estimate
 We'll select the worms that are non-dauer and N2 from our dataset and run the `estimate.worm_age()` function.
 
-```{r perform_ae}
+```{r perform_ae, cache=TRUE}
 sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
   pheno.hendriks$`strain:ch1`=="N2" # select N2s
 
@@ -218,6 +218,20 @@ The global estimate is also given below the interval.
 <br>
 <br>
 
+
+# About the reference datasets
+
+## References included in the package
+There are currently 4 reference datasets included in the package. 
+All are *C. elegans* time series :
+
+ - `Cel_embryo` is an embryo development time series (time in minutes past the 4-cell state) produced by @hashimshony2015, starting at the single cell embryo all the way to hatching.
+ - `Cel_larval` holds larval development time series (time in hours post-hatching for 20$^\circ$C, aside from `time.series.25`) from @oudenaarden2013. This data holds 2 series one at 20$^\circ$C and one at 25. The data loaded with `prepare_refdata()` uses both, with the 25$^\circ$C series'time re-estimated
+
+
+
+<br>
+<br>
 
 # Advanced usage
 

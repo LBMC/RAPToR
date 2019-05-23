@@ -26,8 +26,9 @@ License: file LICENSE
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 6.1.1
-Suggests: 
+Suggests:
+    R.rsp,
     knitr,
     rmarkdown,
     biomaRt
-VignetteBuilder: knitr
+VignetteBuilder: R.rsp
