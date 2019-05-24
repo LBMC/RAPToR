@@ -21,11 +21,12 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- TRUE # wether to cache heavy-computation chunks 
+quick_build <- F # wether to cache heavy-computation chunks 
 ```
 
 
-
+<br>
+<br>
 `wormAge` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
 This is a major problem in the field of *C. elegans*, where many factors can impact development speed. Let's get started.
 
@@ -144,6 +145,22 @@ rm(geo_hend)
 head(pheno.hendriks[,-1])
 ```
 
+
+Finally, let's select the samples that are N2 and non-Dauer from the dataset.
+```{r hen_select}
+sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
+  pheno.hendriks$`strain:ch1`=="N2" # select N2s
+
+geno.hendriks <- geno.hendriks[,sel]
+pheno.hendriks <- pheno.hendriks[sel,]
+```
+
+
+<br>
+<br>
+
+
+
 # Performing an age estimate
 
 ## Choosing a reference dataset
@@ -157,50 +174,53 @@ plot_ref_timelines()
 ```
 
 
-While the `Cel_YA_adult1` time series is interpolated on together with the `Cel_larval` time series (and thus actually covers the whole larval spectrum), it's advised to use the `Cel_larval` reference alone if your samples are matched before the start of the young adult series (40h). 
-This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage. 
-Maximizing the geneset on which the estimate is performed means more robust estimates.
+<!-- While the `Cel_YA_adult1` time series is interpolated on together with the `Cel_larval` time series (and thus actually covers the whole larval spectrum), it's advised to use the `Cel_larval` reference alone if your samples are matched before the start of the young adult series (40h).  -->
+<!-- This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage.  -->
+<!-- Maximizing the geneset on which the estimate is performed means more robust estimates. -->
 
-We advise not to use the Reinke reference unless absolutely necessary as it is very old and noisy ; the data available in the package is already reconstructed from the few dynamics we were able to pick up.
+We advise not to use the `Cel_YA_adult2` reference unless absolutely necessary as it is very old and noisy ; the data available in the package is already reconstructed from the few dynamics we were able to pick up.
 
 
 ### Loading the reference
-To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series to increase resolution.
+
+To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series.
 You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
 
 Alternatively, you can take a look at the section on [building your own reference series.](#building-your-own-reference)
 
-For our example, the `Cel_YA_adult1` dataset is appropriate since our samples go from late L3 to young adult. The `n.inter` corresponds to the resolution of the 
+For our example, the `Cel_YA_adult1` dataset is appropriate since our samples go from late L3 to young adult. 
+The `n.inter` parameter corresponds to the resolution of the re-built reference. 
+In the interest of lightening the computational load for this vignette, I chose a rather small value, but aim over the 500s if you want optimal results.
 ```{r prep_ref, cache=quick_build}
 ref <- prepare_refdata("Cel_YA_adult1", n.inter = 200)
 ```
 
 Note that the age estimates will be given in the time unit and scale of the chosen reference (here, in hours post-hatching at 20$^\circ$C)
 
+
+
 ## Performing a simple age estimate
-We'll select the worms that are non-dauer and N2 from our dataset and run the `estimate.worm_age()` function.
+
+All we need to do now is run the `estimate.worm_age()` function.
 
 ```{r perform_ae, cache=quick_build}
-sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
-  pheno.hendriks$`strain:ch1`=="N2" # select N2s
-
-ae_hendriks <- estimate.worm_age(samp = geno.hendriks[, sel], 
+ae_hendriks <- estimate.worm_age(samp = geno.hendriks, 
                                  refdata = ref$interpol.gene_expr,
                                  ref.time_series = ref$time.series)
 ```
 
-Let's quickly compare our estimates with the chronological time points.
+Let's do a quick check of our estimates against the chronological time points.
 
-We can observe the well-known difference of growth speed of 1.5 between worms grown at 20 and 25$^\circ$C by fitting a simple linear model.
+Since the staged samples were grown at 25$^\circ$C, and the reference at 20, we can observe the well-known growth speed difference of 1.5 between worms grown at these temperatures by fitting a simple linear model.
 
 
 ```{r hend_age_diff}
-lm_hendriks <- lm(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel])
+lm_hendriks <- lm(ae_hendriks$age.estimates[,1]~pheno.hendriks$age)
 summary(lm_hendriks)
 ```
 
 ```{r echo=F, fig.height=4, fig.width=6, out.width="50%"}
-plot(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel], 
+plot(ae_hendriks$age.estimates[,1]~pheno.hendriks$age, 
      xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
      main = "Chronological vs Estimated ages for Hendriks series")
 abline(lm_hendriks, lwd=2, col=2)
@@ -227,11 +247,10 @@ head(ae_hendriks$age.estimates)
 
 The table holds the following :
 
- - `age.estimate`, the global estimate for the sample (whole gene set)
- - `2.5%`, the lower bound of the bootstrapped age estimates' confidence interval
- - `97.5%`, the upper bound...
- - `cor.score`, the correlation score of the global estimate
- - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`
+ - `age.estimate`, the global estimate for the sample (whole gene set).
+ - `2.5%`, `97.5%`, the lower and upper bounds of the bootstrapped age estimates' confidence interval.
+ - `cor.score`, the correlation score of the global estimate.
+ - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`. More information on this is given in the [advanced usage](#if-the-bootstrap-estimates-jump-around) sections
 
 ### Plotting
 
@@ -272,14 +291,14 @@ Sources and links to original data are available in the documentation of the dat
 
 
 This reference data is the basis for building high-resolution temporal references (through calling the `prepare_refdata()` function). 
-To briefly put it, this is achieved by interpolating on Independant Component Analysis components showing relevant dynamics with respect to time, and reconstructing the theoretical gene expression data from them. 
+To briefly put it, this is achieved by interpolating on *Independant Component Analysis* components showing relevant dynamics with respect to time, and reconstructing the theoretical gene expression data from them. 
 This process is detailed in the next section.
 
 
 ## Building your own reference
 
 If you happen to be working with a different strain (or even a different organism), you can build your own reference to stage your samples. The simplicity of the method allows for its wide application range, though we remain dependant on a good time series.
-To do this, you will require a time series of gene expression data on your favourite organism as well as some knowledge about *Independant Component Analysis* (ICA).
+To do this, you will require a time series of gene expression data on your favourite organism as well as some knowledge about Independant Component Analysis (ICA).
 
 <div class="alert alert-info">
   <strong>Why use ICA ?</strong><br/>
@@ -303,9 +322,9 @@ The best way to check for this is to plot the ICA components along time.
 ```{r ica_hend, cache=quick_build}
 requireNamespace("ica", quietly = T)
 
-time.series <- pheno.hendriks[sel, "age"]
+time.series <- pheno.hendriks$age
 nc <- 8 # nb of components
-ica.hendriks <- ica::icafast(geno.hendriks[,sel], nc)
+ica.hendriks <- ica::icafast(geno.hendriks, nc)
 ```
 
 You can look at the documentation for `ica::icafast` to see what is returned by the function. 
@@ -343,7 +362,7 @@ invisible(sapply(c(.2, .4, .9), function(sp){
 ))
 ```
 
-As you can see above, using too small a span (left plot) will fit the data *too closely* and sometimes pick up noise along with the trend we want.
+As you can see above, using too small a span (left plot) will fit the data "too closely" and sometimes pick up noise along with the trend we want.
 Using a span too large (right plot) will completely smooth out the dynamics.
 
 Finding appropriate span values for your selected components is a tedious but necessary process to get the best high-resolution reference possible. 
@@ -356,11 +375,11 @@ All we need to do is the inverse matrix product to get the theoretical gene expr
 
 In `wormAge`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute, keep and the span values for interpolation.
 
-```{r interpol_hend, fig.height=5, fig.width=10}
+```{r interpol_hend, fig.height=5, fig.width=10, warning=FALSE}
 par(mfrow=c(2,4))
 
 sps <- c(.3,.5,.3,.4,.5,.4,.4,.4)
-ref_hend <- interpol_refdata(X = geno.hendriks[,sel],
+ref_hend <- interpol_refdata(X = geno.hendriks,
                              time.series = time.series,
                              n.inter = 200,  # resolution of interpolation
                              ica.nc = nc,    # nb of components
@@ -370,6 +389,8 @@ ref_hend <- interpol_refdata(X = geno.hendriks[,sel],
                              plot = T)
 ```
 
+
+And that's it. You can now stage samples on your reference (provided they are within the initial data's timespan).
 
 <br>
 <br>
@@ -456,9 +477,9 @@ This parameter will also indirectly change the weight of the prior over the corr
 
 On our example, we can use the ajusted chronological ages for 20$^\circ$C.
 ```{r hend_prior, cache=quick_build}
-priors <- pheno.hendriks$age[sel] * 1.6 - 5
+priors <- pheno.hendriks$age * 1.6 - 5
 
-ae_hend_prior <- estimate.worm_age(samp = geno.hendriks[,sel],
+ae_hend_prior <- estimate.worm_age(samp = geno.hendriks,
                                    refdata = ref$interpol.gene_expr,
                                    ref.time_series = ref$time.series,
                                    prior = priors,
