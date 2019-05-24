@@ -73,7 +73,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   }
   
   if(bootstrap.n<=5){
-    message("Note : bootstrap.n should ideally be > 5")
+    warning("bootstrap.n should ideally be > 5")
   }
   
   # get matching geneset
@@ -229,6 +229,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     }
     return(1)
   })
+  
+  # check for edge-of-reference estimates
+  qref <- stats::quantile(ref.time_series, probs=c(.05,.95))
+  if(any(  (age.estimates[1,]<qref[1])|(age.estimates[1,]>qref[2])  ))
+    warning("Some estimates come near the edges of the reference.\nIf possible, stage those on a different reference for confirmation.")
   
   # data formatting
   age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95,
