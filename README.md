@@ -1,27 +1,54 @@
 # wormAge R package
 
+`wormAge` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
+This is a major problem in the field of *C. elegans*, where many factors can impact development speed.
 
-This package aims to recover the developmental stage of C. elegans worms based on their gene expression profiles.
-Reference time series data is provided from the litterature for this purpose, but one can create their own reference from a time series.
 
 ## Installation
 
 To install the package, you can use the `devtools` R package. This should be done in your R console :
-```
-> library(devtools)
-> devtools::install_github("LBMC/wormAge", build_vignettes = T)
+```r
+library(devtools)
+devtools::install_github("LBMC/wormAge", build_vignettes = T)
 ```
 
-You can also install the package, by downloading the repo, opening a terminal in the repo folder and typing :
-```
-R CMD INSTALL .
-```
 
 You may need to install the `GEOquery` and `limma` packages separately as they are not on CRAN (see [Bioconductor website](https://bioconductor.org/packages/)).
 
 Also, note that the vignette may take a couple of minutes to build.
 
+## Getting started
+
+Everything you need to know to make this work is detailed in the package's vignette. You can access it from your R console with
+
+```r
+vignette("wormAge")
+```
+
+### How does it work ?
+
+The method works in a three-step process. 
+
+ 1. From a reference gene expression time series (several of which are included in this package), a near-continous, **high-temporal-resolution reference** is built.
+ 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
+ 1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
+
+
+
+### What data can be used ?
+The `wormAge` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
+This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
+
+**The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
+
+
 ## Update info
+
+### v0.6
+
+ - Changed the reference dataset names to be more transparent
+ - Added a warning in `estimate_wormage()` for *edge-of-reference* estimates
+ - Continued vignette for general usage (still in progress)
 
 ### v0.5
 
