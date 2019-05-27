@@ -1,6 +1,6 @@
 #' Plot an ae object
 #' 
-#' Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}} 
+#' Plots the age estimates along with bootstrap error bars using a dotchart.
 #' 
 #' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
 #' @param errbar.width the width of the error bars.

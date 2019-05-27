@@ -39,7 +39,7 @@
 \item{...}{additional arguments passed on to \code{\link{dotchart}}.}
 }
 \description{
-Plots the correlation score curves from samples against a reference series \code{\link{cor.gene_expr}}
+Plots the age estimates along with bootstrap error bars using a dotchart.
 }
 \examples{
 data(Cel_larval)
