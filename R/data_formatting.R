@@ -69,6 +69,11 @@ format_to_ref <- function(samp, refdata,
 #' 
 #' @export
 #' 
+#' @examples 
+#' dat <- Cel_larval$X[1:10,1:3] # get dummy dataset
+#' ids <- cbind(id.from=rownames(dat), id.to=rep(1:4, length.out=10)) # make id df
+#' format_ids(dat, ids)
+#' 
 format_ids <- function(X, IDs, from=1, to=2, 
                        aggr.fun=mean, verbose=TRUE){
   requireNamespace("stats", quietly = T)

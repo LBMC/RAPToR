@@ -25,3 +25,9 @@ a gene expression matrix, with new IDs as rownames
 This function converts the gene IDs from given input and aggregates results 
 if necessary, for resulting IDs to be unique.
 }
+\examples{
+dat <- Cel_larval$X[1:10,1:3] # get dummy dataset
+ids <- cbind(id.from=rownames(dat), id.to=rep(1:4, length.out=10)) # make id df
+format_ids(dat, ids)
+
+}
