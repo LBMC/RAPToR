@@ -45,7 +45,7 @@ plot.ae <- function(x, errbar.width=0.1,
     x$prior <- x$prior[subset,,drop=F]
     x$boots <- x$boots[,subset, ,drop=F]
     if(!is.null(groups)){
-      groups <- groups[subset]
+      groups <- droplevels(groups[subset])
     }
   }
   err.inf <- x$age.estimates[,2]
