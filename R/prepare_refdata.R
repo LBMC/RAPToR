@@ -32,16 +32,14 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken",
   if(ref=="larval_development"|ref=="Cel_larval"|ref=="oudenaarden"){
     message("Loading the C. elegans reference dataset for larval development")
     utils::data("Cel_larval", envir = environment())
-    # join the 20 and 25C series (and quantile normalize)
-    X <- limma::normalizeBetweenArrays(cbind(Cel_larval$X, Cel_larval$X.25), 
-                                       method = "quantile")
     # ICA components with relevant time dynamics
-    keeps <- (1:20)[-c(11,12,14,18,19)]
+    keeps <- (1:20)[-c(2,6,10,14)]
     # span values for loess regression of components
-    sps <- c(.4,.3,.35,.3,.25,.25,.25,.3,.3,.25,.25, .2,.25, .3,.2)
+    sps <- c(0.35, 0.30, 0.50, 0.35, 0.25, 0.30, 
+             0.25, 0.30, 0.35, 0.30, 0.25, 0.35)
     
-    interp.dat <- interpol_refdata(X[,names(Cel_larval$est.time.series)], n.inter,
-                                   time.series = Cel_larval$est.time.series,
+    interp.dat <- interpol_refdata(Cel_larval$X, n.inter,
+                                   time.series = Cel_larval$time.series,
                                    ica.nc = 20, center=T,
                                    keep.c = keeps, span = sps)
   }
