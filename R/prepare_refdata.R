@@ -93,7 +93,7 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken",
     
     keeps <- c(4,13,14,15,17)
     sps <- c(0.5, 0.4, 0.4, 0.2, 0.25)
-    interp.dat <- interpol_refdata(Cel_YA_adult2$X, n.inter, 
+    interp.dat <- interpol_refdata(X, n.inter, 
                                    time.series = c(Cel_YA_adult2$time.series,
                                                    Cel_larval$time.series[Cel_larval$time.series>20]),
                                    ica.nc = 20, center = T,
