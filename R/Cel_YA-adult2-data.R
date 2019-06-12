@@ -1,11 +1,9 @@
 #' C. elegans Young Adult/Adult reference data time series (2)
 #'
-#' Reconstructed data from a dataset published by Reinke et al.
-#' Time is in hours, scaled on the Oudenaarden 20C time series.
+#' Dataset published by Reinke et al. in 2004
+#' Time is in hours, scaled on the Cel_larval 20C time series.
+#' Note that this reference series is quite old and very noisy.
 #' 
-#' To obtain this reference, an ICA was performed joining the Oudenaarden and 
-#' Reinke datasets to get clear development dynamics, and interpolation done on the 
-#' 28-87h time period. This was necessary as the data is quite old and noisy.
 #'
 #' @docType data
 #'
