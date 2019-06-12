@@ -51,6 +51,47 @@ format_to_ref <- function(samp, refdata,
 
 
 
+
+
+
+#' Format/convert the sample gene IDs
+#'
+#' This function converts the gene IDs from given input and aggregates results 
+#' if necessary, for resulting IDs to be unique.
+#' 
+#' @param X the sample gene expression matrix with genes as rows and individuals as columns
+#' @param IDs A dataframe holding current IDs for \code{X} and target IDs 
+#' @param from,to defaults to 1 and 2 ; columns of \code{IDs} holding current and target IDs of \code{X} respectively
+#' @param aggr.fun the function used for \code{\link[stats]{aggregate}}
+#' @param verbose if TRUE, prints number of genes kept and aggregated
+#'
+#' @return a gene expression matrix, with new IDs as rownames
+#' 
+#' @export
+#' 
+format_ids <- function(X, IDs, from=1, to=2, 
+                       aggr.fun=mean, verbose=TRUE){
+  requireNamespace("stats", quietly = T)
+  n.i <- nrow(X)
+  keep.ids <- intersect(rownames(X), IDs[,from])
+  if(length(keep.ids)==0)
+    stop("No matching IDs between rownames(X) and IDs[,from]")
+  
+  X.a <- stats::aggregate(X[keep.ids,],
+                          by=list(as.factor(IDs[match(keep.ids, IDs[,from]),to])),
+                          aggr.fun)
+  X <- X.a[,-1]
+  rownames(X) <- as.character(X.a[,1])
+  n.f <- nrow(X)
+  if(verbose){
+    message(paste("Kept", length(keep.ids), "out of", n.i, "- aggregated into", n.f))
+  }
+  return(X)
+}
+
+
+
+
 #' Get a GPL200 dataset with WBGene ids
 #' 
 #' This function either downloads a GPL200 GEO dataset from given accession number and transfers 
