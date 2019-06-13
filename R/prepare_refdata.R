@@ -33,14 +33,14 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken",
     message("Loading the C. elegans reference dataset for larval development")
     utils::data("Cel_larval", envir = environment())
     # ICA components with relevant time dynamics
-    keeps <- (1:20)[-c(2,6,10,14)]
+    keeps <- (1:16)[-c(2,6,10)]
     # span values for loess regression of components
-    sps <- c(0.35, 0.30, 0.50, 0.35, 0.25, 0.30, 
-             0.25, 0.30, 0.35, 0.30, 0.25, 0.35)
+    sps <- c(0.4, 0.5, 0.3, 0.3, 0.35, 1, 0.3, 0.3, 
+             0.25, 0.3, 0.3, 0.3, 1, 0.25, 0.35)
     
     interp.dat <- interpol_refdata(Cel_larval$X, n.inter,
                                    time.series = Cel_larval$time.series,
-                                   ica.nc = 20, center=T,
+                                   ica.nc = 16, center=T,
                                    keep.c = keeps, span = sps)
   }
   if(ref=="embryonic_development"|ref=="Cel_embryo"|ref=="hashimshony"){
