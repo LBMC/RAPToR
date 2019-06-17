@@ -4,8 +4,8 @@
 \alias{prepare_refdata}
 \title{Prepare the reference data included in the package}
 \usage{
-prepare_refdata(ref = c("young_adult", "Cel_YA_adult1", "sterken",
-  "larval_development", "Cel_larval", "oudenaarden",
+prepare_refdata(ref = c("young_adult", "Cel_YA_adult1",
+  "sterken_hendriks", "larval_development", "Cel_larval", "oudenaarden",
   "embryonic_development", "Cel_embryo", "hashimshony", "Cel_YA_adult2",
   "reinke"), n.inter = 200)
 }
@@ -20,8 +20,8 @@ the interpolated reference dataset, as would \code{\link{interpol_refdata}}
 \description{
 This function loads the desired reference dataset from the package and
 performs the interpolation with optimal parameters.
-Four available reference datasets are available
-(embryonic development, larval development and young adult/adult - sterken or reinke).
+Three available reference datasets are available
+(embryonic development, larval development and young adult/adult).
 }
 \examples{
 \donttest{ 

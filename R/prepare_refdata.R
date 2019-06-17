@@ -2,8 +2,8 @@
 #' 
 #' This function loads the desired reference dataset from the package and
 #' performs the interpolation with optimal parameters.
-#' Four available reference datasets are available
-#' (embryonic development, larval development and young adult/adult - sterken or reinke).
+#' Three available reference datasets are available
+#' (embryonic development, larval development and young adult/adult).
 #' 
 #' @param ref which reference dataset to load. Can be abbreviated.
 #' @param n.inter the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata}}.
@@ -21,7 +21,7 @@
 #'
 #' @importFrom utils data
 #' @importFrom limma normalizeBetweenArrays
-prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken",
+prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken_hendriks",
                                     "larval_development", "Cel_larval", "oudenaarden",
                                     "embryonic_development", "Cel_embryo", "hashimshony", 
                                     "Cel_YA_adult2", "reinke"),
@@ -56,49 +56,41 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken",
                                    ica.nc = 16, center = T,
                                    keep.c = keeps, span = sps)
   }
-  if(ref=="young_adult"|ref=="Cel_YA_adult1"|ref=="sterken"){
+  if(ref=="young_adult"|ref=="Cel_YA_adult1"|ref=="sterken_hendriks"){
     message("Loading the C. elegans reference dataset for young adult/adult worms")
-    utils::data("Cel_larval", envir = environment())
     utils::data("Cel_YA_adult1", envir = environment())
-    # Interpolation is done together with the larval dataset for 
-    # better selection of gene expression dynamic components
-    larvs <- cbind(Cel_larval$X, Cel_larval$X.25)[,names(Cel_larval$est.time.series)]
-    ov <- format_to_ref(Cel_YA_adult1$X, larvs, verbose = F)
-    X.os <- limma::normalizeBetweenArrays(cbind(ov$refdata, ov$samp), 
-                                          method = "quantile")
-    
     # ICA components with relevant time dynamics
-    keeps <- (1:20)[-c(3, 7, 13, 14, 15, 19, 20)]
+    keeps <- c(1,3,4,5,6,8,9,10,12,15)
     # span values for loess regression of components
-    sps <- c(0.6, 0.25, 0.4, 0.3, 0.15, 0.4, 0.3, 0.2, 0.2, 0.25, 0.25, 0.2, 0.15)
+    sps1 <- c(0.4, 0.3, 0.3, 0.5, 0.6, 0.4, 0.35, 0.35, 0.4, 0.4)
     
-    interp.dat <- interpol_refdata(X.os, n.inter, 
-                                   time.series = c(Cel_larval$est.time.series, 
-                                                   Cel_YA_adult1$time.series),
-                                   ica.nc = 20, center = T,
+    interp.dat <- interpol_refdata(Cel_YA_adult1, n.inter, 
+                                   time.series = Cel_YA_adult1$time.series,
+                                   ica.nc = 16, center = T,
                                    keep.c = keeps, span = sps)
     
     
   }
   if(ref=="Cel_YA_adult2"|ref=="reinke"){
-    message("Loading the C. elegans reference dataset for young adult/adult worms (2)\nNote : this reference is of much lower quality than Cel_YA_adult1")
-    utils::data("Cel_larval", envir = environment())
-    utils::data("Cel_YA_adult2", envir = environment())
-    # Interpolation is done together with the (20C, late) larval dataset for 
-    # better selection of gene expression dynamic components
-    
-    ov <- format_to_ref(Cel_YA_adult2$X, Cel_larval$X[,Cel_larval$time.series>20], 
-                        verbose = F)
-    X <- limma::normalizeBetweenArrays(cbind(ov$samp, ov$refdata), method = "quant")
-    
-    keeps <- c(4,13,14,15,17)
-    sps <- c(0.5, 0.4, 0.4, 0.2, 0.25)
-    interp.dat <- interpol_refdata(X, n.inter, 
-                                   time.series = c(Cel_YA_adult2$time.series,
-                                                   Cel_larval$time.series[Cel_larval$time.series>20]),
-                                   ica.nc = 20, center = T,
-                                   keep.c = keeps, span = sps)
-    
+    stop("The Cel_YA_adult2 has been removed due to its low quality.\nPlease use Cel_YA_adult1.")
+    #message("Loading the C. elegans reference dataset for young adult/adult worms (2)\nNote : this reference is of much lower quality than Cel_YA_adult1")
+    # utils::data("Cel_larval", envir = environment())
+    # utils::data("Cel_YA_adult2", envir = environment())
+    # # Interpolation is done together with the (20C, late) larval dataset for 
+    # # better selection of gene expression dynamic components
+    # 
+    # ov <- format_to_ref(Cel_YA_adult2$X, Cel_larval$X, 
+    #                     verbose = F)
+    # X <- limma::normalizeBetweenArrays(cbind(ov$samp, ov$refdata), method = "quant")
+    # 
+    # keeps <- c(4,7,10,12,13,18)
+    # sps <- c(0.35, 0.45, 0.45, 0.2, 0.2, 0.4)
+    # interp.dat <- interpol_refdata(X, n.inter, 
+    #                                time.series = c(Cel_YA_adult2$time.series,
+    #                                                Cel_larval$time.series),
+    #                                t.min = 30,
+    #                                ica.nc = 20, center = T,
+    #                                keep.c = keeps, span = sps)    
     
   }
   
