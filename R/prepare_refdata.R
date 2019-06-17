@@ -62,9 +62,9 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken_hen
     # ICA components with relevant time dynamics
     keeps <- c(1,3,4,5,6,8,9,10,12,15)
     # span values for loess regression of components
-    sps1 <- c(0.4, 0.3, 0.3, 0.5, 0.6, 0.4, 0.35, 0.35, 0.4, 0.4)
+    sps <- c(0.4, 0.3, 0.3, 0.5, 0.6, 0.4, 0.35, 0.35, 0.4, 0.4)
     
-    interp.dat <- interpol_refdata(Cel_YA_adult1, n.inter, 
+    interp.dat <- interpol_refdata(Cel_YA_adult1$X, n.inter, 
                                    time.series = Cel_YA_adult1$time.series,
                                    ica.nc = 16, center = T,
                                    keep.c = keeps, span = sps)
