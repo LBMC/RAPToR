@@ -44,6 +44,15 @@ This means that any data providing information on gene expression on a large sca
 
 ## Update info
 
+### v0.7
+ 
+ - Added a `format_ids()` function to handle transformation from one ID set to another with aggregation of data
+ - Updated the post-hatching series with clean, reproducible versions (along with their optimal interpolation parameters in `prepare_refdata()`)
+ - `Cel_YA_adult1` reference is now built from joint datasets by Hendriks et al. (2014) and Sterken (2014)
+ - Removed the `Cel_YA_adult2` reference (quality too low and reproducibility of data handling was mediocre at best)
+ - Fixed a bug in the `ae` plot function with groups and subsets
+
+
 ### v0.6
 
  - Changed the reference dataset names to be more transparent
