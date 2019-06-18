@@ -178,7 +178,6 @@ plot_ref_timelines()
 <!-- This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage.  -->
 <!-- Maximizing the geneset on which the estimate is performed means more robust estimates. -->
 
-We advise not to use the `Cel_YA_adult2` reference unless absolutely necessary as it is very old and noisy ; the data available in the package is already reconstructed from the few dynamics we were able to pick up.
 
 
 ### Loading the reference
@@ -188,23 +187,31 @@ You can load a reference dataset with optimal parameters using the `prepare_refd
 
 Alternatively, you can take a look at the section on [building your own reference series.](#building-your-own-reference)
 
-For our example, the `Cel_YA_adult1` dataset is appropriate since our samples go from late L3 to young adult. 
+For our example, the `Cel_YA_adult1` dataset would be appropriate since our samples go from late L3 to young adult. However, since the dataset we just loaded is part of that reference, we'll stage the early samples of the time series on the `Cel_larval` reference to prove our point.
 The `n.inter` parameter corresponds to the resolution of the re-built reference. 
 In the interest of lightening the computational load for this vignette, I chose a rather small value, but aim over the 500s if you want optimal results.
+
 ```{r prep_ref, cache=quick_build}
-ref <- prepare_refdata("Cel_YA_adult1", n.inter = 200)
+ref <- prepare_refdata("Cel_larval", n.inter = 200)
 ```
 
 Note that the age estimates will be given in the time unit and scale of the chosen reference (here, in hours post-hatching at 20$^\circ$C)
 
+We know our example data has worms grown at 25$^\circ$C and that the `Cel_larval` reference goes up to 48 hours post-hatching. We can thus safely stage samples with a chronological time lower than $48/1.5=32$ hours.
+```{r sel_tostage}
+sel <- which(pheno.hendriks$age < 32)
+```
 
 
 ## Performing a simple age estimate
 
 All we need to do now is run the `estimate.worm_age()` function.
+```{r echo=F}
+set.seed(10)
+```
 
 ```{r perform_ae, cache=quick_build}
-ae_hendriks <- estimate.worm_age(samp = geno.hendriks, 
+ae_hendriks <- estimate.worm_age(samp = geno.hendriks[,sel], # select the early worms 
                                  refdata = ref$interpol.gene_expr,
                                  ref.time_series = ref$time.series)
 ```
@@ -215,12 +222,12 @@ Since the staged samples were grown at 25$^\circ$C, and the reference at 20, we 
 
 
 ```{r hend_age_diff}
-lm_hendriks <- lm(ae_hendriks$age.estimates[,1]~pheno.hendriks$age)
+lm_hendriks <- lm(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel])
 summary(lm_hendriks)
 ```
 
 ```{r echo=F, fig.height=4, fig.width=6, out.width="50%"}
-plot(ae_hendriks$age.estimates[,1]~pheno.hendriks$age, 
+plot(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel], 
      xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
      main = "Chronological vs Estimated ages for Hendriks series")
 abline(lm_hendriks, lwd=2, col=2)
@@ -279,13 +286,14 @@ The global estimate is also given below the interval.
 # About reference datasets
 
 ## References included in the package
-There are currently 4 reference datasets included in the package. 
+There are currently 3 reference datasets included in the package. 
 All are *C. elegans* time series :
 
  - `Cel_embryo` is an embryo development time series (time in minutes past the 4-cell state) produced by @hashimshony2015, starting at the single cell embryo all the way to hatching.
  - `Cel_larval` holds larval development time series (time in hours post-hatching for 20$^\circ$C, aside from `time.series.25`) from @oudenaarden2013. This data holds 2 series one at 20$^\circ$C and one at 25. The data loaded with `prepare_refdata()` uses both, with the 25$^\circ$C series' time scaled to 20.
- - `Cel_YA_adult1` holds data from early L4 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @sterken2019. We strongly advise to use this reference over the next one.
- - `Cel_YA_adult2` holds data from late L3 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @reinke2004. Due to its age, this data was initially extremely noisy. The data in this object is actually reconstructed from the few developmental signals we were able to pick up by analyzing it together with the data from @oudenaarden2013.
+ - `Cel_YA_adult1` holds data from early L3 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @sterken2019 and @hendriks2014. 
+
+<!-- - `Cel_YA_adult2` holds data from late L3 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @reinke2004. Due to its age, this data was initially extremely noisy. The data in this object is actually reconstructed from the few developmental signals we were able to pick up by analyzing it together with the data from @oudenaarden2013. -->
  
 Sources and links to original data are available in the documentation of the datasets (*e.g.* `?Cel_larval`).
 
@@ -373,7 +381,7 @@ For ICA, we know that by definition $X = SM^T$, with $X$ the input gene expressi
 Our interpolations over multiple components are essentially an equivalent of $M$, with much higher time resolution. 
 All we need to do is the inverse matrix product to get the theoretical gene expression data : $Y = SN^T$, with $N$ the interpolated loadings (rows) of each component (columns).
 
-In `wormAge`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute, keep and the span values for interpolation.
+In `wormAge`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute and keep, and the span values for interpolation.
 
 ```{r interpol_hend, fig.height=5, fig.width=10, warning=FALSE}
 par(mfrow=c(2,4))
@@ -409,12 +417,13 @@ This can be due to different problems :
  - The overlapping gene set between the sample and the reference may be missing key gene groups necessary to distinguish between larval states ; unlikely, unless 
  - The overlapping gene set is very small (less than a few thousand), which necessarily means that
  - The boostrap gene subset size is too small
+ - Random gene subset selection can also in rare cases make the difference between larval stages ambiguous
 
-We can simulate the last case with our previous dataset by messing with the `bootstrap.set_size` parameter.
+We can simulate the "small bootstrap set size" by messing with the `bootstrap.set_size` parameter.
 ```{r boot_jump, cache=quick_build}
-set.seed(10) # for reproducible results (get the same random gene subsets each time)
+set.seed(5) # for reproducible results (get the same random gene subsets each time)
 
-ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 1:3], # only take 3 samples for the example
+ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples that didn't have the issue
                                   refdata = ref$interpol.gene_expr,
                                   ref.time_series = ref$time.series,
                                   bootstrap.set_size = 500, # make the bt subset size very small
@@ -434,16 +443,7 @@ plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick')
 You'll notice that most of our bootstrap estimates are still around the global estimate, and that a few have gone astray 10 hours back (*ie* on the previous molt/larval state, in our case).
 If you see this, increasing the bootstrap gene subset size should solve the issue (default is $n/3$, with $n$ the number of overlapping genes between sample and reference).
 
-```{r boot_jump_fix, fig.height=3, fig.width=8, cache=quick_build}
-set.seed(10) 
-ae_hend_boot2 <- estimate.worm_age(samp = geno.hendriks[, 1:3], 
-                                   refdata = ref$interpol.gene_expr,
-                                   ref.time_series = ref$time.series,
-                                   bootstrap.set_size = 7000, # increase bt set size
-                                   bootstrap.n = 50) 
-plot(ae_hend_boot2, show.boot_estimates = TRUE, col.b = 'firebrick', 
-     xlim = range(ae_hend_boot$age.estimates[,1:3])) # set x-axis to the previous plot's
-```
+
 
 
 
@@ -453,7 +453,7 @@ If you notice the bootstrap estimates are spread half and half, even with a larg
 Be warned that using priors has a significant impact on the estimate.
 
 ```{r rm_boots, echo=F}
-rm(ae_hend_boot, ae_hend_boot2)
+rm(ae_hend_boot)
 invisible(gc())
 ```
 
@@ -470,16 +470,16 @@ The priors are given *in the reference series' time scale*, so beware of growth 
 For example, the Hendriks series we used above is grown at 25$^\circ$C. 
 
 Due to these possible differences and the bias introduced by the prior, it is recommended to carefully plan its use. 
-Performing a first run without priors will give a general idea of the difference between the chronological age of your samples.
+Performing a first run without priors will give a general idea of the difference between the chronological and developmental age of your samples.
 
 Once the priors are determined, you will need to set the standard deviation of the gaussian centered on the sample with the `prior.params` argument. 
 This parameter will also indirectly change the weight of the prior over the correlation score for estimate selection. The recommended value is 10 hours (80 min on the embryonic reference series).
 
 On our example, we can use the ajusted chronological ages for 20$^\circ$C.
 ```{r hend_prior, cache=quick_build}
-priors <- pheno.hendriks$age * 1.6 - 5
+priors <- pheno.hendriks$age[sel] * 1.6 - 5 # rough approximation based on our previous lm
 
-ae_hend_prior <- estimate.worm_age(samp = geno.hendriks,
+ae_hend_prior <- estimate.worm_age(samp = geno.hendriks[,sel],
                                    refdata = ref$interpol.gene_expr,
                                    ref.time_series = ref$time.series,
                                    prior = priors,
@@ -495,7 +495,7 @@ all(ae_hend_prior$age.estimates[,1]==ae_hendriks$age.estimates[,1])
 ```
 
 As you can see, here the estimates are the same as without the prior. 
-Nevertheless, we've fixed the first sample's "jumping" bootstrap estimates.
+Nevertheless, we've fixed the first and third sample's "jumping" bootstrap estimates.
 
 
 # References
