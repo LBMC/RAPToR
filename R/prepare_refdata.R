@@ -60,9 +60,9 @@ prepare_refdata <- function(ref = c("young_adult", "Cel_YA_adult1", "sterken_hen
     message("Loading the C. elegans reference dataset for young adult/adult worms")
     utils::data("Cel_YA_adult1", envir = environment())
     # ICA components with relevant time dynamics
-    keeps <- c(1,3,4,5,6,8,9,10,12,15)
+    keeps <- c(1,3,4,5,6,7,8,9,11,14,15,16)
     # span values for loess regression of components
-    sps <- c(0.4, 0.3, 0.3, 0.5, 0.6, 0.4, 0.35, 0.35, 0.4, 0.4)
+    sps <- c(0.4, 0.3, 0.35, 0.55, 0.45, 0.45, 0.4, 0.3, 0.4, 0.4, 0.35, 0.3)
     
     interp.dat <- interpol_refdata(Cel_YA_adult1$X, n.inter, 
                                    time.series = Cel_YA_adult1$time.series,
