@@ -212,7 +212,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   }
   # get average & IC95 over boostrap
   resolution <- mean(diff(ref.time_series))/2
-  age.est95 <- t(parSapply(cl, 1:dim(boots)[2], function(i){
+  age.est95 <- t(parallel::parSapply(cl, 1:dim(boots)[2], function(i){
     stats::quantile(boots[1,i,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
   }))
   
