@@ -140,9 +140,11 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
       return(cbind(time = cor.max.time, cor.score = cor.max))
     }
   }
-  
-  # build clusters for parallel comp.
-  cl <- parallel::makeForkCluster(nb.cores)
+
+  # build clusters for parallel comp. (detecting OS for cluster type)
+  cl <- parallel::makeCluster(nb.cores, 
+                              type = ifelse(.Platform$OS.type=="windows", 
+                                            "PSOCK", "FORK"))
   
   samp.seq <- 1:ncol(samp)
   boot.seq <- 1:bootstrap.n
