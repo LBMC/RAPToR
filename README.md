@@ -49,7 +49,7 @@ This means that any data providing information on gene expression on a large sca
  - Fixed a namespace issue
  - Fixed windows compatibility for parallel computing
  
-#### v0.7.0
+#### v0.7.0 
  - Added a `format_ids()` function to handle transformation from one ID set to another with aggregation of data
  - Updated the post-hatching series with clean, reproducible versions (along with their optimal interpolation parameters in `prepare_refdata()`)
  - `Cel_YA_adult1` reference is now built from joint datasets by Hendriks et al. (2014) and Sterken (2014)
