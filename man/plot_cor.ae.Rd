@@ -6,7 +6,7 @@
 \usage{
 plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
   c.lwd = 2, bar.size = 1, mx.col = "firebrick",
-  col.p = "royalblue", ...)
+  col.p = "royalblue", xlab = "reference time", ...)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
@@ -22,6 +22,8 @@ plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
 \item{mx.col}{color of the age estimate bars}
 
 \item{col.p}{color of the prior bar}
+
+\item{xlab}{the x axis label, passed on to \code{\link{plot}}}
 
 \item{...}{additional arguments passed on to \code{\link{plot}}}
 }

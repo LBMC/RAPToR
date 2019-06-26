@@ -108,7 +108,7 @@ plot.ae <- function(x, errbar.width=0.1,
   }
   
   if(glob.above){
-    graphics::points(x$age.estimates[o,1], y, cex=.8*cex, pch=16, ...)
+    graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, ...)
   }
 }
 
