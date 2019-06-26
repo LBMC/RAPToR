@@ -6,8 +6,8 @@
 \usage{
 \method{plot}{ae}(x, errbar.width = 0.1, show.prior = F, col.p = 1,
   show.boot_estimates = F, col.b = 2, groups = NULL, subset = NULL,
-  pch = 16, cex = 1, xlim = NULL, xlab = "Estimated ages",
-  l.pos = "bottomright", ...)
+  glob.above = F, pch = 16, cex = 1, xlim = NULL,
+  xlab = "Estimated ages", l.pos = "bottomright", ...)
 }
 \arguments{
 \item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
@@ -25,6 +25,8 @@
 \item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
 
 \item{subset}{an index vector of the samples to plot (defaults to all).}
+
+\item{glob.above}{logical ; if TRUE, the global estimate is plotted above all else.}
 
 \item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
 

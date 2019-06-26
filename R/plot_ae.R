@@ -10,6 +10,7 @@
 #' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
 #' @param subset an index vector of the samples to plot (defaults to all).
+#' @param glob.above logical ; if TRUE, the global estimate is plotted above all else.
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
 #' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
@@ -35,6 +36,7 @@ plot.ae <- function(x, errbar.width=0.1,
                     show.prior=F, col.p=1,
                     show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
+                    glob.above = F,
                     pch=16, cex=1, xlim=NULL,
                     xlab="Estimated ages", 
                     l.pos='bottomright', ...)
@@ -104,6 +106,10 @@ plot.ae <- function(x, errbar.width=0.1,
     graphics::legend(l.pos, legend = ' Prior', col = col.p[n], inset = .02,
                      pt.lwd=2, pch=1, bty = 'n', text.col = col.p[n])
   }
+  
+  if(glob.above){
+    graphics::points(x$age.estimates[o,1], y, cex=.8*cex, pch=16, ...)
+  }
 }
 
 
@@ -120,6 +126,7 @@ plot.ae <- function(x, errbar.width=0.1,
 #' @param bar.size size of the estimate 95IC bars
 #' @param mx.col color of the age estimate bars
 #' @param col.p color of the prior bar
+#' @param xlab the x axis label, passed on to \code{\link{plot}}
 #' @param ... additional arguments passed on to \code{\link{plot}}
 #' 
 #' @export
@@ -139,6 +146,7 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
                          show.prior = F,
                          c.lwd = 2, bar.size = 1, 
                          mx.col = "firebrick", col.p = "royalblue", 
+                         xlab = "reference time",
                          ...) 
 {
   pb <- sapply(subset, function(i) {
@@ -149,7 +157,7 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
     
     # plot corr. curve
     graphics::plot(age.est$ref.time_series, age.est$cors[,i], type = "l", 
-                   lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = "reference time",
+                   lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = xlab,
                    ylim = yl*c(1,1.025), ylab = "corr.score", ...)
     
     # if bootstrap cor 95 IC was returned, plot cor curve 95 IC & median
