@@ -14,8 +14,18 @@ devtools::install_github("LBMC/wormAge", build_vignettes = T)
 
 
 You may need to install the `GEOquery` and `limma` packages separately as they are not on CRAN (see [Bioconductor website](https://bioconductor.org/packages/)).
+If you already have the `BiocManager` package, this can be done with
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 
-Also, note that the vignette may take a couple of minutes to build.
+BiocManager::install("limma")
+```
+and
+```r
+BiocManager::install("GEOquery")
+```
+
 
 ## Getting started
 

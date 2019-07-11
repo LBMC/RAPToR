@@ -22,12 +22,12 @@ Imports:
   beeswarm,
   Biobase,
   GEOquery,
+  R.rsp,
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 Suggests:
-    R.rsp,
     knitr,
     rmarkdown,
     biomaRt
