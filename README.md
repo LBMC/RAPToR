@@ -14,7 +14,7 @@ devtools::install_github("LBMC/wormAge", build_vignettes = T)
 
 
 You may need to install the `GEOquery` and `limma` packages separately as they are not on CRAN (see [Bioconductor website](https://bioconductor.org/packages/)).
-If you already have the `BiocManager` package, this can be done with
+This can be done with
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -46,7 +46,7 @@ The method works in a three-step process.
 
 
 ### What data can be used ?
-The `wormAge` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
+The `wormAge` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
 This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
