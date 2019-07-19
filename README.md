@@ -54,7 +54,12 @@ This means that any data providing information on gene expression on a large sca
 
 ## Update info
 
+
+
 ### v0.7
+#### v0.7.2
+ - Switched to the Median Absolute Deviation (MAD) instead of 95% interval for the estimate confidence interval. (As a side effect, removed IC imbalance and updated vignette)
+
 #### v0.7.1
  - Fixed a namespace issue
  - Fixed windows compatibility for parallel computing
