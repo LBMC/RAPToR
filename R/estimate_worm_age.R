@@ -313,7 +313,7 @@ print.ae <- function(x, digits=3, ...){
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
-#' @return a list holding a data frame of ordered age estimates and 95% IC, the span of estimates and the range.
+#' @return a list holding a data frame of ordered age estimates and confidence intervals, the span of estimates and the range.
 #' 
 #' @export
 #' 
@@ -330,10 +330,11 @@ print.ae <- function(x, digits=3, ...){
 summary.ae <- function(object, digits=3, ...){
   # rank the samples by age
   ord <- order(object$age.estimates[,1]) 
-  ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits),
-                   w=sapply(object$age.estimates[ord,'IC.imbalance'],
-                            function(im){ifelse(im>5, '*','')}))
-  colnames(ae_tab)[4] <- ' '
+  ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits)
+                   # ,w=sapply(object$age.estimates[ord,'IC.imbalance'],
+                   #          function(im){ifelse(im>5, '*','')})
+                   )
+  # colnames(ae_tab)[4] <- ' '
   
   bar <- paste0(rep('-', 50+digits*3), collapse = '')
   
@@ -350,8 +351,8 @@ summary.ae <- function(object, digits=3, ...){
   # Print the sample table
   print(ae_tab, quote = F, right = T)
   cat(bar)
-  if(any(ae_tab[,4]=='*'))
-    cat('\n\t* : Warning, estimate jumps around on bootstrap')
-  
+  # if(any(ae_tab[,4]=='*'))
+  #   cat('\n\t* : Warning, estimate jumps around on bootstrap')
+  # 
   invisible(list(age.estimates=object$age.estimates[ord,1:3], span=c(mn,mx), range=mx-mn))
 }
