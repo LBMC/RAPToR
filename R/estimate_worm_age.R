@@ -30,7 +30,7 @@
 #' @param prior.params the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param verbose boolean ; if TRUE, displays messages of the various steps of the method.
 #' 
-#' @return an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, 
+#' @return an '\code{ae}' object, which is a list of the age estimates, the correlation matrix between sample and reference, 
 #' the reference time series as well as the bootstrap correlation matrices and age estimates.
 #' There are plot, print and summary methods for this object.
 #' 
@@ -66,7 +66,7 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   dup <- FALSE
   if(ncs<=1){
     # if there is only one sample, double it to avoid 
-    # dimension problems with R
+    # dimension drop problems with R
     samp <- cbind(samp,dup=samp)
     ncs <- 2
     dup <- TRUE
@@ -212,25 +212,15 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
   if(verbose){
     message("Computing summary statistics...")
   }
-  # get average & IC95 over boostrap
+  # compute MAD Confidence Interval from boostrap
   resolution <- mean(diff(ref.time_series))/2
-  age.est95 <- t(parallel::parSapply(cl, 1:dim(boots)[2], function(i){
-    stats::quantile(boots[1,i,], probs=c(0.025,0.975), na.rm = T)+c(-1,1)*resolution
+  conf.inter <- t(parallel::parSapply(cl, 1:dim(boots)[2], function(i) {
+    m <- stats::mad(boots[1, i, ], center=age.estimates[1, i], na.rm = T) + resolution
+    return(age.estimates[1, i]+c(-m, m))
   }))
   
   # get IC95 and median on the bootstrap correlation curves
   bc95 <- parallel::parApply(cl, boot.cors, c(1,2), quantile, probs=c(0.025, 0.5, 0.975), na.rm = T)
-  
-  # look for multipeak estimates on samples by computing 'unevenness' on large sample IC95
-  IC.imbalance <- parallel::parSapply(cl, 1:dim(boots)[2], function(i){
-    dotest <- (age.est95[i,2]-age.est95[i,1])>(10*resolution)
-    if(dotest){
-      l <- age.estimates[1,i]-age.est95[i,1]
-      r <- age.est95[i,2] - age.estimates[1,i]
-      return(ifelse(l>r, l/r, r/l))
-    }
-    return(1)
-  })
   
   # check for edge-of-reference estimates
   qref <- stats::quantile(ref.time_series, probs=c(.05,.95))
@@ -238,8 +228,9 @@ estimate.worm_age <- function(samp, refdata, ref.time_series,
     warning("Some estimates come near the edges of the reference.\nIf possible, stage those on a different reference for confirmation.")
   
   # data formatting
-  age.estimates <- cbind(age.estimate=age.estimates[1,], age.est95,
-                         cor.score=age.estimates[2,], IC.imbalance=IC.imbalance)
+  colnames(conf.inter) <- c('lb', 'ub')
+  age.estimates <- cbind(age.estimate=age.estimates[1,], conf.inter,
+                         cor.score=age.estimates[2,])
   rownames(age.estimates) <- colnames(samp)
   
   
