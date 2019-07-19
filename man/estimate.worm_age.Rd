@@ -31,7 +31,7 @@ estimate.worm_age(samp, refdata, ref.time_series,
 \item{verbose}{boolean ; if TRUE, displays messages of the various steps of the method.}
 }
 \value{
-an '\code{ae}' object, which is a list of the correlation matrix between sample and reference, the age estimates, 
+an '\code{ae}' object, which is a list of the age estimates, the correlation matrix between sample and reference, 
 the reference time series as well as the bootstrap correlation matrices and age estimates.
 There are plot, print and summary methods for this object.
 }

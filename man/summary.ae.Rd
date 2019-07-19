@@ -14,7 +14,7 @@
 \item{...}{ignored (needed to match the S3 standard)}
 }
 \value{
-a list holding a data frame of ordered age estimates and 95% IC, the span of estimates and the range.
+a list holding a data frame of ordered age estimates and confidence intervals, the span of estimates and the range.
 }
 \description{
 Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object

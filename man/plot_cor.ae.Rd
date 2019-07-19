@@ -17,7 +17,7 @@ plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
 
 \item{c.lwd}{line width for the correlation score curve}
 
-\item{bar.size}{size of the estimate 95IC bars}
+\item{bar.size}{size of the estimate confidence interval bars}
 
 \item{mx.col}{color of the age estimate bars}
 
