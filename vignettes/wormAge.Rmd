@@ -189,10 +189,10 @@ Alternatively, you can take a look at the section on [building your own referenc
 
 For our example, the `Cel_YA_adult1` dataset would be appropriate since our samples go from late L3 to young adult. However, since the dataset we just loaded is part of that reference, we'll stage the early samples of the time series on the `Cel_larval` reference to prove our point.
 The `n.inter` parameter corresponds to the resolution of the re-built reference. 
-In the interest of lightening the computational load for this vignette, I chose a rather small value, but aim over the 500s if you want optimal results.
+In the interest of lightening the computational load, you can choose smaller values, but aim over the 500s if you want optimal results.
 
 ```{r prep_ref, cache=quick_build}
-ref <- prepare_refdata("Cel_larval", n.inter = 200)
+ref <- prepare_refdata("Cel_larval", n.inter = 600)
 ```
 
 Note that the age estimates will be given in the time unit and scale of the chosen reference (here, in hours post-hatching at 20$^\circ$C)
@@ -236,7 +236,7 @@ legend("bottomright", legend = "lm_hendriks", lwd=3, col=2, bty='n')
 
 
 ## Understanding the output
-The output of the `estimate.worm_age()` is an `ae` object including various elements such as the age estimate and a 95% confidence interval obtained through booststrapping (age estimate on random gene subsets).
+The output of the `estimate.worm_age()` is an `ae` object including various elements such as the age estimate and a confidence interval obtained through booststrapping (age estimate on random gene subsets).
 
 <br>
 General information can be accessed via the `summary()` function.
@@ -255,16 +255,18 @@ head(ae_hendriks$age.estimates)
 The table holds the following :
 
  - `age.estimate`, the global estimate for the sample (whole gene set).
- - `2.5%`, `97.5%`, the lower and upper bounds of the bootstrapped age estimates' confidence interval.
+ - `lb`, `ub`, the lower and upper bounds of the bootstrapped age estimates' confidence interval.
  - `cor.score`, the correlation score of the global estimate.
- - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`. More information on this is given in the [advanced usage](#if-the-bootstrap-estimates-jump-around) sections
+
+<!-- - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`. More information on this is given in the [advanced usage](#if-the-bootstrap-estimates-jump-around) sections -->
 
 ### Plotting
 
 Estimates and confidence intervals can also be displayed in the form of a dotchart with the default plot function.
 
 ```{r plot_ae, fig.height=5, fig.width=9, fig.align='center'}
-plot(ae_hendriks, main="Age estimates on Hendriks development series")
+plot(ae_hendriks, main="Age estimates on Hendriks development series",
+     show.boot_estimates = TRUE)
 ```
 
 
@@ -276,7 +278,7 @@ par(mfrow=c(2,2))
 plot_cor.ae(ae_hendriks, subset = 1:4)
 ```
 
-The 95 % interval is represented for both the estimate (red bars) and the correlation scores along the reference series (black dotted lines). 
+The confidence interval of the estimates are represented with the red bars. The bootstrap correlation scores' 95% interval along the reference series are also shown (as the black dotted lines). 
 The global estimate is also given below the interval.
 
 <br>
@@ -409,7 +411,7 @@ And that's it. You can now stage samples on your reference (provided they are wi
 ## If the bootstrap estimates 'jump around'
 
 In some cases, two different developmental time points of the reference can both be very closely correlated with a sample.
-This has the consequence that, with some random gene subsets, the bootstrap estimates will 'jump' between them and the confidence interval will be quite large and uneven (the global estimate will stick to one edge of it).
+This has the consequence that, with some random gene subsets, the bootstrap estimates will 'jump' between them and the confidence interval will be quite large.
 
 This can be due to different problems :
 
@@ -423,21 +425,21 @@ We can simulate the "small bootstrap set size" by messing with the `bootstrap.se
 ```{r boot_jump, cache=quick_build}
 set.seed(5) # for reproducible results (get the same random gene subsets each time)
 
-ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples that didn't have the issue
+ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples 
                                   refdata = ref$interpol.gene_expr,
                                   ref.time_series = ref$time.series,
-                                  bootstrap.set_size = 500, # make the bt subset size very small
+                                  bootstrap.set_size = 300, # make the bt subset size very small
                                   bootstrap.n = 50) # do more bt steps to be sure to get the issue
 ```
 
-The samples with this problem are detected through the `IC.imbalance` criterion mentioned above (when >5), and marked in the summary by an asterisk.
-```{r sum_hen_boot}
-summary(ae_hend_boot)
-```
+<!-- The samples with this problem are detected through the `IC.imbalance` criterion mentioned above (when >5), and marked in the summary by an asterisk. -->
+<!-- ```{r sum_hen_boot} -->
+<!-- summary(ae_hend_boot) -->
+<!-- ``` -->
 
-We can also show the bootstrap estimates as swarms on the `ae` plot, allowing us to see their distribution along the confidence interval.
+We can show the bootstrap estimates as swarms on the `ae` plot, allowing us to see their distribution along the reference time.
 ```{r pl_hen_boot, fig.height=3, fig.width=8}
-plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick')
+plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick', xlim=c(20,40))
 ```
 
 You'll notice that most of our bootstrap estimates are still around the global estimate, and that a few have gone astray 10 hours back (*ie* on the previous molt/larval state, in our case).
@@ -451,6 +453,7 @@ If you see this, increasing the bootstrap gene subset size should solve the issu
 
 If you notice the bootstrap estimates are spread half and half, even with a large number of bootstrap steps (>=100), you may want to consider using a prior for these particular samples. 
 Be warned that using priors has a significant impact on the estimate.
+Also, in this scenario, it is possible your data may be a mix of two distinct larval states.
 
 ```{r rm_boots, echo=F}
 rm(ae_hend_boot)
@@ -466,7 +469,7 @@ In the `estimate.worm_age()` function, priors work by giving the parameters for 
 
 **This implies that with a prior which is completely off, the estimate may also be wrong ; use with care.**
 
-The priors are given *in the reference series' time scale*, so beware of growth speed difference with temperature. 
+The priors are given *in the reference series' time scale*, so beware of growth speed difference with temperature or different time origins (fertilization, egg-laying, hatching...). 
 For example, the Hendriks series we used above is grown at 25$^\circ$C. 
 
 Due to these possible differences and the bias introduced by the prior, it is recommended to carefully plan its use. 
@@ -495,7 +498,6 @@ all(ae_hend_prior$age.estimates[,1]==ae_hendriks$age.estimates[,1])
 ```
 
 As you can see, here the estimates are the same as without the prior. 
-Nevertheless, we've fixed the first and third sample's "jumping" bootstrap estimates.
 
 
 # References
