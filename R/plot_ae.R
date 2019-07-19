@@ -123,7 +123,7 @@ plot.ae <- function(x, errbar.width=0.1,
 #' @param subset an index vector of the samples to plot (defaults to all)
 #' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
 #' @param c.lwd line width for the correlation score curve
-#' @param bar.size size of the estimate 95IC bars
+#' @param bar.size size of the estimate confidence interval bars
 #' @param mx.col color of the age estimate bars
 #' @param col.p color of the prior bar
 #' @param xlab the x axis label, passed on to \code{\link{plot}}
@@ -168,9 +168,9 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
       })
     
     # get values for current sample
-    ae <- age.est$age.estimates[i, c("age.estimate", "cor.score", "2.5%", "97.5%")]
+    ae <- age.est$age.estimates[i, c("age.estimate", "cor.score", "lb", "ub")]
     
-    # plot 95IC bars & band
+    # plot IC bars & band
     seg.h <- ((yl[2]-yl[1])/10)*bar.size
     xs <- c(ae[3], ae[4])
     y0s <- rep(ae[2]-seg.h, 2)
