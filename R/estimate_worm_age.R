@@ -10,11 +10,7 @@
 #' 
 #' The implemented bootstrap procedure re-estimates the age on random gene subsets
 #' of fixed size to evaluate the robustness of the estimate, given in the form of
-#' an interval holding 95 \% of the bootstrap age estimates. 
-#' Since estimates can sometimes 'jump' from peak to peak during the bootstrap,
-#' an \emph{imbalance} measure is computed on the intervals from the ratio of the 
-#' distances from the global estimate (whole gene set) to the egdes of the interval.
-#' If this ratio exceeds 5, it may be useful to give a prior for a more robust estimate. 
+#' the Median Absolute Deviation of the bootstrap age estimates to the global estimate. 
 #' 
 #' Using interpolated reference data (from \code{\link{interpol_refdata}})
 #' gives more precise results.
