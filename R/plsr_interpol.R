@@ -5,11 +5,11 @@
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).
-#' @param df the df parameter passed on to the \code{\link[splines]{ns()}} function.
+#' @param df the df parameter passed on to the \code{\link[splines]{ns}()} function.
 #' @param n.inter number of timepoints to return in interpolated data, defaults to 200.
-#' @param t.min,t.max defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
-#' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr()}} function.
-#' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns()}} function.
+#' @param tmin,tmax defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
+#' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr}()} function.
+#' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns}()} function.
 #' @param return.model if TRUE, returns the PLSR model object and the input df value.
 #' 
 #' @export
@@ -35,7 +35,7 @@
 #' 
 #' @importFrom stats predict
 #' @importFrom splines ns
-#' @importFrom pls plsr RMSEP
+#' @import pls 
 
 plsr_interpol <- function(X, time.series, df, 
                           n.inter = 200, 

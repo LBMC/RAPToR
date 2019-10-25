@@ -13,17 +13,17 @@ plsr_interpol(X, time.series, df, n.inter = 200,
 
 \item{time.series}{timepoints of the reference (X).}
 
-\item{df}{the df parameter passed on to the \code{\link[splines]{ns()}} function.}
+\item{df}{the df parameter passed on to the \code{\link[splines]{ns}()} function.}
 
 \item{n.inter}{number of timepoints to return in interpolated data, defaults to 200.}
 
-\item{scale}{defaults to TRUE, passed on to the \code{\link[pls]{plsr()}} function.}
+\item{tmin, tmax}{defaults to min and max of \code{time.series} ; start and end times of interpolated time series.}
 
-\item{knots}{defaults to NULL, passed on to the \code{\link[splines]{ns()}} function.}
+\item{scale}{defaults to TRUE, passed on to the \code{\link[pls]{plsr}()} function.}
+
+\item{knots}{defaults to NULL, passed on to the \code{\link[splines]{ns}()} function.}
 
 \item{return.model}{if TRUE, returns the PLSR model object and the input df value.}
-
-\item{t.min, t.max}{defaults to min and max of \code{time.series} ; start and end times of interpolated time series.}
 }
 \description{
 This function computes the interpolated gene expression data from a reference time series.
