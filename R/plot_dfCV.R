@@ -1,57 +1,83 @@
-#' Plot an ae object
+#' Plot a dfCV object
 #' 
-#' Plots the age estimates along with bootstrap error bars using a dotchart.
+#' Plots the dfCV object to help determine the optimal df parameter value for PLSR regression.
 #' 
 #' @param x a \code{dfCV} object, as returned by \code{\link{df_CV}}.
-#' @param col.p the color of the prior estimate marker.
-#' @param col.b the color of the bootstrapped estimates.
-#' @param pch the pch parameter passed on to \code{\link{dotchart}}.
+#' @param stat either "median" or "mean".
+#' @param subset indices of a subset of df values to plot
+#' @param t.plot boolean ; if TRUE, plots the individual CV Error trajectories.
+#' @param t.col color for the individual CV Error trajectories.
+#' @param signchange boolean ; if TRUE, displays '+'/'-' above the curve to indicate diff from previous point.
+#' @param main title of the plot.
+#' @param type the line type.
 #' @param cex sizing parameter applied to various elements of the plot.
-#' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
-#' @param xlab the x axis label, passed on to \code{\link{plot}}.
-#' @param l.pos the position of the legend when show.prior is \code{TRUE}, as passed on to \code{\link[graphics]{legend}}
+#' @param lwd the line width.
+#' @param leg boolean ; if TRUE, displays a legend.
+#' @param l.pos the position of the legend, as passed on to \code{\link[graphics]{legend}}
 #' @param ... additional arguments passed on to \code{\link{plot}}.
 #' 
 #' @export
 #' 
 #' @examples
-#' data(Cel_larval)
-#' 
-#' samp <- Cel_larval$X[,13:15]
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 #' \donttest{
-#' plot(age.est)
+#' data(Cel_embryo)
+#' 
+#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
+#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
+#' plot(dfCVembryo)
 #' }
 #' 
-#' @importFrom graphics plot dotchart points arrows legend
-#' @importFrom beeswarm swarmy
+#' 
+#' @importFrom graphics plot points abline text legend
+#' @importFrom stats median
 #' 
 
 plot.dfCV <- function(x, 
                       stat = c('median', 'mean'),
                       subset = 1:length(x$dfs),
                       t.plot = TRUE, t.col = makeTransparent('black', 30),
-                      main = "CV Error", l.pos='left', ...)
+                      signchange = TRUE,
+                      main = "CV Error", 
+                      type = 'b', cex = 0.5, lwd = 2, 
+                      leg = TRUE,
+                      l.pos='top', 
+                      ...)
 {
   
   stat <- match.arg(stat)
-  M_errs <- x$cv_errors[,sel]
+  errs <- x$cv.errors[,subset]
+  dfs <- x$dfs[subset]
   
-  y <- apply(M_errs, 2, median)
-  if(!median)
-    y <- colMeans(M_errs)
-  plot(x$dfs[sel], y, lwd=2, cex=.5, type='b', 
-       xlab = "df", ylab = "CV Error",
-       main = main)
-  invisible(sapply(1:nrow(M_errs), function(i){
-    points(x$dfs[sel],M_errs[i,], type='b', col=t.col, lty=3, cex=.2)
-  }))
+  if('median' == stat)
+    y <- apply(errs, 2, stats::median)
+  if('mean' == stat)
+    y <- apply(errs, 2, mean)
   
-  text((x$dfs[sel])[-1], y[-1], labels = c('-','+')[(diff(y)>0)+1], pos = 3, font = 2, 
-       col=c('chartreuse4','firebrick')[(diff(y)>0)+1], cex = 2)
+  graphics::plot(dfs, y, lwd = lwd, cex = cex, type = type,
+                 xlab = "df", ylab = "CV Error", main = main, ...)
   
-  abline(h=min(y), lty=2, col='royalblue')
-  text(max(x$dfs), min(y), labels="min", font=2, col='royalblue', pos=3, offset = .25)
-  legend(l.pos, bty='n', legend = ifelse(median, "median", "mean"), inset = .01,
-         lwd=2, pt.cex = .5, text.font = 2, pch = 1, lty='65', cex=1.2)
+  # plot individual CV trajectories
+  if(isTRUE(t.plot)){
+    sapply(1:nrow(errs), function(i){
+      graphics::points(dfs, errs[i,], type = type, col = t.col, 
+                       lty = 3, cex = cex*.5)
+    })
+  }
+  
+  # display '+' or '-' above points to show gradient
+  if(isTRUE(signchange))
+    graphics::text(dfs[-1], y[-1], 
+                   labels = c('-','+')[(diff(y)>0)+1], 
+                   pos = 3, font = 2, cex = 2,
+                   col = c('chartreuse4','firebrick')[(diff(y)>0)+1])
+  
+  # show minimum
+  graphics::abline(h = min(y), lty = 2, col='royalblue')
+  graphics::text(max(dfs), min(y), labels = "min", font = 2, 
+                 col = 'royalblue', pos = 3, offset = .25)
+  
+  if(isTRUE(leg))
+    legend(l.pos, bty = 'n', legend = stat, inset = .01,
+           lwd = lwd, pt.cex = cex, pch = 1, lty=1, 
+           cex = 1.2, text.font = 2)
 }
