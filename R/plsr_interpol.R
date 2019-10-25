@@ -10,7 +10,7 @@
 #' @param t.min,t.max defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
 #' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr()}} function.
 #' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns()}} function.
-#' @param return.model if TRUE, returns the PLSR model object.
+#' @param return.model if TRUE, returns the PLSR model object and the input df value.
 #' 
 #' @export
 #' 
@@ -33,14 +33,14 @@ plsr_interpol <- function(X, time.series, df,
                           scale = T, knots = NULL,
                           return.model = FALSE)
 {
-  if(n.inter<ncol(X)){
-    warning("n.inter should be larger than ncol(X)")
-  }
   if(length(time.series)!=ncol(X)){
     stop("time series must be of length ncol(X)")
   }
   if(tmin < min(time.series) | tmax > max(time.series)){
     stop("tmin and tmax must be within time.series")
+  }
+  if(n.inter<ncol(X)){
+    warning("n.inter should be larger than ncol(X)")
   }
 
   
@@ -62,9 +62,14 @@ plsr_interpol <- function(X, time.series, df,
   inter.mat <- stats::predict(t.mat, inter) # make interpolated ns time series 
   pred.mat <- stats::predict(m.X, newdata = inter.mat, comps=1:nc) # use model to predict gene expr
   
-  return(list(plsr.model=m.X,    # PLSR model
-              ts=inter,          # time series (interpolated)
-              pred=t(pred.mat),  # model predictions (interpolated)
-              df=df))            # spline df
   
+  res <- list(
+    time.series = inter,   # time series (interpolated)
+    interpGE = t(pred.mat) # model predictions (interpolated)
+    )
+  if(isTRUE(return.model)){
+    res$plsr.model <- m.X  # PLSR model
+    res$df <- df           # df param
+  }
+  return(res)            
 } 
