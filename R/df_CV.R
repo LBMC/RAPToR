@@ -1,6 +1,10 @@
 #' Find the optimal spline df through cross-valdation
 #' 
-#' Some text about how cross-validation is performed here. And using ICA components.
+#' This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter 
+#' for a multi-target PLSR regression.
+#' By default, CV is done using the sample loadings on ICA components rather than the full gene expression matrix as target variable.
+#' The reason for this is a non-negligible reduction of computing costs (>100x faster) for equal results. 
+#' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).
@@ -12,7 +16,8 @@
 #' @param ica.nc number of components to use for the ica. Defaults to 16 or ncol(X) if there are less than 16 samples.
 #' @param nb.cores number of cores to use for parallelization.
 #' 
-#' @return a '\code{dfCV}' object, which is a list of ...
+#' @return a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs, 
+#' the CV parameters and PLSR model components used for prediction
 #' There are plot, print and summary methods for this object.
 #' 
 #' @export

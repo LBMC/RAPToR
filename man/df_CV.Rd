@@ -28,11 +28,16 @@ df_CV(X, time.series, dfs = 1:(ncol(X) - 1), cv.n = 50, cv.s = 0.8,
 \item{nb.cores}{number of cores to use for parallelization.}
 }
 \value{
-a '\code{dfCV}' object, which is a list of ...
+a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs, 
+the CV parameters and PLSR model components used for prediction
 There are plot, print and summary methods for this object.
 }
 \description{
-Some text about how cross-validation is performed here. And using ICA components.
+This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter 
+for a multi-target PLSR regression.
+By default, CV is done using the sample loadings on ICA components rather than the full gene expression matrix as target variable.
+The reason for this is a non-negligible reduction of computing costs (>100x faster) for equal results. 
+Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
 }
 \examples{
 data(Cel_embryo)
