@@ -1,24 +1,25 @@
 #' Interpolation of gene expression on time series from reference data
 #' 
 #' This function computes the interpolated gene expression data from a reference time series.
-#' This is done with a multi-target PLSR model
+#' This is done with a multi-target Partial Least Square Rregression (PLSR) model, using a spline of time as descriptive variables.
 #' 
-#' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns
+#' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).
-#' @param df the df parameter passed on to the \code{\link[splines]{ns}}
+#' @param df the df parameter passed on to the \code{\link[splines]{ns()}} function.
 #' @param n.inter number of timepoints to return in interpolated data, defaults to 200.
-#' @param t.min,t.max defaults to min and max of \code{time.series} ; start and end times of new time series ; ignored if new.timepoints is given.
-#' @param return.model if TRUE, returns the PLSR model object
+#' @param t.min,t.max defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
+#' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr()}} function.
+#' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns()}} function.
+#' @param return.model if TRUE, returns the PLSR model object.
 #' 
 #' @export
 #' 
 #' @examples 
 #' 
 #' \donttest{
-#' data(Cel_larval)
-#' par(mfrow=c(2,2))
-#'   }
-#' })
+#' data(Cel_embryo)
+#' 
+#'  
 #' }
 #'
 #' 
@@ -29,7 +30,8 @@
 plsr_interpol <- function(X, time.series, df, 
                           n.inter = 200, 
                           tmin = min(time.series), tmax = max(time.series),
-                          scale = T, knots = NULL)
+                          scale = T, knots = NULL,
+                          return.model = FALSE)
 {
   if(n.inter<ncol(X)){
     warning("n.inter should be larger than ncol(X)")
