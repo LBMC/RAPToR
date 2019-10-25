@@ -163,7 +163,8 @@ ef <- function(xt, xe){
 #' summary(dfCVembryo)
 #' }
 #' 
-summary.dfCV <- function(object, digits=3, ...){
+#' @importFrom stats median
+summary.dfCV <- function(object, digits = 3, ...){
 
   out_str <- paste0('\nCross-Validation on spline df :\n',
                     '\nPLSR models fitted on ', 
@@ -177,7 +178,33 @@ summary.dfCV <- function(object, digits=3, ...){
                     '\n')
   cat(out_str)
   cat('\nMedian CVError per df :\n')
-  print(apply(object$cv.errors, 2, median), digits = digits)
+  print(apply(object$cv.errors, 2, stats::median), digits = digits)
 
   invisible(out_str)
+}
+
+
+#' dfCV object print
+#' 
+#' Prints a summary of the \code{dfCV} object  (same as summary)
+#' 
+#' @param object a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param digits the number of digits passed on to \code{\link{round}}
+#' @param ... ignored (needed to match the S3 standard)
+#' 
+#' @return invisibly returns the string output
+#' 
+#' @export
+#' 
+#' @examples
+#' \donttest{
+#' data(Cel_embryo)
+#' 
+#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
+#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
+#' print(dfCVembryo)
+#' }
+#' 
+print.dfCV <- function(object, digits = 3, ...){
+  invisible(summary.dfCV(object, digits = digits))
 }
