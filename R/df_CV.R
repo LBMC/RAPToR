@@ -21,7 +21,10 @@
 #' @importFrom stats quantile dnorm
 #' @importFrom pryr standardise_call
 #' 
-df_CV <- function(X, y, dfs=1:length(y), n.cv=50, s.cv=0.8, err.func=ef, ncores=2, ...){
+df_CV <- function(X, y, 
+                  dfs=1:length(y), 
+                  n.cv=50, s.cv=0.8, 
+                  err.func=ef, nb.cores=2, ...){
   require(parallel)
   require(splines)
   require(pls)
@@ -71,7 +74,7 @@ df_CV <- function(X, y, dfs=1:length(y), n.cv=50, s.cv=0.8, err.func=ef, ncores=
                          })
                          return(errs)
                        }
-                       , mc.cores = ncores
+                       , mc.cores = nb.cores
                        ))
   
   res <- list(dfs = dfs,
@@ -81,8 +84,17 @@ df_CV <- function(X, y, dfs=1:length(y), n.cv=50, s.cv=0.8, err.func=ef, ncores=
               plsr.nc = ncomps)
 }
 
-# CV error function between Xtrue and Xestimated (sum squared)
+
+
+
+#' CV error function
+#' 
+#' Computes sum((xt-xe)^2)
+#' 
+#' @param xt,xe vectors of validation data and predictions respectively
+#' 
+#' @return The sum squared prediction error.
 ef <- function(xt, xe){
-  sum((xt-xe)^2)
+  return(sum((xt-xe)^2))
 }
 
