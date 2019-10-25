@@ -188,7 +188,7 @@ summary.dfCV <- function(object, digits = 3, ...){
 #' 
 #' Prints a summary of the \code{dfCV} object  (same as summary)
 #' 
-#' @param object a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param x a \code{dfCV} object, as returned by \code{\link{df_CV}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
@@ -205,6 +205,6 @@ summary.dfCV <- function(object, digits = 3, ...){
 #' print(dfCVembryo)
 #' }
 #' 
-print.dfCV <- function(object, digits = 3, ...){
-  invisible(summary.dfCV(object, digits = digits))
+print.dfCV <- function(x, digits = 3, ...){
+  invisible(summary.dfCV(x, digits = digits))
 }
