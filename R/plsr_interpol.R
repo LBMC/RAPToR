@@ -1,7 +1,7 @@
 #' Interpolation of gene expression on time series from reference data
 #' 
 #' This function computes the interpolated gene expression data from a reference time series.
-#' This is done with a multi-target Partial Least Square Rregression (PLSR) model, using a spline of time as descriptive variables.
+#' This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).

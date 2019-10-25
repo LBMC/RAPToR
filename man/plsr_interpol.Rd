@@ -27,7 +27,7 @@ plsr_interpol(X, time.series, df, n.inter = 200,
 }
 \description{
 This function computes the interpolated gene expression data from a reference time series.
-This is done with a multi-target Partial Least Square Rregression (PLSR) model, using a spline of time as descriptive variables.
+This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 }
 \examples{
 
