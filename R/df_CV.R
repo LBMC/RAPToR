@@ -21,8 +21,7 @@
 #' data(Cel_embryo)
 #' 
 #' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-#'                     dfs = 3:17, cv.n = 100, cv.s = 0.8, 
-#'                     nb.cores = 4)
+#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
 #' 
 #' \donttest{
 #' 
@@ -103,7 +102,7 @@ df_CV <- function(X, time.series,
                          })
                          return(errs)
                        }))
-  
+  colnames(cv.errors) <- paste0('df.', dfs)
   
   # Stop cluster and free space
   parallel::stopCluster(cl)
