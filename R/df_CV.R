@@ -137,3 +137,47 @@ ef <- function(xt, xe){
   return(sum((xt-xe)^2))
 }
 
+
+
+
+
+
+#' dfCV object summary
+#' 
+#' Prints a summary of the \code{dfCV} object
+#' 
+#' @param object a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param digits the number of digits passed on to \code{\link{round}}
+#' @param ... ignored (needed to match the S3 standard)
+#' 
+#' @return invisibly returns the string output
+#' 
+#' @export
+#' 
+#' @examples
+#' \donttest{
+#' data(Cel_embryo)
+#' 
+#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
+#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
+#' summary(dfCVembryo)
+#' }
+#' 
+summary.dfCV <- function(object, digits=3, ...){
+
+  out_str <- paste0('\nCross-Validation on spline df :\n',
+                    '\nPLSR models fitted on ', 
+                    ifelse(is.null(object$ica.nc), 
+                           'whole gene expression matrix.',
+                           paste0('ICA sample loadings (',object$ica.nc,' comps).')),
+                    '\nPerformed ', object$cv.n, ' CV repeats with a ', 
+                    ifelse(object$cv.s<1, paste0(round(object$cv.s*100),'/', round(100-object$cv.s*100), ' training/validation ratio.'),
+                           paste0(object$cv.s, ' sample training set.')),
+                    '\nScanned ', length(object$dfs),' df values  [', min(object$dfs), ' , ', max(object$dfs), ']',
+                    '\n')
+  cat(out_str)
+  cat('\nMedian CVError per df :\n')
+  print(apply(object$cv.errors, 2, median), digits = digits)
+
+  invisible(out_str)
+}
