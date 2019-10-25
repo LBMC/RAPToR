@@ -17,9 +17,19 @@
 #' @examples 
 #' 
 #' \donttest{
-#' data(Cel_embryo)
+#' data("Cel_embryo")
 #' 
-#'  
+#' iGE <- plsr_interpol(Cel_embryo$X, Cel_embryo$time.series, df = 9, n.inter = 100)
+#' 
+#' # plot random genes with their interpolations
+#' par(mfrow=c(2,2))
+#' invisible(sapply(sample(1:nrow(Cel_embryo$X), 4), function(i){
+#'   plot(Cel_embryo$time.series, Cel_embryo$X[i,], lwd = 2, 
+#'        xlab = "time", ylab = "gene expression", 
+#'        main = rownames(Cel_embryo$X)[i])
+#'   points(iGE$time.series, iGE$interpGE[i,], lwd = 2,
+#'          type = "l", col = "royalblue")
+#' }))
 #' }
 #'
 #' 
