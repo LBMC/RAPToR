@@ -4,22 +4,24 @@
 \alias{df_CV}
 \title{Find the optimal spline df through cross-valdation}
 \usage{
-df_CV(X, time.series, dfs = 1:(ncol(X) - 1), cv.n = 50, cv.s = 0.8,
-  err.func = ef, ica.use = TRUE, ica.nc = min(ncol(X), 16),
-  nb.cores = 2)
+df_CV(X, time.series, dfs = 1:(ncol(X) - 1), covar = NULL, cv.n = 50,
+  cv.s = 0.8, err.func = ef, ica.use = TRUE, ica.nc = min(ncol(X),
+  16), nb.cores = 2)
 }
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.}
 
 \item{time.series}{timepoints of the reference (X).}
 
-\item{dfs}{vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}()} function).}
+\item{dfs}{vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}} function).}
+
+\item{covar}{a covariate to include in the model (*e.g* batch).}
 
 \item{cv.n}{number of cross-validation repeats.}
 
 \item{cv.s}{ratio of samples to use for training set. If cv.s > 1, then cv.s samples are used for the training set.}
 
-\item{err.func}{the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}()} function).}
+\item{err.func}{the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}} function).}
 
 \item{ica.use}{boolean ; if TRUE, sample loadings of ICA components are used for CV rather than the whole gene expression matrix.}
 

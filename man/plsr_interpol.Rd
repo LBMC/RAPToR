@@ -4,9 +4,9 @@
 \alias{plsr_interpol}
 \title{Interpolation of gene expression on time series from reference data}
 \usage{
-plsr_interpol(X, time.series, df, n.inter = 200,
-  tmin = min(time.series), tmax = max(time.series), scale = T,
-  knots = NULL, return.model = FALSE)
+plsr_interpol(X, time.series, df, covar = NULL, topred = NULL,
+  n.inter = 200, tmin = min(time.series), tmax = max(time.series),
+  scale = T, knots = NULL, return.model = FALSE)
 }
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.}
@@ -14,6 +14,10 @@ plsr_interpol(X, time.series, df, n.inter = 200,
 \item{time.series}{timepoints of the reference (X).}
 
 \item{df}{the df parameter passed on to the \code{\link[splines]{ns}} function.}
+
+\item{covar}{a covariate to include in the model (*e.g* batch).}
+
+\item{topred}{a level of \code{covar} to use for model predictions ; defaults to the first level.}
 
 \item{n.inter}{number of timepoints to return in interpolated data, defaults to 200.}
 

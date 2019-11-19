@@ -6,6 +6,8 @@
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).
 #' @param df the df parameter passed on to the \code{\link[splines]{ns}} function.
+#' @param covar a covariate to include in the model (*e.g* batch).  
+#' @param topred a level of \code{covar} to use for model predictions ; defaults to the first level.
 #' @param n.inter number of timepoints to return in interpolated data, defaults to 200.
 #' @param tmin,tmax defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
 #' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr}} function.
@@ -38,48 +40,83 @@
 #' @import pls 
 
 plsr_interpol <- function(X, time.series, df, 
+                          covar = NULL, topred = NULL,
                           n.inter = 200, 
                           tmin = min(time.series), tmax = max(time.series),
                           scale = T, knots = NULL,
                           return.model = FALSE)
 {
-  if(length(time.series)!=ncol(X)){
+  if (length(time.series) != ncol(X)) {
     stop("time series must be of length ncol(X)")
   }
-  if(tmin < min(time.series) | tmax > max(time.series)){
+  if (tmin < min(time.series) | tmax > max(time.series)) {
     stop("tmin and tmax must be within time.series")
   }
-  if(n.inter<ncol(X)){
+  if (n.inter < ncol(X)) {
     warning("n.inter should be larger than ncol(X)")
   }
-
-  
-  if(df>=(length(time.series)))
+  if (df >= (length(time.series))) 
     stop("Spline degree must be less than number of unique samples")
   
-  t.mat <- splines::ns(time.series, df=df, knots=knots) # Build polynomial from time series
-  m.X <- pls::plsr(t(X)~t.mat, scale=scale, validation='CV') # apply plsr model
   
-  # get appropriate ncomp for plsr with built-in CV
-  cv <- pls::RMSEP(m.X)$val['CV',,]
-  nc <- which.min(colMeans(cv)) - 1
-  if(nc==0)
-    nc <- which.min(colMeans(cv)[-1])
+  # for building the model
+  dat <- data.frame(
+    X = I(t(X)),
+    Y = I(splines::ns(time.series, df = df, knots = knots))
+  )
   
-  # Build interpolation
+  m_formula <- formula(X ~ Y)
+  
+  # for predictions
   inter <- seq(tmin, tmax, length.out = n.inter)
+  ndat <- data.frame( 
+    Y = I(stats::predict(dat$Y, inter))
+  )
   
-  inter.mat <- stats::predict(t.mat, inter) # make interpolated ns time series 
-  pred.mat <- stats::predict(m.X, newdata = inter.mat, comps=1:nc) # use model to predict gene expr
   
+  if(!is.null(covar)){
+    if (length(covar) != length(time.series)){
+      stop("covar should be of length ncol(X)")
+    }
+    
+    covar <- factor(covar)
+    
+    if(is.null(topred)){
+      # interpolate as the first dataset/condition by default
+      topred <- covar[which(covar == levels(covar)[1])[1]]
+    }
+    else{
+      # topred must be specified as a level of covar
+      if(! topred %in% levels(covar)){
+        stop("topred must be a level of covar")
+      }
+      topred <- covar[which(covar == topred)[1]]
+    }
+    
+    dat$covar <- covar
+    m_formula <- formula(X ~ Y + covar)
+    ndat$covar <- rep(topred, n.inter)
+    
+  } 
   
-  res <- list(
-    time.series = inter,   # time series (interpolated)
-    interpGE = t(pred.mat) # model predictions (interpolated)
-    )
-  if(isTRUE(return.model)){
-    res$plsr.model <- m.X  # PLSR model
-    res$df <- df           # df param
+  m.X <- pls::plsr(m_formula, data = dat, scale = scale, validation = "CV")
+  
+  # choose nc for plsr interpol
+  cv <- pls::RMSEP(m.X)$val["CV", , ]
+  nc <- which.min(colMeans(cv)) - 1
+  if (nc == 0){
+    nc <- which.min(colMeans(cv)[-1])
   }
-  return(res)            
+  
+  pred <- stats::predict(m.X, newdata = ndat, comps = 1:nc)
+  
+  # format results
+  res <- list(time.series = inter, interpGE = t(pred))
+  
+  if (isTRUE(return.model)) {
+    res$plsr.model <- m.X
+    res$plsr.nc <- nc
+    res$df <- df
+  }
+  return(res)
 } 

@@ -8,10 +8,11 @@
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (X).
-#' @param dfs vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}()} function).
+#' @param covar a covariate to include in the model (*e.g* batch).  
+#' @param dfs vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}} function).
 #' @param cv.n number of cross-validation repeats.
 #' @param cv.s ratio of samples to use for training set. If cv.s > 1, then cv.s samples are used for the training set.
-#' @param err.func the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}()} function).
+#' @param err.func the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}} function).
 #' @param ica.use boolean ; if TRUE, sample loadings of ICA components are used for CV rather than the whole gene expression matrix.
 #' @param ica.nc number of components to use for the ica. Defaults to 16 or ncol(X) if there are less than 16 samples.
 #' @param nb.cores number of cores to use for parallelization.
@@ -41,6 +42,7 @@
 #' 
 df_CV <- function(X, time.series, 
                   dfs = 1:(ncol(X)-1), 
+                  covar = NULL,
                   cv.n = 50, cv.s = 0.8, 
                   err.func = ef,
                   ica.use = TRUE, ica.nc = min(ncol(X), 16),
@@ -48,86 +50,102 @@ df_CV <- function(X, time.series,
 
   y <- time.series
   n <- length(y)
-  
-  if(isTRUE(ica.use)){
-    # Use ICA sample loadings for CV
-    X <- ica::icafast(X, nc = ica.nc)$M 
+  if (isTRUE(ica.use)) {
+    X <- ica::icafast(X, nc = ica.nc)$M
   }
-  else{
+  else {
     X <- t(X)
   }
+  if (cv.s < 1) 
+    n_samp <- round(cv.s * n, 0)
+  else n_samp <- cv.s
   
-  if(cv.s<1.0)
-    n_samp <- round(cv.s*n, 0)
-  else
-    n_samp <- cv.s
+  # for building the model
+  dat <- data.frame(
+    X = I(X)
+  )
+  m_formula <- formula(X ~ Y)
   
-  # Determine the correct ncomps to use in plsr for scanned df values
-  ncomps <- sapply(dfs, function(df){
-    cv <- suppressWarnings(RMSEP(plsr(X~ns(y, df = df), scale=F, validation='CV'))$val['CV',,])
-    nc <- which.min(colMeans(cv))-1
-    if(nc==0)
+  if(!is.null(covar)){
+    if (length(covar) != length(time.series)){
+      stop("covar should be of length ncol(X)")
+    }
+    covar <-  factor(covar)
+    
+    dat$covar <- covar
+    m_formula <- formula(X ~ Y + covar)
+    
+    # need to keep at least first and last points from each dataset/condition in training set
+    df <- data.frame(t = time.series, c = covar, id = seq_along(covar))
+    dontsample <- c(
+      by(df, df$c, function(x) x$id[which.min(x$t)]),
+      by(df, df$c, function(x) x$id[which.max(x$t)])
+    )
+  }
+  else{
+    dontsample <- c(which.min(time.series), which.max(time.series))
+  }
+  
+  # find the nc for plsr interpol with scanned dfs.
+  ncomps <- sapply(dfs, function(df) {
+    dat$Y = I(splines::ns(y, df = df))
+    cv <- suppressWarnings(pls::RMSEP(
+      pls::plsr(m_formula, data = dat,
+                scale = F, validation = "CV"))$val["CV", , ])
+    nc <- which.min(colMeans(cv)) - 1
+    if (nc == 0) 
       nc <- which.min(colMeans(cv)[-1])
-    nc
+    return(nc)
   })
-  names(ncomps) <- paste0('df.', dfs)
+  names(ncomps) <- paste0("df.", dfs)
   
-  # Make cv.n random subsets
-  sels <- lapply(1:cv.n, function(i){
-    sample(2:(n-1), n-n_samp, replace = F)
+  # randomly split training/validation sets 
+  sels <- lapply(1:cv.n, function(i) {
+    sample(seq_along(time.series)[- dontsample], n - n_samp, replace = F)
   })
   
   # Build splines for scanned dfs
-  Ys <- lapply(dfs, function(df){
-    ns(y, df=df)
+  Ys <- lapply(dfs, function(df) {
+    splines::ns(y, df = df)
   })
   
-  # Set up cluster for parallelization
-  cl <- parallel::makeCluster(nb.cores, 
-                              type = ifelse(.Platform$OS.type=="windows", 
-                                            "PSOCK", "FORK"))
+  # build cluster for parallel computing & export needed variables
+  cl <- parallel::makeCluster(nb.cores, type = ifelse(.Platform$OS.type == "windows", "PSOCK", "FORK"))
+  parallel::clusterExport(cl, varlist = c('m_formula', 'Ys', 'dat', 
+                                          'sels', 'ncomps', 'dfs'),
+                          envir = environment())
   
+  cv.errors <- do.call("rbind", 
+                       parallel::parLapply(cl, 1:cv.n, 
+                                           function(i) {
+                                             sel <- sels[[i]]
+                                             
+                                             errs <- sapply(dfs, function(df) {
+                                               dat$Y <- I(Ys[[which(dfs == df)]])
+                                               m <- pls::plsr(m_formula, data = dat[-sel,], scale = F)
+                                               xv <- stats::predict(m, newdata = dat[sel,],
+                                                                    comps = 1:ncomps[which(dfs == df)])
+                                               err <- err.func(dat$X[sel, ], xv)
+                                               return(err)
+                                             })
+                                             return(errs)
+                                           }))
+  colnames(cv.errors) <- paste0("df.", dfs)
   
-  # Perform cross-validation on df parameter
-  cv.errors <- do.call('rbind', 
-                       parallel::parLapply(cl, 1:cv.n, function(i){
-                         sel <- sels[[i]]
-                         
-                         errs <- sapply(dfs, function(df){
-                           Y <- Ys[[which(dfs==df)]]
-                           yi <- Y[-sel,, drop=F] # used for model
-                           yv <- Y[sel,, drop=F] # used for cv
-                           
-                           m <- plsr(X[-sel,]~yi, scale=F)
-                           
-                           xv <- predict(m, newdata=yv, comps=1:ncomps[which(dfs==df)])
-                           err <- err.func(X[sel,], xv)
-                           return(err)
-                           
-                         })
-                         return(errs)
-                       }))
-  colnames(cv.errors) <- paste0('df.', dfs)
-  
-  # Stop cluster and free space
+  # stop cluster and free space 
   parallel::stopCluster(cl)
   gc(verbose = F)
   
-  res <- list(
-    cv.errors = cv.errors,
-    dfs = dfs,
-    cv.n = cv.n,
-    cv.s = cv.s,
-    plsr.nc = ncomps)
-  
-  if(isTRUE(ica.use))
+  # format results
+  res <- list(cv.errors = cv.errors, dfs = dfs, cv.n = cv.n, 
+              cv.s = cv.s, plsr.nc = ncomps)
+  if (isTRUE(ica.use)) {
     res$ica.nc <- ica.nc
+  }
   
   class(res) <- "dfCV"
-  
   return(res)
 }
-
 
 
 
