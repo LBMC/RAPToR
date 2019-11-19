@@ -35,7 +35,7 @@
 #' }
 #'
 #' 
-#' @importFrom stats predict
+#' @importFrom stats predict formula
 #' @importFrom splines ns
 #' @import pls 
 
@@ -65,7 +65,7 @@ plsr_interpol <- function(X, time.series, df,
     Y = I(splines::ns(time.series, df = df, knots = knots))
   )
   
-  m_formula <- formula(X ~ Y)
+  m_formula <- stats::formula(X ~ Y)
   
   # for predictions
   inter <- seq(tmin, tmax, length.out = n.inter)
@@ -94,7 +94,7 @@ plsr_interpol <- function(X, time.series, df,
     }
     
     dat$covar <- covar
-    m_formula <- formula(X ~ Y + covar)
+    m_formula <- stats::formula(X ~ Y + covar)
     ndat$covar <- rep(topred, n.inter)
     
   } 

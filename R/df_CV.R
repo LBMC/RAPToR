@@ -34,7 +34,7 @@
 #' }
 #' 
 #' @importFrom parallel parLapply stopCluster makeForkCluster
-#' @importFrom stats quantile dnorm predict
+#' @importFrom stats quantile dnorm predict formula
 #' @importFrom splines ns
 #' @importFrom ica icafast
 #' @import pls 
@@ -64,7 +64,7 @@ df_CV <- function(X, time.series,
   dat <- data.frame(
     X = I(X)
   )
-  m_formula <- formula(X ~ Y)
+  m_formula <- stats::formula(X ~ Y)
   
   if(!is.null(covar)){
     if (length(covar) != length(time.series)){
@@ -73,7 +73,7 @@ df_CV <- function(X, time.series,
     covar <-  factor(covar)
     
     dat$covar <- covar
-    m_formula <- formula(X ~ Y + covar)
+    m_formula <- stats::formula(X ~ Y + covar)
     
     # need to keep at least first and last points from each dataset/condition in training set
     df <- data.frame(t = time.series, c = covar, id = seq_along(covar))
