@@ -22,8 +22,6 @@ Imports:
   data.table,
   pryr,
   beeswarm,
-  Biobase,
-  GEOquery,
   R.rsp,
 License: file LICENSE
 LazyData: true
