@@ -13,7 +13,7 @@
 #' of the correlation profiles will be scored according to a gaussian
 #' of the specified parameters.
 #' 
-#' @param samp the sample matrix, gene as rows, individuals as columns
+#' @param samp the sample matrix, genes as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
 #' @param ref.time_series the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)
 #' @param nb.cores the number of cores on which to parallelize the process, defaults to 2.

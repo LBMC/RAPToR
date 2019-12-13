@@ -18,7 +18,7 @@ ae(
 )
 }
 \arguments{
-\item{samp}{the sample matrix, gene as rows, individuals as columns}
+\item{samp}{the sample matrix, genes as rows, individuals as columns}
 
 \item{refdata}{the reference time series matrix, same format as \code{samp}}
 
