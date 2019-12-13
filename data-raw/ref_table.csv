@@ -1,0 +1,5 @@
+name, organism, data_pkg, description
+Cel_embryo, Caenorhabditis elegans, wormRef, Embryonic development reference series from 1C to hatching
+Cel_larval, Caenorhabditis elegans, wormRef, Larval development reference series from hatching to YA
+Cel_YA_1, Caenorhabditis elegans, wormRef, YA development reference series from late larval to adult
+Cel_YA_2, Caenorhabditis elegans, wormRef, YA development reference series from YA to adult with embryos
