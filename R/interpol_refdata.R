@@ -31,7 +31,7 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 
 #' Interpolation of gene expression on time series from reference data
 #' 
-#' function that computes interpolated data from a reference time series
+#' **DEPRECATED please use plsr_interpol()** - function that computes interpolated data from a reference time series. 
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns
 #' @param n.inter number of timepoints to return in interpolated data
@@ -48,28 +48,8 @@ get.spline <- function(ICA, time.series, comp, pred.x,
 #' @export
 #' 
 #' @examples 
+#' # Deprecated.
 #' 
-#' \donttest{
-#' data(Cel_larval)
-#' par(mfrow=c(2,2))
-#'
-#' interpold <- interpol_refdata(X = Cel_larval$X, n.inter = 200, 
-#'                               time.series = Cel_larval$time.series, ,
-#'                               ica.nc = 10, keep.c = 1:10,
-#'                               plot = TRUE)
-#'
-#' pb <- sapply(c(2,5,13,50), function(i){
-#'    plot(Cel_larval$time.series, Cel_larval$X[i,],
-#'         type = 'l', lwd=2, 
-#'         main=rownames(Cel_larval$X)[i], xlab = 'time')
-#'    points(interpold$time.series, interpold$interpol.gene_expr[i,],
-#'           type = 'l', lwd=2, col='firebrick')
-#'   if(i==5){
-#'     legend('topright', legend = c("Initial ref. data", "Interpolated data"),
-#'            lwd=3, col=c('black', 'firebrick'), bty = "n")
-#'   }
-#' })
-#' }
 #'
 #' 
 #' @importFrom ica icafast
@@ -78,6 +58,7 @@ interpol_refdata <- function(X, n.inter, time.series,
                              t.min=NULL, t.max=NULL, new.timepoints=NULL,
                              span=0.25, plot=F, return.fits=F)
 {
+  warning("DEPRECATED. Please use plsr_interpol() instead.")
   if(n.inter<ncol(X)){
     stop("n.inter must be larger than ncol(X)")
   }
