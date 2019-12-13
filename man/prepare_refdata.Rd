@@ -4,10 +4,12 @@
 \alias{prepare_refdata}
 \title{Prepare the reference data included in the package}
 \usage{
-prepare_refdata(ref = c("young_adult", "Cel_YA_adult1",
-  "sterken_hendriks", "larval_development", "Cel_larval", "oudenaarden",
-  "embryonic_development", "Cel_embryo", "hashimshony", "Cel_YA_adult2",
-  "reinke"), n.inter = 200)
+prepare_refdata(
+  ref = c("young_adult", "Cel_YA_adult1", "sterken_hendriks", "larval_development",
+    "Cel_larval", "oudenaarden", "embryonic_development", "Cel_embryo", "hashimshony",
+    "Cel_YA_adult2", "reinke"),
+  n.inter = 200
+)
 }
 \arguments{
 \item{ref}{which reference dataset to load. Can be abbreviated.}
@@ -30,5 +32,5 @@ interpol.larval <- prepare_refdata(ref="larval")
 
 }
 \seealso{
-[interpol_refdata()]
+\code{\link[=interpol_refdata]{interpol_refdata()}}
 }

@@ -19,7 +19,7 @@ levels (log+1 from intensities).
 \details{
 Only samples of Standard N2 strain were kept here.
 
-Time is in hours from hatching, scaled on the Oudenaarden 20C time series, 
+Time is in hours from hatching, scaled on the Oudenaarden 20C time series,
 re-estimated on the Reinke and Oudenaarden references.
 }
 \examples{

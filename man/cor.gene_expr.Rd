@@ -17,7 +17,7 @@ cor.gene_expr(samp, refdata, cor.method = "spearman")
 a matrix of correlation scores with samples as columns, refdata as rows
 }
 \description{
-Computes the correlation between the gene expressions of the sample 
+Computes the correlation between the gene expressions of the sample
 and the reference data using the \code{\link{cor}} function ;
 default correlation index is spearman.
 }

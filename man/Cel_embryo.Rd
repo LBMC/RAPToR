@@ -13,10 +13,10 @@ data(Cel_embryo)
 }
 \description{
 Data from a paper published by Hashimshony et al.
-with C elegans gene expression levels (log+1 from rpkm) at 
-56 time points. The time is in minutes after the 4-cell stage. 
+with C elegans gene expression levels (log+1 from rpkm) at
+56 time points. The time is in minutes after the 4-cell stage.
 Two timepoints thus have negative times (the 1 and 2-cell stage embryos).
-This dataset is a reference time series for C. elegans embryo development at 20C 
+This dataset is a reference time series for C. elegans embryo development at 20C
 from the 1-cell stage to hatching (830min).
 }
 \examples{

@@ -1,19 +1,17 @@
-#' Estimate the developmental age of individuals
+#' Age Estimate
 #' 
 #' This function estimates the developmental age of sample individuals based on 
-#' correlation with given reference data. The correlation is computed through
-#' the \code{\link{cor.gene_expr}} function.
-#' 
-#' A prior can be given to help with the estimate, in which case the peaks 
-#' of the correlation profiles will be scored according to a gaussian
-#' of the specified parameters.
+#' correlation with given reference data. 
 #' 
 #' The implemented bootstrap procedure re-estimates the age on random gene subsets
 #' of fixed size to evaluate the robustness of the estimate, given in the form of
 #' the Median Absolute Deviation of the bootstrap age estimates to the global estimate. 
 #' 
-#' Using interpolated reference data (from \code{\link{interpol_refdata}})
-#' gives more precise results.
+#' Using interpolated reference data gives more precise results.
+#' 
+#' A prior can be given to help with the estimate, in which case the peaks 
+#' of the correlation profiles will be scored according to a gaussian
+#' of the specified parameters.
 #' 
 #' @param samp the sample matrix, gene as rows, individuals as columns
 #' @param refdata the reference time series matrix, same format as \code{samp}
@@ -26,9 +24,9 @@
 #' @param prior.params the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
 #' @param verbose boolean ; if TRUE, displays messages of the various steps of the method.
 #' 
-#' @return an '\code{ae}' object, which is a list of the age estimates, the correlation matrix between sample and reference, 
+#' @return an `ae` object, which is a list of the age estimates, the correlation matrix between sample and reference, 
 #' the reference time series as well as the bootstrap correlation matrices and age estimates.
-#' There are plot, print and summary methods for this object.
+#' There are `plot`, `print` and `summary` methods for this object.
 #' 
 #' @export
 #' 
@@ -36,7 +34,7 @@
 #' data(Cel_larval)
 #' 
 #' samp <- Cel_larval$X[,13:15]
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
+#' age.est <- ae(samp, Cel_larval$X, Cel_larval$time.series)
 #' age.est$age.estimates
 #' \donttest{
 #' plot(age.est)
@@ -46,11 +44,11 @@
 #' @importFrom stats quantile dnorm
 #' @importFrom pryr standardise_call
 #' 
-estimate.worm_age <- function(samp, refdata, ref.time_series,
-                              cor.method="spearman", nb.cores=2,
-                              bootstrap.n = 30, bootstrap.set_size = NULL,
-                              prior=NULL, prior.params=NULL,
-                              verbose=T)
+ae <- function(samp, refdata, ref.time_series,
+               cor.method = "spearman", nb.cores = 2,
+               bootstrap.n = 30, bootstrap.set_size = NULL,
+               prior = NULL, prior.params = NULL,
+               verbose = T)
 {
   if(length(ref.time_series)!=ncol(refdata)){
     stop("Reference data and time series don't match")
@@ -351,4 +349,22 @@ summary.ae <- function(object, digits=3, ...){
   #   cat('\n\t* : Warning, estimate jumps around on bootstrap')
   # 
   invisible(list(age.estimates=object$age.estimates[ord,1:3], span=c(mn,mx), range=mx-mn))
+}
+
+
+#' Age Estimate - **DEPRECATED**
+#' 
+#' **DEPRECATED**. Please use \code{\link{ae}} instead.
+#' 
+#' @param samp passed on to ae
+#' @param refdata passed on to ae
+#' @param ref.time_series passed on to ae
+#' @param ... passed on to ae
+#' 
+#' @export
+#'
+estimate.worm_age <- function(samp, refdata, ref.time_series, ...)
+{
+  warning("DEPRECATED. Please use ae() instead.")
+  return(ae(samp, refdata, ref.time_series, ...))
 }

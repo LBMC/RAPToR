@@ -4,8 +4,7 @@
 \alias{format_ids}
 \title{Format/convert the sample gene IDs}
 \usage{
-format_ids(X, IDs, from = 1, to = 2, aggr.fun = mean,
-  verbose = TRUE)
+format_ids(X, IDs, from = 1, to = 2, aggr.fun = mean, verbose = TRUE)
 }
 \arguments{
 \item{X}{the sample gene expression matrix with genes as rows and individuals as columns}
@@ -22,7 +21,7 @@ format_ids(X, IDs, from = 1, to = 2, aggr.fun = mean,
 a gene expression matrix, with new IDs as rownames
 }
 \description{
-This function converts the gene IDs from given input and aggregates results 
+This function converts the gene IDs from given input and aggregates results
 if necessary, for resulting IDs to be unique.
 }
 \examples{

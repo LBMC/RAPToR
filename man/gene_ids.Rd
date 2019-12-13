@@ -13,7 +13,7 @@ data(gene_ids)
 }
 \description{
 A dataframe with WBGene IDs, common public name and Sequence name.
-This table may be especially useful to convert a dataset's row ids to 
+This table may be especially useful to convert a dataset's row ids to
 WBGene IDs, as needed to find the overlapping geneset with the reference
 and perform the age estimation.
 }

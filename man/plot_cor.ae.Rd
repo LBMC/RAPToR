@@ -4,9 +4,17 @@
 \alias{plot_cor.ae}
 \title{Plot an ae object}
 \usage{
-plot_cor.ae(age.est, subset = 1:ncol(age.est$cors), show.prior = F,
-  c.lwd = 2, bar.size = 1, mx.col = "firebrick",
-  col.p = "royalblue", xlab = "reference time", ...)
+plot_cor.ae(
+  age.est,
+  subset = 1:ncol(age.est$cors),
+  show.prior = F,
+  c.lwd = 2,
+  bar.size = 1,
+  mx.col = "firebrick",
+  col.p = "royalblue",
+  xlab = "reference time",
+  ...
+)
 }
 \arguments{
 \item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}

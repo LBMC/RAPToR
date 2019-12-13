@@ -14,7 +14,7 @@ data(Cel_larval)
 \description{
 Data from a paper published by Oudenaarden et al.
 with C elegans gene expression levels (log+1 from rpkm).
- 
+
 This dataset is a reference time series for C. elegans development at both 20C and 25C
 from hatching to late L4 (48h at 20C)
 }
@@ -25,7 +25,7 @@ gene1 <- Cel_larval$X[1,]
 \donttest{plot(times, gene1, type='l')}
 }
 \references{
-Oudenaarden et al. (2013) Nat Genet. 2013 Nov; 45(11): 1337–1344. 
+Oudenaarden et al. (2013) Nat Genet. 2013 Nov; 45(11): 1337–1344.
 (\href{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3812263/}{PubMed})
 }
 \keyword{datasets}

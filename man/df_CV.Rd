@@ -4,9 +4,18 @@
 \alias{df_CV}
 \title{Find the optimal spline df through cross-valdation}
 \usage{
-df_CV(X, time.series, dfs = 1:(ncol(X) - 1), covar = NULL, cv.n = 50,
-  cv.s = 0.8, err.func = ef, ica.use = TRUE, ica.nc = min(ncol(X),
-  16), nb.cores = 2)
+df_CV(
+  X,
+  time.series,
+  dfs = 1:(ncol(X) - 1),
+  covar = NULL,
+  cv.n = 50,
+  cv.s = 0.8,
+  err.func = ef,
+  ica.use = TRUE,
+  ica.nc = min(ncol(X), 16),
+  nb.cores = 2
+)
 }
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.}
@@ -15,7 +24,7 @@ df_CV(X, time.series, dfs = 1:(ncol(X) - 1), covar = NULL, cv.n = 50,
 
 \item{dfs}{vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}} function).}
 
-\item{covar}{a covariate to include in the model (*e.g* batch).}
+\item{covar}{a covariate to include in the model (\emph{e.g} batch).}
 
 \item{cv.n}{number of cross-validation repeats.}
 
@@ -30,15 +39,15 @@ df_CV(X, time.series, dfs = 1:(ncol(X) - 1), covar = NULL, cv.n = 50,
 \item{nb.cores}{number of cores to use for parallelization.}
 }
 \value{
-a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs, 
+a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs,
 the CV parameters and PLSR model components used for prediction
 There are plot, print and summary methods for this object.
 }
 \description{
-This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter 
+This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter
 for a multi-target PLSR regression.
 By default, CV is done using the sample loadings on ICA components rather than the full gene expression matrix as target variable.
-The reason for this is a non-negligible reduction of computing costs (>100x faster) for equal results. 
+The reason for this is a non-negligible reduction of computing costs (>100x faster) for equal results.
 Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
 }
 \examples{

@@ -4,9 +4,20 @@
 \alias{interpol_refdata}
 \title{Interpolation of gene expression on time series from reference data}
 \usage{
-interpol_refdata(X, n.inter, time.series, ica.nc, keep.c, center = T,
-  t.min = NULL, t.max = NULL, new.timepoints = NULL, span = 0.25,
-  plot = F, return.fits = F)
+interpol_refdata(
+  X,
+  n.inter,
+  time.series,
+  ica.nc,
+  keep.c,
+  center = T,
+  t.min = NULL,
+  t.max = NULL,
+  new.timepoints = NULL,
+  span = 0.25,
+  plot = F,
+  return.fits = F
+)
 }
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns}

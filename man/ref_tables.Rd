@@ -12,7 +12,7 @@ The timings for developmental stages are taken from the datasets' papers.
 data(ref_tables)
 }
 \description{
-A list of reference tables giving the approximate timings of key developmental 
+A list of reference tables giving the approximate timings of key developmental
 stages in the reference datasets, as well as the dataset spans.
 }
 \examples{

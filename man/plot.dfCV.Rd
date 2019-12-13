@@ -4,11 +4,21 @@
 \alias{plot.dfCV}
 \title{Plot a dfCV object}
 \usage{
-\method{plot}{dfCV}(x, stat = c("median", "mean"),
-  subset = 1:length(x$dfs), t.plot = TRUE,
-  t.col = makeTransparent("black", 30), signchange = TRUE,
-  main = "CV Error", type = "b", cex = 0.5, lwd = 2, leg = TRUE,
-  l.pos = "top", ...)
+\method{plot}{dfCV}(
+  x,
+  stat = c("median", "mean"),
+  subset = 1:length(x$dfs),
+  t.plot = TRUE,
+  t.col = makeTransparent("black", 30),
+  signchange = TRUE,
+  main = "CV Error",
+  type = "b",
+  cex = 0.5,
+  lwd = 2,
+  leg = TRUE,
+  l.pos = "top",
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{dfCV} object, as returned by \code{\link{df_CV}}.}
