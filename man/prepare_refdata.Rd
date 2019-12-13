@@ -4,33 +4,26 @@
 \alias{prepare_refdata}
 \title{Prepare the reference data included in the package}
 \usage{
-prepare_refdata(
-  ref = c("young_adult", "Cel_YA_adult1", "sterken_hendriks", "larval_development",
-    "Cel_larval", "oudenaarden", "embryonic_development", "Cel_embryo", "hashimshony",
-    "Cel_YA_adult2", "reinke"),
-  n.inter = 200
-)
+prepare_refdata(ref, n.inter = 200)
 }
 \arguments{
-\item{ref}{which reference dataset to load. Can be abbreviated.}
+\item{ref}{the name of the reference dataset to load ; can be abbreviated.}
 
-\item{n.inter}{the \code{n.inter} parameter, as passed on to \code{\link{interpol_refdata}}.}
+\item{n.inter}{the resolution of the interpolation, as passed on to \code{\link{plsr_interpol}}.}
 }
 \value{
-the interpolated reference dataset, as would \code{\link{interpol_refdata}}
+the interpolated reference dataset, as returned by \code{\link{plsr_interpol}}
 }
 \description{
-This function loads the desired reference dataset from the package and
-performs the interpolation with optimal parameters.
-Three available reference datasets are available
-(embryonic development, larval development and young adult/adult).
+This function loads (and interpolates on) the desired reference dataset.
+The available datasets can be found in the \link{ref_table}.
 }
 \examples{
 \donttest{ 
-interpol.larval <- prepare_refdata(ref="larval")
+r_larv <- prepare_refdata(ref="larval")
 }
 
 }
 \seealso{
-\code{\link[=interpol_refdata]{interpol_refdata()}}
+\link{plsr_interpol}
 }
