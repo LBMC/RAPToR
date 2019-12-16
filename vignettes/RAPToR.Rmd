@@ -27,8 +27,8 @@ quick_build <- F # wether to cache heavy-computation chunks
 
 <br>
 <br>
-`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
-This is a major problem in the field of *C. elegans*, where many factors can impact development speed. Let's get started.
+`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the true age of transcriptomic samples from their gene expression profiles. 
+While this is a major problem in the field of *C. elegans*, this issue occurs in any model where many factors can impact development speed (*e.g* *Drosophila*). Let's get started.
 
 ```{r setup, message=FALSE, results='hide'}
 library(RAPToR)
@@ -40,7 +40,7 @@ library(RAPToR)
 
 The method works in a three-step process. 
 
- 1. From a reference gene expression time series (several of which are included in this package), a near-continous, **high-temporal-resolution reference** is built.
+ 1. From a reference gene expression time series (several of which are included in the associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
@@ -48,7 +48,8 @@ The method works in a three-step process.
 
 # What data can be used ?
 The `RAPToR` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
-This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
+This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (preferably RPKM), MicroArray, Chips...
+Since the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data will lead to better performance of the tool.  
 
 <div class="alert alert-danger">
   <strong>Warning :</strong><br/>
@@ -56,9 +57,10 @@ This means that any data providing information on gene expression on a large sca
 </div>
 
 ## Converting IDs
-The only transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. All the references included in the package use WormBase Gene IDs (*e.g.* `WBGene00016153`)
+The only transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. 
+For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
 
-To help with this conversion, a gene ID reference table is included in the package, with `WormBase.Gene.ID`, `Public.Name` and `Sequence.Name`, obtained through [WormBase](http://www.wormbase.org).
+To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (the table is built directly from the `biomaRt`).
 
 ```{r gene_ids}
 data("gene_ids")
