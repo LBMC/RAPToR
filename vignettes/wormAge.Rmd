@@ -1,11 +1,11 @@
 ---
-title: "`wormAge` usage"
+title: "`RAPToR` usage"
 output: 
   rmarkdown::html_document :
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{wormAge-usage}
+  %\VignetteIndexEntry{RAPToR-usage}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: ../inst/REFERENCES.bib
@@ -27,11 +27,11 @@ quick_build <- F # wether to cache heavy-computation chunks
 
 <br>
 <br>
-`wormAge` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
+`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
 This is a major problem in the field of *C. elegans*, where many factors can impact development speed. Let's get started.
 
 ```{r setup, message=FALSE, results='hide'}
-library(wormAge)
+library(RAPToR)
 ```
 
 
@@ -47,7 +47,7 @@ The method works in a three-step process.
 
 
 # What data can be used ?
-The `wormAge` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
+The `RAPToR` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
 This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
 
 <div class="alert alert-danger">
@@ -165,7 +165,7 @@ pheno.hendriks <- pheno.hendriks[sel,]
 
 ## Choosing a reference dataset
 
-`wormAge` estimates the developmental age of samples based on correlation with reference time series datasets. 
+`RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper dataset to run your samples against.
 Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the larval 20$^\circ$C reference series from @oudenaarden2013).
 
@@ -182,7 +182,7 @@ plot_ref_timelines()
 
 ### Loading the reference
 
-To get precise estimates, `wormAge` interpolates on the dynamics of gene expression of the reference series.
+To get precise estimates, `RAPToR` interpolates on the dynamics of gene expression of the reference series.
 You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
 
 Alternatively, you can take a look at the section on [building your own reference series.](#building-your-own-reference)
@@ -383,7 +383,7 @@ For ICA, we know that by definition $X = SM^T$, with $X$ the input gene expressi
 Our interpolations over multiple components are essentially an equivalent of $M$, with much higher time resolution. 
 All we need to do is the inverse matrix product to get the theoretical gene expression data : $Y = SN^T$, with $N$ the interpolated loadings (rows) of each component (columns).
 
-In `wormAge`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute and keep, and the span values for interpolation.
+In `RAPToR`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute and keep, and the span values for interpolation.
 
 ```{r interpol_hend, fig.height=5, fig.width=10, warning=FALSE}
 par(mfrow=c(2,4))

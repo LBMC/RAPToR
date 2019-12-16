@@ -1,4 +1,4 @@
-.onLoad <- function(libname = find.package("wormAge"), pkgname = "wormAge"){
+.onLoad <- function(libname = find.package("RAPToR"), pkgname = "RAPToR"){
   # CRAN Note avoidance
   if(getRversion() >= "2.15.1"){
     # 

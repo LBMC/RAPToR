@@ -1,6 +1,6 @@
-# wormAge R package
+# RAPToR R package
 
-`wormAge` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
+`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
 This is a major problem in the field of *C. elegans*, where many factors can impact development speed.
 
 
@@ -9,7 +9,7 @@ This is a major problem in the field of *C. elegans*, where many factors can imp
 To install the package, you can use the `devtools` R package. This should be done in your R console :
 ```r
 library(devtools)
-devtools::install_github("LBMC/wormAge", build_vignettes = T)
+devtools::install_github("LBMC/RAPToR", build_vignettes = T)
 ```
 
 
@@ -32,7 +32,7 @@ BiocManager::install("GEOquery")
 Everything you need to know to make this work is detailed in the package's vignette. You can access it from your R console with
 
 ```r
-vignette("wormAge")
+vignette("RAPToR")
 ```
 
 ### How does it work ?
@@ -46,7 +46,7 @@ The method works in a three-step process.
 
 
 ### What data can be used ?
-The `wormAge` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
+The `RAPToR` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
 This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
@@ -83,7 +83,7 @@ This means that any data providing information on gene expression on a large sca
  - Added a reference dataset for young adult to adult worms of better quality than the Reinke dataset (Sterken)
  - Restructured the `ref_tables` object
  - Added a `plot_ref_timelines()` function to plot the datasets' coverage and map key developmental stages
- - Joined both previous vignettes into one `wormAge` vignette and expanded the usage information (still in progress)
+ - Joined both previous vignettes into one `RAPToR` vignette and expanded the usage information (still in progress)
  - Updated the `ae` object to include a `$call` output with its call for reproducibility
  - Changed the `show.init_estimates` and `col.i` parameters to `show.prior` and `col.p` in the `ae` plot functions
 

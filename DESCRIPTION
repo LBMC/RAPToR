@@ -1,4 +1,4 @@
-Package: wormAge
+Package: RAPToR
 Title: Estimate the developmental stage of C. elegans from gene expression
 Version: 0.7.2
 Authors@R: c(
