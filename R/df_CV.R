@@ -1,10 +1,11 @@
 #' Find the optimal spline df through cross-valdation
 #' 
 #' This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter 
-#' for a multi-target PLSR regression.
+#' for a multi-target PLSR regression \insertCite{wolfer2017dfsignif}{wormAge}. 
 #' By default, CV is done using the sample loadings on ICA components rather than the full gene expression matrix as target variable.
 #' The reason for this is a non-negligible reduction of computing costs (>100x faster) for equal results. 
-#' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
+#' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole 
+#' gene set \insertCite{storey2005significance}{wormAge}.
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
 #' @param time.series timepoints of the reference (`X`).
@@ -25,6 +26,11 @@
 #' 
 #' @eval interpol_example()
 #' 
+#' @references
+#'    \insertAllCited{}
+#' 
+#' 
+#' @importFrom Rdpack reprompt
 #' @importFrom parallel parLapply stopCluster makeForkCluster
 #' @importFrom stats quantile dnorm predict formula
 #' @importFrom splines ns

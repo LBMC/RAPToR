@@ -23,11 +23,13 @@ Imports:
   pryr,
   beeswarm,
   R.rsp,
+  Rdpack
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
+RdMacros: Rdpack
 Suggests:
     knitr,
     rmarkdown,
