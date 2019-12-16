@@ -16,7 +16,7 @@ Makes any given color(s) transparent
 }
 \examples{
 \donttest{
-plot(1:10, col=makeTransparent('firebrick', 120), pch=16, cex=2)
+plot(1:255, col=makeTransparent('firebrick', 1:255), pch=16, cex=2)
 }
 
 }

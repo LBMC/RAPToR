@@ -30,15 +30,8 @@
 #' 
 #' @export
 #' 
-#' @examples 
-#' data(Cel_larval)
+#' @eval ae_example()
 #' 
-#' samp <- Cel_larval$X[,13:15]
-#' age.est <- ae(samp, Cel_larval$X, Cel_larval$time.series)
-#' age.est$age.estimates
-#' \donttest{
-#' plot(age.est)
-#' }
 #' 
 #' @importFrom parallel parApply parSapply parLapply stopCluster makeForkCluster
 #' @importFrom stats quantile dnorm
@@ -279,15 +272,7 @@ ae <- function(samp, refdata, ref.time_series,
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
-#' data(Cel_larval)
-#' 
-#' samp <- Cel_larval$X[,13:15]
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
-#' 
-#' print(age.est)
-#' }
+#' @eval ae_example()
 #' 
 print.ae <- function(x, digits=3, ...){
   cat("ae object\n\n")
@@ -311,15 +296,7 @@ print.ae <- function(x, digits=3, ...){
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
-#' data(Cel_larval)
-#' 
-#' samp <- Cel_larval$X[,13:15]
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
-#' 
-#' summary(age.est)
-#' }
+#' @eval ae_example()
 #' 
 summary.ae <- function(object, digits=3, ...){
   # rank the samples by age

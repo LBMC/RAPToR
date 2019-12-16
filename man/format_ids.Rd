@@ -15,7 +15,7 @@ format_ids(X, IDs, from = 1, to = 2, aggr.fun = mean, verbose = TRUE)
 
 \item{aggr.fun}{the function used for \code{\link[stats]{aggregate}}}
 
-\item{verbose}{if TRUE, prints number of genes kept and aggregated}
+\item{verbose}{if TRUE (default), prints number of genes kept and aggregated}
 }
 \value{
 a gene expression matrix, with new IDs as rownames
@@ -25,8 +25,14 @@ This function converts the gene IDs from given input and aggregates results
 if necessary, for resulting IDs to be unique.
 }
 \examples{
-dat <- Cel_larval$X[1:10,1:3] # get dummy dataset
-ids <- cbind(id.from=rownames(dat), id.to=rep(1:4, length.out=10)) # make id df
-format_ids(dat, ids)
+# make dummy data
+ids <- data.frame(id.a = paste0('a', 1:10), id.b = paste0('b', 1:10), stringsAsFactors = F)
+X <- matrix(rnorm(50), ncol = 5)
+rownames(X) <- ids$id.a
+
+print(X)
+
+# format ids
+format_ids(X, ids, from = "id.a", to = "id.b")
 
 }

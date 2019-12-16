@@ -57,12 +57,26 @@
 Plots the age estimates along with bootstrap error bars using a dotchart.
 }
 \examples{
-data(Cel_larval)
-
-samp <- Cel_larval$X[,13:15]
-age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
 \donttest{
-plot(age.est)
-}
+requireNamespace('wormRef', quietly = TRUE)
 
+# get some samples to stage
+samp <- wormRef::Cel_larval$g[,13:15]
+
+# load interpolated reference
+r_larv <- prepare_refdata('Cel_larval', n.inter = 200)
+
+# perform age estimate
+ae_test <- ae(samp = samp, 
+              refdata = r_larv$interpGE, 
+              ref.time_series = r_larv$time.series)
+
+# check output
+summary(ae_test)
+plot(ae_test, show.boot_estimates = TRUE) # plot all sample estimates
+plot_cor.ae(ae_test) # plot individual correlation profiles of samples
+
+# get results
+ae_test$age.estimates
+}
 }

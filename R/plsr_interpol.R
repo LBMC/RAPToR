@@ -4,36 +4,19 @@
 #' This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
-#' @param time.series timepoints of the reference (X).
+#' @param time.series timepoints of the reference (`X`).
 #' @param df the df parameter passed on to the \code{\link[splines]{ns}} function.
 #' @param covar a covariate to include in the model (*e.g* batch).  
-#' @param topred a level of \code{covar} to use for model predictions ; defaults to the first level.
+#' @param topred a level of `covar` to use for model predictions ; defaults to the first level.
 #' @param n.inter number of timepoints to return in interpolated data, defaults to 200.
-#' @param tmin,tmax defaults to min and max of \code{time.series} ; start and end times of interpolated time series.
+#' @param tmin,tmax defaults to min and max of `time.series` ; start and end times of interpolated time series.
 #' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr}} function.
 #' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns}} function.
 #' @param return.model if TRUE, returns the PLSR model object and the input df value.
 #' 
 #' @export
 #' 
-#' @examples 
-#' 
-#' data("Cel_embryo")
-#' 
-#' iGE <- plsr_interpol(Cel_embryo$X, Cel_embryo$time.series, df = 9, n.inter = 100)
-#' 
-#' \donttest{
-#' # plot random genes with their interpolations
-#' par(mfrow=c(2,2))
-#' invisible(sapply(sample(1:nrow(Cel_embryo$X), 4), function(i){
-#'   plot(Cel_embryo$time.series, Cel_embryo$X[i,], lwd = 2, 
-#'        xlab = "time", ylab = "gene expression", 
-#'        main = rownames(Cel_embryo$X)[i])
-#'   points(iGE$time.series, iGE$interpGE[i,], lwd = 2,
-#'          type = "l", col = "royalblue")
-#' }))
-#' }
-#'
+#' @eval interpol_example()
 #' 
 #' @importFrom stats predict formula
 #' @importFrom splines ns

@@ -19,10 +19,28 @@ This function loads (and interpolates on) the desired reference dataset.
 The available datasets can be found in the \link{ref_table}.
 }
 \examples{
-\donttest{ 
-r_larv <- prepare_refdata(ref="larval")
-}
+\donttest{
+requireNamespace('wormRef', quietly = TRUE)
 
+# get some samples to stage
+samp <- wormRef::Cel_larval$g[,13:15]
+
+# load interpolated reference
+r_larv <- prepare_refdata('Cel_larval', n.inter = 200)
+
+# perform age estimate
+ae_test <- ae(samp = samp, 
+              refdata = r_larv$interpGE, 
+              ref.time_series = r_larv$time.series)
+
+# check output
+summary(ae_test)
+plot(ae_test, show.boot_estimates = TRUE) # plot all sample estimates
+plot_cor.ae(ae_test) # plot individual correlation profiles of samples
+
+# get results
+ae_test$age.estimates
+}
 }
 \seealso{
 \link{plsr_interpol}

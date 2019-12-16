@@ -22,12 +22,10 @@ and the reference data using the \code{\link{cor}} function ;
 default correlation index is spearman.
 }
 \examples{
-data(Cel_larval)
+X <- matrix(stats::rnorm(5000), ncol = 5)
+Y <- X + stats::rnorm(5000, sd = .1)
+rownames(X) <- as.character(1:1000) -> rownames(Y)
 
-samp <- Cel_larval$X[,c(3,8,12,20)]
-cc <- cor.gene_expr(samp, Cel_larval$X)
-\donttest{
-plot(cc, margins=c(10,5))
-}
+cc <- cor.gene_expr(X, Y)
 
 }

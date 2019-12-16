@@ -2,7 +2,7 @@
 #' 
 #' Plots the age estimates along with bootstrap error bars using a dotchart.
 #' 
-#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param x an `ae` object, as returned by \code{\link{estimate.worm_age}}.
 #' @param errbar.width the width of the error bars.
 #' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
 #' @param col.p the color of the prior estimate marker.
@@ -20,14 +20,7 @@
 #' 
 #' @export
 #' 
-#' @examples
-#' data(Cel_larval)
-#' 
-#' samp <- Cel_larval$X[,13:15]
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
-#' \donttest{
-#' plot(age.est)
-#' }
+#' @eval ae_example()
 #' 
 #' @importFrom graphics plot dotchart points arrows legend
 #' @importFrom beeswarm swarmy
@@ -131,14 +124,7 @@ plot.ae <- function(x, errbar.width=0.1,
 #' 
 #' @export
 #' 
-#' @examples
-#' data(Cel_larval)
-#' 
-#' samp <- Cel_larval$X[,13:15]
-#' \donttest{
-#' age.est <- estimate.worm_age(samp, Cel_larval$X, Cel_larval$time.series)
-#' plot_cor.ae(age.est)
-#' }
+#' @eval ae_example()
 #' 
 #' @importFrom graphics plot points segments text polygon
 #' 
@@ -209,7 +195,7 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
 #' 
 #' @examples
 #' \donttest{
-#' plot(1:10, col=makeTransparent('firebrick', 120), pch=16, cex=2)
+#' plot(1:255, col=makeTransparent('firebrick', 1:255), pch=16, cex=2)
 #' }
 #' 
 #' @importFrom grDevices rgb col2rgb

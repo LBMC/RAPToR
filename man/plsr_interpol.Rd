@@ -21,7 +21,7 @@ plsr_interpol(
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.}
 
-\item{time.series}{timepoints of the reference (X).}
+\item{time.series}{timepoints of the reference (\code{X}).}
 
 \item{df}{the df parameter passed on to the \code{\link[splines]{ns}} function.}
 
@@ -44,22 +44,32 @@ This function computes the interpolated gene expression data from a reference ti
 This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 }
 \examples{
-
-data("Cel_embryo")
-
-iGE <- plsr_interpol(Cel_embryo$X, Cel_embryo$time.series, df = 9, n.inter = 100)
-
 \donttest{
-# plot random genes with their interpolations
-par(mfrow=c(2,2))
-invisible(sapply(sample(1:nrow(Cel_embryo$X), 4), function(i){
-  plot(Cel_embryo$time.series, Cel_embryo$X[i,], lwd = 2, 
-       xlab = "time", ylab = "gene expression", 
-       main = rownames(Cel_embryo$X)[i])
-  points(iGE$time.series, iGE$interpGE[i,], lwd = 2,
-         type = "l", col = "royalblue")
-}))
+requireNamespace('wormRef', quietly = TRUE)
+
+# gene expression data
+G <- wormRef::Cel_larval$g
+
+# pheno data (e.g time, batch)
+P <- wormRef::Cel_larval$p
+
+
+
+# find optimal spline degree of freedom for PLSR interpolation
+dfCV_G <- df_CV(X = G, 
+                time.series = P$age,
+                covar = P$cov,
+                dfs = 10:20)
+
+# check minimum of CV error
+summary(dfCV_G)
+plot(dfCV_G) # min for df = 17
+
+# perform PLSR interpolation using optimal parameter
+r_G <- plsr_interpol(X = G, 
+                     time.series = P$age,
+                     covar = P$cov,
+                     df = 17) 
+
 }
-
-
 }

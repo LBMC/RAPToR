@@ -20,7 +20,7 @@ df_CV(
 \arguments{
 \item{X}{gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.}
 
-\item{time.series}{timepoints of the reference (X).}
+\item{time.series}{timepoints of the reference (\code{X}).}
 
 \item{dfs}{vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}} function).}
 
@@ -28,20 +28,20 @@ df_CV(
 
 \item{cv.n}{number of cross-validation repeats.}
 
-\item{cv.s}{ratio of samples to use for training set. If cv.s > 1, then cv.s samples are used for the training set.}
+\item{cv.s}{ratio of samples to use for training set. If \code{cv.s > 1}, then \code{cv.s} samples are used for the training set.}
 
 \item{err.func}{the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}} function).}
 
-\item{ica.use}{boolean ; if TRUE, sample loadings of ICA components are used for CV rather than the whole gene expression matrix.}
+\item{ica.use}{boolean ; if TRUE (default), sample loadings of ICA components are used for CV rather than the whole gene expression matrix.}
 
-\item{ica.nc}{number of components to use for the ica. Defaults to 16 or ncol(X) if there are less than 16 samples.}
+\item{ica.nc}{number of components to use for the ica. Defaults to 16 or \code{ncol(X)} if there are less than 16 samples.}
 
 \item{nb.cores}{number of cores to use for parallelization.}
 }
 \value{
-a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs,
+a '\code{dfCV}' object, which is a list of the CV error table (\code{cv.n} x \code{dfs}), the dfs,
 the CV parameters and PLSR model components used for prediction
-There are plot, print and summary methods for this object.
+There are \code{plot}, \code{print} and \code{summary} methods for this object.
 }
 \description{
 This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter
@@ -51,13 +51,32 @@ The reason for this is a non-negligible reduction of computing costs (>100x fast
 Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
 }
 \examples{
-data(Cel_embryo)
-
-dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-                    dfs = 3:17, cv.n = 50, cv.s = 0.8)
-
 \donttest{
+requireNamespace('wormRef', quietly = TRUE)
+
+# gene expression data
+G <- wormRef::Cel_larval$g
+
+# pheno data (e.g time, batch)
+P <- wormRef::Cel_larval$p
+
+
+
+# find optimal spline degree of freedom for PLSR interpolation
+dfCV_G <- df_CV(X = G, 
+                time.series = P$age,
+                covar = P$cov,
+                dfs = 10:20)
+
+# check minimum of CV error
+summary(dfCV_G)
+plot(dfCV_G) # min for df = 17
+
+# perform PLSR interpolation using optimal parameter
+r_G <- plsr_interpol(X = G, 
+                     time.series = P$age,
+                     covar = P$cov,
+                     df = 17) 
 
 }
-
 }

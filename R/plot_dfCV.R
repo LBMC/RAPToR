@@ -1,32 +1,24 @@
 #' Plot a dfCV object
 #' 
-#' Plots the dfCV object to help determine the optimal df parameter value for PLSR regression.
+#' Plots the `dfCV` object to help determine the optimal df parameter value for PLSR regression.
 #' 
-#' @param x a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param x a `dfCV` object, as returned by \code{\link{df_CV}}.
 #' @param stat either "median" or "mean".
 #' @param subset indices of a subset of df values to plot
-#' @param t.plot boolean ; if TRUE, plots the individual CV Error trajectories.
+#' @param t.plot boolean ; if TRUE (default), plots the individual CV Error trajectories.
 #' @param t.col color for the individual CV Error trajectories.
 #' @param signchange boolean ; if TRUE, displays '+'/'-' above the curve to indicate diff from previous point.
 #' @param main title of the plot.
 #' @param type the line type.
 #' @param cex sizing parameter applied to various elements of the plot.
 #' @param lwd the line width.
-#' @param leg boolean ; if TRUE, displays a legend.
+#' @param leg boolean ; if TRUE (default), displays a legend.
 #' @param l.pos the position of the legend, as passed on to \code{\link[graphics]{legend}}
-#' @param ... additional arguments passed on to \code{\link{plot}}.
+#' @param ... additional arguments passed on to \code{\link[graphics]{plot}}.
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
-#' data(Cel_embryo)
-#' 
-#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
-#' plot(dfCVembryo)
-#' }
-#' 
+#' @eval interpol_example()
 #' 
 #' @importFrom graphics plot points abline text legend
 #' @importFrom stats median

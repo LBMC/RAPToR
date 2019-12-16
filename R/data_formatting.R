@@ -4,14 +4,21 @@
 #' This removes genes that are not present in both datasets.
 #' 
 #' @param samp the sample gene expression matrix with genes as rows and individuals as columns
-#' @param refdata the reference matrix, same format as \code{samp}
-#' @param na.rm if TRUE, rows with NA are removed
-#' @param verbose if TRUE, prints a summary of initial and resulting gene counts
+#' @param refdata the reference matrix, same format as `samp`
+#' @param na.rm if TRUE (default), rows with NA are removed
+#' @param verbose if TRUE (default), prints a summary of initial and resulting gene counts
 #'
-#' @return a list with matching \code{samp} and \code{refdata} as well as \code{inter.genes}, character vector with the matching gene IDs
+#' @return a list with matching `samp` and `refdata` as well as `inter.genes`, character vector with the matching gene IDs.
 #' 
 #' @export
 #' 
+#' @examples 
+#' X <- matrix(rnorm(50), ncol = 5)
+#' Y <- X
+#' rownames(X) <- paste0('g', 1:10)
+#' rownames(Y) <- paste0('g', 4:13)
+#' 
+#' Z <- format_to_ref(X,Y)
 format_to_ref <- function(samp, refdata, 
                           na.rm=T, verbose=T)
 {
@@ -60,19 +67,25 @@ format_to_ref <- function(samp, refdata,
 #' if necessary, for resulting IDs to be unique.
 #' 
 #' @param X the sample gene expression matrix with genes as rows and individuals as columns
-#' @param IDs A dataframe holding current IDs for \code{X} and target IDs 
-#' @param from,to defaults to 1 and 2 ; columns of \code{IDs} holding current and target IDs of \code{X} respectively
+#' @param IDs A dataframe holding current IDs for `X` and target IDs 
+#' @param from,to defaults to 1 and 2 ; columns of `IDs` holding current and target IDs of `X` respectively
 #' @param aggr.fun the function used for \code{\link[stats]{aggregate}}
-#' @param verbose if TRUE, prints number of genes kept and aggregated
+#' @param verbose if TRUE (default), prints number of genes kept and aggregated
 #'
 #' @return a gene expression matrix, with new IDs as rownames
 #' 
 #' @export
 #' 
 #' @examples 
-#' dat <- Cel_larval$X[1:10,1:3] # get dummy dataset
-#' ids <- cbind(id.from=rownames(dat), id.to=rep(1:4, length.out=10)) # make id df
-#' format_ids(dat, ids)
+#' # make dummy data
+#' ids <- data.frame(id.a = paste0('a', 1:10), id.b = paste0('b', 1:10), stringsAsFactors = F)
+#' X <- matrix(rnorm(50), ncol = 5)
+#' rownames(X) <- ids$id.a
+#' 
+#' print(X)
+#' 
+#' # format ids
+#' format_ids(X, ids, from = "id.a", to = "id.b")
 #' 
 format_ids <- function(X, IDs, from=1, to=2, 
                        aggr.fun=mean, verbose=TRUE){

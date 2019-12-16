@@ -12,10 +12,7 @@
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{ 
-#' r_larv <- prepare_refdata(ref="larval")
-#' }
+#' @eval ae_example()
 #'
 #' @importFrom utils data
 #' @importFrom limma normalizeBetweenArrays

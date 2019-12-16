@@ -7,31 +7,23 @@
 #' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole gene set.
 #' 
 #' @param X gene expression matrix of reference time series, genes as rows, (ordered) individuals as columns.
-#' @param time.series timepoints of the reference (X).
+#' @param time.series timepoints of the reference (`X`).
 #' @param covar a covariate to include in the model (*e.g* batch).  
 #' @param dfs vector of spline df parameters to scan (passed on to \code{\link[splines]{ns}} function).
 #' @param cv.n number of cross-validation repeats.
-#' @param cv.s ratio of samples to use for training set. If cv.s > 1, then cv.s samples are used for the training set.
+#' @param cv.s ratio of samples to use for training set. If `cv.s > 1`, then `cv.s` samples are used for the training set.
 #' @param err.func the error function to use to compute the CV error. Defaults to sum square of differences (the \code{\link{ef}} function).
-#' @param ica.use boolean ; if TRUE, sample loadings of ICA components are used for CV rather than the whole gene expression matrix.
-#' @param ica.nc number of components to use for the ica. Defaults to 16 or ncol(X) if there are less than 16 samples.
+#' @param ica.use boolean ; if TRUE (default), sample loadings of ICA components are used for CV rather than the whole gene expression matrix.
+#' @param ica.nc number of components to use for the ica. Defaults to 16 or `ncol(X)` if there are less than 16 samples.
 #' @param nb.cores number of cores to use for parallelization.
 #' 
-#' @return a '\code{dfCV}' object, which is a list of the CV error table (cv.n x dfs), the dfs, 
+#' @return a '`dfCV`' object, which is a list of the CV error table (`cv.n` x `dfs`), the dfs, 
 #' the CV parameters and PLSR model components used for prediction
-#' There are plot, print and summary methods for this object.
+#' There are `plot`, `print` and `summary` methods for this object.
 #' 
 #' @export
 #' 
-#' @examples 
-#' data(Cel_embryo)
-#' 
-#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
-#' 
-#' \donttest{
-#' 
-#' }
+#' @eval interpol_example()
 #' 
 #' @importFrom parallel parLapply stopCluster makeForkCluster
 #' @importFrom stats quantile dnorm predict formula
@@ -167,9 +159,9 @@ ef <- function(xt, xe){
 
 #' dfCV object summary
 #' 
-#' Prints a summary of the \code{dfCV} object
+#' Prints a summary of the `dfCV` object
 #' 
-#' @param object a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param object a `dfCV` object, as returned by \code{\link{df_CV}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
@@ -177,14 +169,7 @@ ef <- function(xt, xe){
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
-#' data(Cel_embryo)
-#' 
-#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
-#' summary(dfCVembryo)
-#' }
+#' @eval interpol_example()
 #' 
 #' @importFrom stats median
 summary.dfCV <- function(object, digits = 3, ...){
@@ -209,9 +194,9 @@ summary.dfCV <- function(object, digits = 3, ...){
 
 #' dfCV object print
 #' 
-#' Prints a summary of the \code{dfCV} object  (same as summary)
+#' Prints a summary of the `dfCV` object  (same as summary)
 #' 
-#' @param x a \code{dfCV} object, as returned by \code{\link{df_CV}}.
+#' @param x a `dfCV` object, as returned by \code{\link{df_CV}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
@@ -219,14 +204,7 @@ summary.dfCV <- function(object, digits = 3, ...){
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
-#' data(Cel_embryo)
-#' 
-#' dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-#'                     dfs = 3:17, cv.n = 50, cv.s = 0.8)
-#' print(dfCVembryo)
-#' }
+#' @eval interpol_example()
 #' 
 print.dfCV <- function(x, digits = 3, ...){
   invisible(summary.dfCV(x, digits = digits))

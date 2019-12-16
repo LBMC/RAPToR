@@ -11,14 +11,22 @@ format_to_ref(samp, refdata, na.rm = T, verbose = T)
 
 \item{refdata}{the reference matrix, same format as \code{samp}}
 
-\item{na.rm}{if TRUE, rows with NA are removed}
+\item{na.rm}{if TRUE (default), rows with NA are removed}
 
-\item{verbose}{if TRUE, prints a summary of initial and resulting gene counts}
+\item{verbose}{if TRUE (default), prints a summary of initial and resulting gene counts}
 }
 \value{
-a list with matching \code{samp} and \code{refdata} as well as \code{inter.genes}, character vector with the matching gene IDs
+a list with matching \code{samp} and \code{refdata} as well as \code{inter.genes}, character vector with the matching gene IDs.
 }
 \description{
 This function formats the sample and reference data to have a matching gene set.
 This removes genes that are not present in both datasets.
+}
+\examples{
+X <- matrix(rnorm(50), ncol = 5)
+Y <- X
+rownames(X) <- paste0('g', 1:10)
+rownames(Y) <- paste0('g', 4:13)
+
+Z <- format_to_ref(X,Y)
 }

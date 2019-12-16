@@ -21,11 +21,31 @@ Prints a summary of the \code{dfCV} object
 }
 \examples{
 \donttest{
-data(Cel_embryo)
+requireNamespace('wormRef', quietly = TRUE)
 
-dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-                    dfs = 3:17, cv.n = 50, cv.s = 0.8)
-summary(dfCVembryo)
+# gene expression data
+G <- wormRef::Cel_larval$g
+
+# pheno data (e.g time, batch)
+P <- wormRef::Cel_larval$p
+
+
+
+# find optimal spline degree of freedom for PLSR interpolation
+dfCV_G <- df_CV(X = G, 
+                time.series = P$age,
+                covar = P$cov,
+                dfs = 10:20)
+
+# check minimum of CV error
+summary(dfCV_G)
+plot(dfCV_G) # min for df = 17
+
+# perform PLSR interpolation using optimal parameter
+r_G <- plsr_interpol(X = G, 
+                     time.series = P$age,
+                     covar = P$cov,
+                     df = 17) 
+
 }
-
 }

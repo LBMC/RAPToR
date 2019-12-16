@@ -27,7 +27,7 @@
 
 \item{subset}{indices of a subset of df values to plot}
 
-\item{t.plot}{boolean ; if TRUE, plots the individual CV Error trajectories.}
+\item{t.plot}{boolean ; if TRUE (default), plots the individual CV Error trajectories.}
 
 \item{t.col}{color for the individual CV Error trajectories.}
 
@@ -41,23 +41,42 @@
 
 \item{lwd}{the line width.}
 
-\item{leg}{boolean ; if TRUE, displays a legend.}
+\item{leg}{boolean ; if TRUE (default), displays a legend.}
 
 \item{l.pos}{the position of the legend, as passed on to \code{\link[graphics]{legend}}}
 
-\item{...}{additional arguments passed on to \code{\link{plot}}.}
+\item{...}{additional arguments passed on to \code{\link[graphics]{plot}}.}
 }
 \description{
-Plots the dfCV object to help determine the optimal df parameter value for PLSR regression.
+Plots the \code{dfCV} object to help determine the optimal df parameter value for PLSR regression.
 }
 \examples{
 \donttest{
-data(Cel_embryo)
+requireNamespace('wormRef', quietly = TRUE)
 
-dfCVembryo <- df_CV(Cel_embryo$X, Cel_embryo$time.series, 
-                    dfs = 3:17, cv.n = 50, cv.s = 0.8)
-plot(dfCVembryo)
+# gene expression data
+G <- wormRef::Cel_larval$g
+
+# pheno data (e.g time, batch)
+P <- wormRef::Cel_larval$p
+
+
+
+# find optimal spline degree of freedom for PLSR interpolation
+dfCV_G <- df_CV(X = G, 
+                time.series = P$age,
+                covar = P$cov,
+                dfs = 10:20)
+
+# check minimum of CV error
+summary(dfCV_G)
+plot(dfCV_G) # min for df = 17
+
+# perform PLSR interpolation using optimal parameter
+r_G <- plsr_interpol(X = G, 
+                     time.series = P$age,
+                     covar = P$cov,
+                     df = 17) 
+
 }
-
-
 }
