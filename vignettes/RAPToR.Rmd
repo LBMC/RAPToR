@@ -1,5 +1,5 @@
 ---
-title: "`RAPToR` usage"
+title: "`RAPToR` - Real Age Prediction from Transcriptome staging On Reference"
 output: 
   rmarkdown::html_document :
     toc: true
@@ -10,7 +10,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 bibliography: ../inst/REFERENCES.bib
 author: Romain Bulteau
-date: May 2019
+date: December 2019
 ---
   
 ```{r, include = FALSE}
@@ -22,17 +22,34 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 quick_build <- F # wether to cache heavy-computation chunks 
+
+library(RAPToR)
+
+library(ggplot2)
+library(ggpubr)
+requireNamespace("limma", quietly = T)
 ```
 
 
 <br>
 <br>
 `RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the true age of transcriptomic samples from their gene expression profiles. 
-While this is a major problem in the field of *C. elegans*, this issue occurs in any model where many factors can impact development speed (*e.g* *Drosophila*). Let's get started.
+While this is a major problem in the field of *C. elegans*, this issue occurs in various models where many factors can impact development speed (*e.g* *Drosophila*). 
 
-```{r setup, message=FALSE, results='hide'}
-library(RAPToR)
-```
+
+
+# Why use `RAPToR` ?
+
+Imprecise developmental staging is a known problem in transcriptomic analyses.
+Unknown and unintended developmental variation among samples can obscure and confound the effect of variables of interest in a study.
+For example, when large developmental timecourse datasets are produced, the samples are almost always re-ordered post-profiling.
+This is because we are unable to experimentally synchronize samples to a satisfactory degree.
+
+The methods used in the above scenario are usually a combination of a dimension-reduction analysis (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
+This can work when your experiment has hundreds of samples and/or happens to be a time series, but this is clearly not the general standard of current gene expression studies. 
+The problem we are faced with is not limited to large scale experiments, why should we only address it in such scenarios ? 
+
+`RAPToR` provides a way to precisely determine the real age of *single samples* from their expression profile.
 
 
 
@@ -40,14 +57,15 @@ library(RAPToR)
 
 The method works in a three-step process. 
 
- 1. From a reference gene expression time series (several of which are included in the associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
+ 1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
 
 
-# What data can be used ?
-The `RAPToR` package allows you to estimate the developmental age of samples from their *gene expression profiles*.
+# What type of data can be used ?
+
+The `RAPToR` package allows you to estimate the developmental age of samples from their *transcriptome*.
 This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (preferably RPKM), MicroArray, Chips...
 Since the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data will lead to better performance of the tool.  
 
@@ -56,194 +74,191 @@ Since the references provided in the data-packages are $log(X+1)$ of expression 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 </div>
 
-## Converting IDs
-The only transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. 
+
+
+# General structure of the tool
+
+The main package (`RAPToR`) holds all the necessary functions to stage samples and build references.
+
+We've aimed to provide a way to predict the age of samples easily and,
+since our method requires a reference to stage samples against, we've built several from available data in the literature.
+For R package standards, these are large datasets so the references are stored in separate "data-packages". 
+To give an example, `wormRef` holds the *C. elegans* references.
+
+You can see the available references in the `ref_table` object.
+
+```{r ref_table}
+head(ref_table)
+```
+
+
+# Usage example
+
+In this part, we'll be showcasing usage of the tool on two *C. elegans* time series datasets from the literature. 
+
+ 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, hereafter called `ds1`.
+ 1. A high-resolution time series of late larval development published by @hendriks2014extensive, hereafter called `ds2`
+
+Both datasets are available on GEO 
+(
+[GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157), 
+[GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)
+).
+
+
+
+## Loading the data
+```{r load_pkgs, message=FALSE, warning=FALSE, results='hide'}
+library(RAPToR)
+```
+
+As the code to create the `ds1` and `ds2` objects is quite lengthy and is not the object of this vignette, you can find it [at the end of the document](#load_ds1_ds2).
+
+
+
+
+```{r load_ds, include=FALSE}
+load("../inst/extdata/ds1.RData")
+load("../inst/extdata/ds2.RData")
+```
+
+
+
+Here is what our data looks like 
+```{r head_ds1}
+ds1$g[1:5,1:5]
+head(ds1$p, n = 5)
+```
+
+```{r head_ds2}
+ds2$g[1:5,1:5]
+head(ds2$p, n = 5)
+```
+
+We'll quantile-normalize and log the expression data.
+```{r quantile_norm_log}
+ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
+ds1$g <- log(ds1$g + 1)
+
+ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
+ds2$g <- log(ds2$g + 1)
+```
+
+
+
+The only other transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. 
 For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
 
-To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (the table is built directly from the `biomaRt`).
-
-```{r gene_ids}
-data("gene_ids")
-head(gene_ids)
-```
-
-```{r rm_geneids, echo=F}
-rm(gene_ids) 
-invisible(gc())
-```
+To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (built directly from the `biomaRt`).
 
 
-One can also use the `biomaRt` Bioconductor package to convert gene IDs, as shown in the example below.
-```{r biomart_ex, eval=FALSE}
-requireNamespace("biomaRt", quietly = T)
+## Performing an age estimate
 
-# establish connection with the biomart
-mart <- biomaRt::useMart("ensembl", dataset = "celegans_gene_ensembl")
-
-# Perform bm query
-gene_ids_bm <- biomaRt::getBM(attributes = c("wormbase_gene",
-                                             "ensembl_gene_id",
-                                             "external_gene_name"), 
-                              filters = "external_gene_name", # return matched gene names
-                              values = head(gene_ids$Public.Name), # query IDs
-                              mart = mart)
-head(gene_ids_bm)
-#>    wormbase_gene ensembl_gene_id external_gene_name
-#> 1 WBGene00000001  WBGene00000001              aap-1
-#> 2 WBGene00000002  WBGene00000002              aat-1
-#> 3 WBGene00000003  WBGene00000003              aat-2
-#> 4 WBGene00000004  WBGene00000004              aat-3
-#> 5 WBGene00000005  WBGene00000005              aat-4
-#> 6 WBGene00000006  WBGene00000006              aat-5
-```
-The biomart holds an extensive amount of different gene or probe IDs, which should be able to cover all needs for conversion. 
-Getting these lists can also be done manually via the [biomart website](https://www.ensembl.org/biomart)
-
-
-
-## Example loading a dataset
-
-We'll fetch a GEO dataset to use for examples from here on. Time series make for good models since we can easily check if age estimates are correct. 
-Let's load [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861), a dataset from @hendriks2014.
-
-```{r load_hendriks, cache=quick_build}
-temp <- tempfile() # make a temporary file for unzipping the data
-# The data we need is in the supplementary files of this dataset
-download.file(
-  "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE52861&format=file&file=GSE52861_ce_geneExpression_polyA_normalized.txt.gz", temp)
-
-geno.hendriks <- read.table(gzfile(temp), h=T, sep = '\t', row.names = 1)
-unlink(temp) # close temporary file connection
-
-```
-
-This data is in the form of normalized log counts.
-```{r head_hend}
-head(geno.hendriks[,1:2])
-```
-
-
-It's also a good idea to get some meta/pheno data. We can use the `GEOquery` package for that.
-
-```{r pheno_hendriks, message=FALSE, cache=quick_build}
-requireNamespace("GEOquery", quietly = T)
-requireNamespace("Biobase", quietly = T)
-
-# Get pheno data on the worms
-geo_hend <- GEOquery::getGEO("GSE52861", getGPL = F)[[1]]
-pheno.hendriks <- Biobase::pData(geo_hend)
-# Filter the relevant fields
-pheno.hendriks <- pheno.hendriks[, c("title", "growth protocol:ch1", 
-                                     "strain:ch1", "time in development:ch1")]
-# Extract age as hours from the corresponding field
-pheno.hendriks$age <- sapply(pheno.hendriks$`time in development:ch1`, function(s){
-  as.integer(strsplit(s, split = ' ')[[1]][1])
-})
-
-# formatting...
-pheno.hendriks$title <- gsub('-', '.', fixed = T, as.character(pheno.hendriks$title))
-pheno.hendriks$title <- gsub('hr', 'h', pheno.hendriks$title)
-rm(geo_hend)
-head(pheno.hendriks[,-1])
-```
-
-
-Finally, let's select the samples that are N2 and non-Dauer from the dataset.
-```{r hen_select}
-sel <- pheno.hendriks$`growth protocol:ch1`=="Continuous" & # select non-dauer
-  pheno.hendriks$`strain:ch1`=="N2" # select N2s
-
-geno.hendriks <- geno.hendriks[,sel]
-pheno.hendriks <- pheno.hendriks[sel,]
-```
-
-
-<br>
-<br>
-
-
-
-# Performing an age estimate
-
-## Choosing a reference dataset
+### Choosing a reference dataset
 
 `RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper dataset to run your samples against.
-Below is a chart showing the developmental stages and the corresponding datasets available in the package (developmental time is according to the larval 20$^\circ$C reference series from @oudenaarden2013).
+By looking at `ref_table` or using the `plot_refs()` function, you can determine which reference is appropriate for your samples.
 
-```{r plot_ref_timelines, fig.height=7, fig.width=9}
-plot_ref_timelines()
+The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
+
+```{r plot_refs, fig.height=6, fig.width=9}
+plot_refs("Caenorhabditis")
 ```
 
 
-<!-- While the `Cel_YA_adult1` time series is interpolated on together with the `Cel_larval` time series (and thus actually covers the whole larval spectrum), it's advised to use the `Cel_larval` reference alone if your samples are matched before the start of the young adult series (40h).  -->
-<!-- This is because we lose a part of the geneset of each reference to get their overlap, which in turns means less genes will overlap with your samples to stage.  -->
-<!-- Maximizing the geneset on which the estimate is performed means more robust estimates. -->
 
+## Loading the reference
 
-
-### Loading the reference
-
-To get precise estimates, `RAPToR` interpolates on the dynamics of gene expression of the reference series.
+To bypass the limitations of available time series' reolution and provide precise estimates, `RAPToR` interpolates on the dynamics of gene expression of the reference series.
 You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
 
 Alternatively, you can take a look at the section on [building your own reference series.](#building-your-own-reference)
 
-For our example, the `Cel_YA_adult1` dataset would be appropriate since our samples go from late L3 to young adult. However, since the dataset we just loaded is part of that reference, we'll stage the early samples of the time series on the `Cel_larval` reference to prove our point.
-The `n.inter` parameter corresponds to the resolution of the re-built reference. 
-In the interest of lightening the computational load, you can choose smaller values, but aim over the 500s if you want optimal results.
+For our example, the `Cel_larval` dataset would be appropriate since our samples are from mid-larval to early young adult in both datasets.
+The `n.inter` parameter corresponds to the resolution of the interpolated reference. 
+In the interest of lightening the computational load you can choose smaller values, but aim over the 500s for optimal results.
+```{r include=FALSE}
+set.seed(10)
+```
 
 ```{r prep_ref, cache=quick_build}
-ref <- prepare_refdata("Cel_larval", n.inter = 600)
+r_larv <- prepare_refdata("Cel_larval", n.inter = 600)
 ```
 
-Note that the age estimates will be given in the time unit and scale of the chosen reference (here, in hours post-hatching at 20$^\circ$C)
-
-We know our example data has worms grown at 25$^\circ$C and that the `Cel_larval` reference goes up to 48 hours post-hatching. We can thus safely stage samples with a chronological time lower than $48/1.5=32$ hours.
-```{r sel_tostage}
-sel <- which(pheno.hendriks$age < 32)
-```
+Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C)
 
 
 ## Performing a simple age estimate
 
-All we need to do now is run the `estimate.worm_age()` function.
-```{r echo=F}
-set.seed(10)
+All we need to do now is run the `ae()` function.
+
+```{r ae_ds1, cache=quick_build, results='hold'}
+ae_ds1 <- ae(samp = ds1$g,                         # input gene expression matrix
+             refdata = r_larv$interpGE,            # reference gene expression matrix
+             ref.time_series = r_larv$time.series) # reference time series
 ```
 
-```{r perform_ae, cache=quick_build}
-ae_hendriks <- estimate.worm_age(samp = geno.hendriks[,sel], # select the early worms 
-                                 refdata = ref$interpol.gene_expr,
-                                 ref.time_series = ref$time.series)
+```{r ae_ds2, cache=quick_build, results='hold'}
+ae_ds2 <- ae(samp = ds2$g,                         # input gene expression matrix
+             refdata = r_larv$interpGE,            # reference gene expression matrix
+             ref.time_series = r_larv$time.series) # reference time series
 ```
 
-Let's do a quick check of our estimates against the chronological time points.
-
-Since the staged samples were grown at 25$^\circ$C, and the reference at 20, we can observe the well-known growth speed difference of 1.5 between worms grown at these temperatures by fitting a simple linear model.
+Let's look at the results.
 
 
-```{r hend_age_diff}
-lm_hendriks <- lm(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel])
-summary(lm_hendriks)
+```{r plot_ae1, fig.width=12, fig.height=7}
+plot(ae_ds1, groups = factor(ds1$p$`strain:ch1`), show.boot_estimates = T)
 ```
 
-```{r echo=F, fig.height=4, fig.width=6, out.width="50%"}
-plot(ae_hendriks$age.estimates[,1]~pheno.hendriks$age[sel], 
+```{r plot_ae2, fig.width=12, fig.height=4}
+plot(ae_ds2, show.boot_estimates = T)
+```
+
+Since the staged samples were all grown at 25$^\circ$C, and the reference time is on 20$^\circ$C development, 
+we can observe the well-known growth speed difference of 1.5 between *C. elegans* worms grown at these temperatures by fitting a simple linear model.
+
+
+```{r lm_ds}
+lm_ds1 <- lm(ae_ds1$age.estimates[,1] ~ ds1$p$age)
+summary(lm_ds1)
+
+lm_ds2 <- lm(ae_ds2$age.estimates[,1] ~ ds2$p$age)
+summary(lm_ds2)
+```
+
+```{r echo=F, fig.height=6, fig.width=12}
+par(mfrow = c(1,2))
+plot(ae_ds1$age.estimates[,1]~ds1$p$age, 
      xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
-     main = "Chronological vs Estimated ages for Hendriks series")
-abline(lm_hendriks, lwd=2, col=2)
-legend("bottomright", legend = "lm_hendriks", lwd=3, col=2, bty='n')
+     main = "Chronological vs Estimated ages for ds1", lwd = 2, col = factor(ds1$p$`strain:ch1`))
+invisible(sapply(levels(factor(ds1$p$`strain:ch1`)), function(l){
+  s <- ds1$p$`strain:ch1` == l
+  points(ae_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+         lty = 2, col = which(l==levels(factor(ds1$p$`strain:ch1`))))
+}))
+
+abline(lm_ds1, lwd=2, col=2)
+legend("bottomright", legend = "lm_ds1", lwd=3, col=2, bty='n')
+
+plot(ae_ds2$age.estimates[,1]~ds2$p$age, 
+     xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
+     main = "Chronological vs Estimated ages for ds2", lwd = 2)
+points(ae_ds2$age.estimates[,1]~ds2$p$age, type = 'l', lty = 2)
+abline(lm_ds2, lwd=2, col=2)
+
+legend("bottomright", legend = "lm_ds2", lwd=3, col=2, bty='n')
 ```
 
 
 ## Understanding the output
-The output of the `estimate.worm_age()` is an `ae` object including various elements such as the age estimate and a confidence interval obtained through booststrapping (age estimate on random gene subsets).
+The output of `ae()` is an `ae` object including various elements such as the age estimate and a confidence interval obtained through booststrapping (age estimate on random gene subsets).
 
 <br>
 General information can be accessed via the `summary()` function.
 ```{r summ_ae}
-summary(ae_hendriks)
+summary(ae_ds2)
 ```
 
 
@@ -251,201 +266,162 @@ summary(ae_hendriks)
 <br>
 If you want to retreive the estimates and their confidence intervals, they are accessible through `$age.estimates`.
 ```{r show_ae}
-head(ae_hendriks$age.estimates)
+head(ae_ds2$age.estimates)
 ```
 
 The table holds the following :
 
  - `age.estimate`, the global estimate for the sample (whole gene set).
- - `lb`, `ub`, the lower and upper bounds of the bootstrapped age estimates' confidence interval.
+ - `lb`, `ub`, the lower and upper bounds of the bootstrapped age estimates' confidence interval (Median Absolute Deviation).
  - `cor.score`, the correlation score of the global estimate.
 
-<!-- - `IC.imbalance`, ratio of distances between global estimate and bounds of the interval ; if this value is above 5, it usually means that the bootstrap estimates 'jump' between two very different correlation peaks, in which case a warning is given in the `summary`. More information on this is given in the [advanced usage](#if-the-bootstrap-estimates-jump-around) sections -->
 
 ### Plotting
 
-Estimates and confidence intervals can also be displayed in the form of a dotchart with the default plot function.
+Estimates and confidence intervals can be displayed in the form of a dotchart with the default plot function (as shown above).
 
-```{r plot_ae, fig.height=5, fig.width=9, fig.align='center'}
-plot(ae_hendriks, main="Age estimates on Hendriks development series",
-     show.boot_estimates = TRUE)
-```
-
-
-The `ae` object also holds the correlation scores of the samples against the reference series and their 95% intervals accross the bootstrap. 
+The `ae` object also holds the correlation scores of the samples against the entire reference series and their confidence intervals accross the bootstrap. 
 You can also plot these correlation profiles with `plot_cor.ae()`
 
-```{r plot_cor, fig.height=6, fig.width=9, fig.align='center'}
+```{r plot_cor, fig.height=6, fig.width=12, fig.align='center'}
 par(mfrow=c(2,2))
-plot_cor.ae(ae_hendriks, subset = 1:4)
+plot_cor.ae(ae_ds2, subset = c(1,4,9,12))
 ```
 
-The confidence interval of the estimates are represented with the red bars. The bootstrap correlation scores' 95% interval along the reference series are also shown (as the black dotted lines). 
-The global estimate is also given below the interval.
+The confidence interval of the estimates is represented with the red bars and the bootstrap correlation scores' 95% interval along the reference series are shown (as the black dotted lines). 
+The sample's estimate is also given below the interval.
 
 <br>
 <br>
 
 
-# About reference datasets
-
-## References included in the package
-There are currently 3 reference datasets included in the package. 
-All are *C. elegans* time series :
-
- - `Cel_embryo` is an embryo development time series (time in minutes past the 4-cell state) produced by @hashimshony2015, starting at the single cell embryo all the way to hatching.
- - `Cel_larval` holds larval development time series (time in hours post-hatching for 20$^\circ$C, aside from `time.series.25`) from @oudenaarden2013. This data holds 2 series one at 20$^\circ$C and one at 25. The data loaded with `prepare_refdata()` uses both, with the 25$^\circ$C series' time scaled to 20.
- - `Cel_YA_adult1` holds data from early L3 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @sterken2019 and @hendriks2014. 
-
-<!-- - `Cel_YA_adult2` holds data from late L3 to Adult (time in hours post-hatching for 20$^\circ$C), produced by @reinke2004. Due to its age, this data was initially extremely noisy. The data in this object is actually reconstructed from the few developmental signals we were able to pick up by analyzing it together with the data from @oudenaarden2013. -->
- 
-Sources and links to original data are available in the documentation of the datasets (*e.g.* `?Cel_larval`).
 
 
-This reference data is the basis for building high-resolution temporal references (through calling the `prepare_refdata()` function). 
-To briefly put it, this is achieved by interpolating on *Independant Component Analysis* components showing relevant dynamics with respect to time, and reconstructing the theoretical gene expression data from them. 
-This process is detailed in the next section.
+
+# Building your own reference
+
+Interpolating on time series data is the basis for building high-temporal-resolution references (through calling the `prepare_refdata()` function). 
+To briefly put it, this is achieved by interpolating on gene expression data using a multi-target Partial Least Squares Regression model (PLSR).
+This process is detailed below.
+
+If you happen to be working with organisms we have not included in the current references, you can build your own reference to stage your samples. 
+The simplicity of the staging method allows for its wide application range, though we remain dependant on a good existing reference.
+
+To build your reference, you will require a time series of gene expression data on your favourite organism.
+
+The `ds2` example dataset we loaded earlier will be used to illustrate the process.
+
+## About the model
+
+PLSR essentially consists of projecting your dependent variables (gene expression) and your independant variables (time, covariate) to a space maximizing their correlation, in which the regression takes place. 
+PLSR is a linear regression method, so we must use splines (`ns()` from the `splines` core package) to correctly predict the non-linear dynamics of our data.
+
+The model used is of the following form.
+$$ X \sim B\left[\texttt{ns}(time, \texttt{df}) + covar\right]+ \mathcal{E} $$
+with $X$ the transposed gene expression matrix ($n$ samples by $m$ genes), $time$ the time series (length $n$), $covar$ the optional covariate (length $n$).
+$B$ and $\mathcal{E}$ correspond to the model's coefficients and residuals respectively.
 
 
-## Building your own reference
+## Finding the appropriate $\texttt{df}$
 
-If you happen to be working with a different strain (or even a different organism), you can build your own reference to stage your samples. The simplicity of the method allows for its wide application range, though we remain dependant on a good time series.
-To do this, you will require a time series of gene expression data on your favourite organism as well as some knowledge about Independant Component Analysis (ICA).
+As you may have noticed, the model needs an input of the spline's degree of freedom ($\texttt{df}$).
+This value can be determined with the help of a Cross-Validation (CV) procedure we have implemented in the `df_CV()` function.
 
-<div class="alert alert-info">
-  <strong>Why use ICA ?</strong><br/>
-As with Principal Component Analysis (PCA), the goal of ICA is to find the loadings of your rows (here, genes) and columns (samples) in a new space, maximizing a given criterion.
-However, where PCA will maximize *variance* (effectively performing *dimension reduction*), ICA will maximize the *independence* of components (effectively performing *signal extraction*).
-
-Since gene expression is highly correlated within different groups of genes, ICA is very good at picking up their signals. 
-Using a time series of expression data as input, this means that dynamics with respect to time are cleanly extracted by the components.
-</div>
-
-The example dataset we loaded earlier will, once again, be used to illustrate the process.
-
-### Performing an ICA on the time series
-
-Before launching an ICA, you must select the number of components you wish to extract. 
-There is no exact rule for how to go about this in our particular scenario, so my rule of thumb is to try out increasingly larger values until you start seeing many redundant or unusable components. 
-By unusable, I mean that there is no clear dynamic *w.r.t* time we can interpolate on.
-
-The best way to check for this is to plot the ICA components along time.
-
-```{r ica_hend, cache=quick_build}
-requireNamespace("ica", quietly = T)
-
-time.series <- pheno.hendriks$age
-nc <- 8 # nb of components
-ica.hendriks <- ica::icafast(geno.hendriks, nc)
+```{r df_CV, cache=quick_build}
+dfCV_ds2 <- df_CV(X = ds2$g, 
+                  time.series = ds2$p$age, 
+                  dfs = 2:14, 
+                  cv.n = 100,
+                  nb.cores = 2)
+```
+```{r plot_dfCV, fig.width=6, fig.height=6, out.width="60%"}
+plot(dfCV_ds2, main = "CV Error for ds2 df selection")
 ```
 
-You can look at the documentation for `ica::icafast` to see what is returned by the function. 
-Our main focus here is the `$M` matrix which contains the samples' loadings (as rows) on the components (as columns).
+The PLSR model and `RAPToR`'s results are fairly robust to $\texttt{df}$ selection (within $\texttt{df}_{optimal} \pm 2$). 
+Looking at the plot above, we can select $\texttt{df} = 8$ for our reference. 
 
 
-```{r plot_ica_hend, fig.height=5, fig.width=10}
-par(mfrow=c(2,4))
-invisible(sapply(1:nc, function(i){
-  plot(time.series, ica.hendriks$M[,i], 
-       xlab = "time (h)", ylab = "ICA component",
-       main = paste("Comp.", i), 
-       lwd=2)
+## Constructing the reference.
+
+Once the $\texttt{df}$ has been selected, the model is built with the `plsr_interpol()` function.
+```{r plsr_interpol}
+r_ds2 <- plsr_interpol(X = ds2$g, 
+                       time.series = ds2$p$age, 
+                       df = 8, 
+                       n.inter = 200)
+```
+
+Let's plot a few random genes to check the model's prediction. 
+It's alright if the prediction is not perfect, but we want the general dynamics to be accurate (oscillaations, increasing or decreasing trendds, *etc.*)
+
+```{r plot_genes, fig.width=14, fig.height=7}
+set.seed(8)
+to_plot <- sample(nrow(ds2$g), size = 12)
+par(mfrow = c(3,4))
+invisible(sapply(to_plot, function(i){
+  plot(ds2$p$age, ds2$g[i,], lwd = 2, main = rownames(ds2$g)[i], xlab = 'time', ylab = 'gene expression')
+  points(r_ds2$time.series, r_ds2$interpGE[i,], col = 'firebrick', lwd = 2, type = 'l')
 }))
+legend('bottomright', lwd = c(2,3), legend = c("data", "PLSR"), 
+       pch = c(1,NA), lty = c(0,1), col = c("grey20", "firebrick"), bty = "n", )
 ```
 
-In the components above, all are suitable for interpolation. 
+That's it. The reference is ready to be used to stage samples.
 
-### Interpolating on selected components
-This step corresponds to finding optimal span parameters for the loess regression.
-For conciseness' sake, I'll show the process with only one component.
+A good test is to stage the samples used to build the reference.
 
-```{r interp_hend_one, fig.height=3, fig.width=9, warning=FALSE}
-par(mfrow=c(1,3))
-
-# new time series values
-xs <- seq(from = min(time.series), to = max(time.series), 
-          length.out = 200)
-
-invisible(sapply(c(.2, .4, .9), function(sp){
-  get.spline(ICA = ica.hendriks, comp = 4,
-             time.series = time.series, 
-             span = sp,
-             pred.x = xs, plot = T)}
-))
+```{r ae_ds2_r2, cache=quick_build}
+ae_ds2_rds2 <- ae(ds2$g, r_ds2$interpGE, r_ds2$time.series)
 ```
-
-As you can see above, using too small a span (left plot) will fit the data "too closely" and sometimes pick up noise along with the trend we want.
-Using a span too large (right plot) will completely smooth out the dynamics.
-
-Finding appropriate span values for your selected components is a tedious but necessary process to get the best high-resolution reference possible. 
-
-### Reconstructing theoretical gene expression data
-Once the span values are all determined, we need to convert the interpolated components back to gene expression data.
-For ICA, we know that by definition $X = SM^T$, with $X$ the input gene expression matrix and $S$ and $M$ being the gene and sample loadings respectively.
-Our interpolations over multiple components are essentially an equivalent of $M$, with much higher time resolution. 
-All we need to do is the inverse matrix product to get the theoretical gene expression data : $Y = SN^T$, with $N$ the interpolated loadings (rows) of each component (columns).
-
-In `RAPToR`, the `interpol_refdata()` function takes care of this process, given $X$, the resolution of the output, the number of ICA components to compute and keep, and the span values for interpolation.
-
-```{r interpol_hend, fig.height=5, fig.width=10, warning=FALSE}
-par(mfrow=c(2,4))
-
-sps <- c(.3,.5,.3,.4,.5,.4,.4,.4)
-ref_hend <- interpol_refdata(X = geno.hendriks,
-                             time.series = time.series,
-                             n.inter = 200,  # resolution of interpolation
-                             ica.nc = nc,    # nb of components
-                             keep.c = 1:8,   # indices of comp. to keep
-                             center = TRUE,  # wether to center the ICA (T by default)
-                             span = sps,     # span values for each kept component
-                             plot = T)
+```{r plot_ae_ds2_rds2, fig.height=6, fig.width=6, out.width="60%"}
+plot(ds2$p$age, ae_ds2_rds2$age.estimates[,1], lwd = 2, 
+     xlab = "Chronological age", ylab = "Predicted age", 
+     main = "ds2 sample predictions on its reference")
+abline(a = 0, b = 1, lty= 2)
 ```
 
 
-And that's it. You can now stage samples on your reference (provided they are within the initial data's timespan).
-
-<br>
-<br>
-
-# Advanced usage
 
 
-## If the bootstrap estimates 'jump around'
 
-In some cases, two different developmental time points of the reference can both be very closely correlated with a sample.
-This has the consequence that, with some random gene subsets, the bootstrap estimates will 'jump' between them and the confidence interval will be quite large.
+<!-- # Advanced usage -->
 
-This can be due to different problems :
+<!-- ## If the bootstrap estimates 'jump around' -->
 
- - If the sample is bulk, there can be worms of an unexpected developmental stage contaminating it
- - The overlapping gene set between the sample and the reference may be missing key gene groups necessary to distinguish between larval states ; unlikely, unless 
- - The overlapping gene set is very small (less than a few thousand), which necessarily means that
- - The boostrap gene subset size is too small
- - Random gene subset selection can also in rare cases make the difference between larval stages ambiguous
+<!-- In some cases, two different developmental time points of the reference can both be very closely correlated with a sample. -->
+<!-- This has the consequence that, with some random gene subsets, the bootstrap estimates will 'jump' between them and the confidence interval will be quite large. -->
 
-We can simulate the "small bootstrap set size" by messing with the `bootstrap.set_size` parameter.
-```{r boot_jump, cache=quick_build}
-set.seed(5) # for reproducible results (get the same random gene subsets each time)
+<!-- This can be due to different problems : -->
 
-ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples 
-                                  refdata = ref$interpol.gene_expr,
-                                  ref.time_series = ref$time.series,
-                                  bootstrap.set_size = 300, # make the bt subset size very small
-                                  bootstrap.n = 50) # do more bt steps to be sure to get the issue
-```
+<!--  - If the sample is bulk, there can be worms of an unexpected developmental stage contaminating it -->
+<!--  - The overlapping gene set between the sample and the reference may be missing key gene groups necessary to distinguish between larval states ; unlikely, unless  -->
+<!--  - The overlapping gene set is very small (less than a few thousand), which necessarily means that -->
+<!--  - The boostrap gene subset size is too small -->
+<!--  - Random gene subset selection can also in rare cases make the difference between larval stages ambiguous -->
 
-<!-- The samples with this problem are detected through the `IC.imbalance` criterion mentioned above (when >5), and marked in the summary by an asterisk. -->
-<!-- ```{r sum_hen_boot} -->
-<!-- summary(ae_hend_boot) -->
+<!-- We can simulate the "small bootstrap set size" by messing with the `bootstrap.set_size` parameter. -->
+<!-- ```{r boot_jump, cache=quick_build} -->
+<!-- set.seed(5) # for reproducible results (get the same random gene subsets each time) -->
+
+<!-- ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples  -->
+<!--                                   refdata = ref$interpol.gene_expr, -->
+<!--                                   ref.time_series = ref$time.series, -->
+<!--                                   bootstrap.set_size = 300, # make the bt subset size very small -->
+<!--                                   bootstrap.n = 50) # do more bt steps to be sure to get the issue -->
 <!-- ``` -->
 
-We can show the bootstrap estimates as swarms on the `ae` plot, allowing us to see their distribution along the reference time.
-```{r pl_hen_boot, fig.height=3, fig.width=8}
-plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick', xlim=c(20,40))
-```
+<!-- <!-- The samples with this problem are detected through the `IC.imbalance` criterion mentioned above (when >5), and marked in the summary by an asterisk. --> 
+<!-- <!-- ```{r sum_hen_boot} --> 
+<!-- <!-- summary(ae_hend_boot) --> 
+<!-- <!-- ``` --> 
+<!-- We can show the bootstrap estimates as swarms on the `ae` plot, allowing us to see their distribution along the reference time. -->
+<!-- ```{r pl_hen_boot, fig.height=3, fig.width=8} -->
+<!-- plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick', xlim=c(20,40)) -->
+<!-- ``` -->
 
-You'll notice that most of our bootstrap estimates are still around the global estimate, and that a few have gone astray 10 hours back (*ie* on the previous molt/larval state, in our case).
-If you see this, increasing the bootstrap gene subset size should solve the issue (default is $n/3$, with $n$ the number of overlapping genes between sample and reference).
+<!-- You'll notice that most of our bootstrap estimates are still around the global estimate, and that a few have gone astray 10 hours back (*ie* on the previous molt/larval state, in our case). -->
+<!-- If you see this, increasing the bootstrap gene subset size should solve the issue (default is $n/3$, with $n$ the number of overlapping genes between sample and reference). -->
 
 
 
@@ -453,53 +429,152 @@ If you see this, increasing the bootstrap gene subset size should solve the issu
 
 <br>
 
-If you notice the bootstrap estimates are spread half and half, even with a large number of bootstrap steps (>=100), you may want to consider using a prior for these particular samples. 
-Be warned that using priors has a significant impact on the estimate.
-Also, in this scenario, it is possible your data may be a mix of two distinct larval states.
-
-```{r rm_boots, echo=F}
-rm(ae_hend_boot)
-invisible(gc())
-```
+<!-- If you notice the bootstrap estimates are spread half and half, even with a large number of bootstrap steps (>=100), you may want to consider using a prior for these particular samples.  -->
+<!-- Be warned that using priors has a significant impact on the estimate. -->
+<!-- Also, in this scenario, it is possible your data may be a mix of two distinct larval states. -->
 
 
 
-## Using a prior
+# Using a prior
 
 In some cases, it may be appropriate to use a prior, helping with the estimate.
-In the `estimate.worm_age()` function, priors work by giving the parameters for their gaussian distributions (for each sample). The correlation peaks are then ranked according to the prior's density at their respective times (the correlation profile is unaffected by the prior, only the choice of the correlation peak is).
+In the `ae()` function, priors work by giving the parameters for gaussian distributions (for each sample). The correlation peaks are then ranked according to the prior's density at their respective time.
+The correlation profile is unaffected by the prior, only the choice of the correlation peak is.
 
 **This implies that with a prior which is completely off, the estimate may also be wrong ; use with care.**
 
 The priors are given *in the reference series' time scale*, so beware of growth speed difference with temperature or different time origins (fertilization, egg-laying, hatching...). 
-For example, the Hendriks series we used above is grown at 25$^\circ$C. 
+For example, the `ds2` *C. elegans* data we used previously is grown at 25$^\circ$C, in contrast with the references' time for 20$^\circ$C development. 
 
-Due to these possible differences and the bias introduced by the prior, it is recommended to carefully plan its use. 
+Due to these possible differences and the bias introduced by the prior, we recommend to carefully plan its use. 
 Performing a first run without priors will give a general idea of the difference between the chronological and developmental age of your samples.
 
 Once the priors are determined, you will need to set the standard deviation of the gaussian centered on the sample with the `prior.params` argument. 
-This parameter will also indirectly change the weight of the prior over the correlation score for estimate selection. The recommended value is 10 hours (80 min on the embryonic reference series).
+This parameter will also indirectly change the weight of the prior over the correlation score for estimate selection.
 
-On our example, we can use the ajusted chronological ages for 20$^\circ$C.
+On our `ds2` example, we can use ajusted known chronological ages for 20$^\circ$C.
 ```{r hend_prior, cache=quick_build}
-priors <- pheno.hendriks$age[sel] * 1.6 - 5 # rough approximation based on our previous lm
+priors <- ds2$p$age * 1.6 - 5 # rough approximation based on our previous lm
 
-ae_hend_prior <- estimate.worm_age(samp = geno.hendriks[,sel],
-                                   refdata = ref$interpol.gene_expr,
-                                   ref.time_series = ref$time.series,
-                                   prior = priors,
-                                   prior.params = 10)
+ae_ds2_prior <- ae(samp = ds2$g,
+                   refdata = r_larv$interpGE,
+                   ref.time_series = r_larv$time.series,
+                   prior = priors,
+                   prior.params = 10)
 ```
 
 
 ```{r plot_ae_prior, fig.height=5, fig.width=9, fig.align='center'}
-plot(ae_hend_prior, main="Age estimates with priors on Hendriks", 
+plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates = T,
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
 
-all(ae_hend_prior$age.estimates[,1]==ae_hendriks$age.estimates[,1])
+all(ae_ds2_prior$age.estimates[,1]==ae_ds2$age.estimates[,1])
 ```
 
 As you can see, here the estimates are the same as without the prior. 
 
+
+<a name="load_ds1_ds2"></a>
+
+# Loading `ds1` and `ds2`
+
+
+```{r load_namespaces, include = F}
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("Biobase", quietly = T)
+requireNamespace("GEOquery", quietly = T)
+```
+
+```{r raw2rpkm_func}
+raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
+  # Compute RPKM from raw counts
+  if(!all(rownames(X)%in%gene.length[, id.col])){
+    stop("Some genes are missing length info !")
+  }
+  res <- sapply(colnames(X), function(samp){
+    pm <- sum(X[,samp])/1e6
+    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
+  })
+  rownames(res) <- rownames(X)
+  return(res)
+}
+```
+
+```{r load_ds1_c, eval = F}
+geo_ds1 <- "GSE80157"
+
+g_url_ds1 <- GEOquery::getGEOSuppFiles(geo_ds1, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_ds1 <- "../inst/extdata/ds1.txt.gz"
+utils::download.file(url = as.character(g_url_ds1$url[2]), destfile = g_file_ds1)
+
+X_ds1 <- read.table(gzfile(g_file_ds1), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
+
+# convert to rpkm & wb_id
+X_ds1 <- RAPToR::format_ids(X_ds1, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
+X_ds1 <- raw2rpkm(X = X_ds1, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
+
+
+
+
+
+# pheno data
+P_ds1 <- Biobase::pData(GEOquery::getGEO(geo_ds1, getGPL = F)[[1]])
+P_ds1[,10:34] <- NULL
+P_ds1[, 3:8] <- NULL
+
+P_ds1$title <- gsub('[-\\(\\);]', '.', P_ds1$title)
+
+colnames(X_ds1) <- gsub('RNASeq_riboM_', '', colnames(X_ds1), fixed = T)
+P_ds1$title <- gsub('RNASeq_riboM_', '', P_ds1$title, fixed = T)
+
+# get age 
+P_ds1$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds1$`time in development:ch1`))
+
+
+X_ds1 <- X_ds1[, P_ds1$title]
+
+ds1 <- list(g = X_ds1, p = P_ds1)
+save(ds1, file = "../inst/extdata/ds1.RData")
+```
+
+```{r load_ds2_c, eval = F}
+geo_ds2 <- "GSE52861"
+
+g_url_ds2 <- GEOquery::getGEOSuppFiles(geo_ds2, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_ds2 <- "../inst/extdata/ds2.txt.gz"
+utils::download.file(url = as.character(g_url_ds2$url[2]), destfile = g_file_ds2)
+
+X_ds2 <- read.table(gzfile(g_file_ds2), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
+
+# convert to rpkm & wb_id
+X_ds2 <- RAPToR::format_ids(X_ds2, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
+X_ds2 <- raw2rpkm(X = X_ds2, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
+
+
+# pheno data
+P_ds2 <- Biobase::pData(GEOquery::getGEO(geo_ds2, getGPL = F)[[1]])
+
+# filter relevant fields/samples
+P_ds2 <- P_ds2[(P_ds2$`strain:ch1` == 'N2') & (P_ds2$`growth protocol:ch1` == 'Continuous'), ]
+P_ds2 <- P_ds2[, c("title", "geo_accession", "time in development:ch1")]
+
+# get age 
+P_ds2$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds2$`time in development:ch1`))
+
+
+# formatting
+P_ds2$title <- gsub('RNASeq_polyA_', '', 
+                  gsub('hr', 'h', 
+                       gsub('-', '.', fixed = T, as.character(P_ds2$title))))
+colnames(X_ds2) <- gsub('RNASeq_polyA_','', colnames(X_ds2))
+X_ds2 <- X_ds2[, P_ds2$title]
+
+ds2 <- list(g = X_ds2, p = P_ds2)
+save(ds2, file = "../inst/extdata/ds2.RData")
+```
+
+
+<hr>
 
 # References
