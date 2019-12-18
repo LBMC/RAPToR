@@ -12,6 +12,7 @@
 #' @param tmin,tmax defaults to min and max of `time.series` ; start and end times of interpolated time series.
 #' @param scale defaults to TRUE, passed on to the \code{\link[pls]{plsr}} function.
 #' @param knots defaults to NULL, passed on to the \code{\link[splines]{ns}} function.
+#' @param plsr.nc the number of components to use for PLSR prediction. If NULL, determined by CV.
 #' @param return.model if TRUE, returns the PLSR model object and the input df value.
 #' 
 #' @export
@@ -26,7 +27,7 @@ plsr_interpol <- function(X, time.series, df,
                           covar = NULL, topred = NULL,
                           n.inter = 200, 
                           tmin = min(time.series), tmax = max(time.series),
-                          scale = T, knots = NULL,
+                          scale = T, knots = NULL, plsr.nc = NULL,
                           return.model = FALSE)
 {
   if (length(time.series) != ncol(X)) {
@@ -85,10 +86,14 @@ plsr_interpol <- function(X, time.series, df,
   m.X <- pls::plsr(m_formula, data = dat, scale = scale, validation = "CV")
   
   # choose nc for plsr interpol
-  cv <- pls::RMSEP(m.X)$val["CV", , ]
-  nc <- which.min(colMeans(cv)) - 1
-  if (nc == 0){
-    nc <- which.min(colMeans(cv)[-1])
+  if(is.null(plsr.nc)){
+    cv <- pls::RMSEP(m.X)$val["CV", , ]
+    nc <- which.min(colMeans(cv)) - 1
+    if (nc == 0){
+      nc <- which.min(colMeans(cv)[-1])
+    }
+  } else {
+    nc <- plsr.nc
   }
   
   pred <- stats::predict(m.X, newdata = ndat, comps = 1:nc)

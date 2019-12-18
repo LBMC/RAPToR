@@ -15,6 +15,7 @@ plsr_interpol(
   tmax = max(time.series),
   scale = T,
   knots = NULL,
+  plsr.nc = NULL,
   return.model = FALSE
 )
 }
@@ -36,6 +37,8 @@ plsr_interpol(
 \item{scale}{defaults to TRUE, passed on to the \code{\link[pls]{plsr}} function.}
 
 \item{knots}{defaults to NULL, passed on to the \code{\link[splines]{ns}} function.}
+
+\item{plsr.nc}{the number of components to use for PLSR prediction. If NULL, determined by CV.}
 
 \item{return.model}{if TRUE, returns the PLSR model object and the input df value.}
 }
