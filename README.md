@@ -1,30 +1,26 @@
-# RAPToR R package
+# `RAPToR` R package
 
-`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the age of samples from their gene expression profiles. 
-This is a major problem in the field of *C. elegans*, where many factors can impact development speed.
+`RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict individual samples' developmental age from their gene expression profiles. 
 
+We achieve this by building high-temporal-resolution time series across the development of organisms from multiple available datasets, which we use as a reference to stage samples. 
+Inferred age can then be used as a covariate in analyses and increase their power to detect differential expression by including time-dependant effects. 
 
 ## Installation
 
 To install the package, you can use the `devtools` R package. This should be done in your R console :
+
 ```r
 library(devtools)
 devtools::install_github("LBMC/RAPToR", build_vignettes = T)
 ```
 
-
-You may need to install the `GEOquery` and `limma` packages separately as they are not on CRAN (see [Bioconductor website](https://bioconductor.org/packages/)).
-This can be done with
+If you don't have `devtools` installed, you can do the following :
 ```r
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+install.packages("devtools")
+```
 
-BiocManager::install("limma")
-```
-and
-```r
-BiocManager::install("GEOquery")
-```
+
+
 
 
 ## Getting started
@@ -51,10 +47,23 @@ This means that any data providing information on gene expression on a large sca
 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 
+<hr>
 
 ## Update info
 
+### v1.0 Major Update
+ - Changed the name of the package from `wormAge` to `RAPToR`. (As the tool is not limited to *C.elegans*)
+ 
+ - Split the references from the main tool. 
+ The references are now in seperate data-packages (*e.g.* `wormRef` will need to be installed separately to access *C. elegans* pre-built references). 
+ All available references and their associated data-package can be seen via the `ref_table` object.
 
+ - Changed the gene expression interpolation method. Now using Partial Least Square Regression (PLSR), with the `plsr_interpol()` function. `interpol_refdata()` is now deprecated as a consequence.
+ - Added the `df_CV()` function to help estimate the parameters for PLSR interpolation when building references
+ 
+ - Deprecated `estimate.worm_age()`, renamed to `ae()`
+ - Updated the vignette with new examples, incorporating all changes to the package. 
+ 
 
 ### v0.7
 #### v0.7.2
@@ -83,7 +92,7 @@ This means that any data providing information on gene expression on a large sca
  - Added a reference dataset for young adult to adult worms of better quality than the Reinke dataset (Sterken)
  - Restructured the `ref_tables` object
  - Added a `plot_ref_timelines()` function to plot the datasets' coverage and map key developmental stages
- - Joined both previous vignettes into one `RAPToR` vignette and expanded the usage information (still in progress)
+ - Joined both previous vignettes into one `wormAge` vignette and expanded the usage information (still in progress)
  - Updated the `ae` object to include a `$call` output with its call for reproducibility
  - Changed the `show.init_estimates` and `col.i` parameters to `show.prior` and `col.p` in the `ae` plot functions
 
