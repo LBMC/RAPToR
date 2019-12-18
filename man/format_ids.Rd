@@ -30,9 +30,8 @@ ids <- data.frame(id.a = paste0('a', 1:10), id.b = paste0('b', 1:10), stringsAsF
 X <- matrix(rnorm(50), ncol = 5)
 rownames(X) <- ids$id.a
 
-print(X)
 
 # format ids
-format_ids(X, ids, from = "id.a", to = "id.b")
+format_ids(X, ids, from = "id.a", to = "id.b", verbose = F)
 
 }
