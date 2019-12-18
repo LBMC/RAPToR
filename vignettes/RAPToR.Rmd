@@ -33,8 +33,23 @@ requireNamespace("limma", quietly = T)
 
 <br>
 <br>
-`RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the true age of transcriptomic samples from their gene expression profiles. 
-While this is a major problem in the field of *C. elegans*, this issue occurs in various models where many factors can impact development speed (*e.g* *Drosophila*). 
+
+Gene expression profiling has become standard practice and serves as the basis of many analyses in biology. 
+However, gene expression is highly variable during development. 
+Unknown and unintended developmental variation among samples can
+obscure and confound the effect of variables of interest in a study. 
+This is especially a problem for fast-developing organisms such as *Caenorhabditis elegans*, where drastic developmental changes in gene expression occur within hours. 
+The developmental speed of such organisms is usually heavily influenced by numerous factors and therefore obtaining developmentally synchronized samples is not trivial. 
+Genome-wide gene expression is a very rich source of data, which includes information about the developmental stage of an organism. 
+However, methods that extract this information are still lacking.
+
+We present `RAPToR`, a new tool to accurately predict individual samples' developmental age from their gene expression profiles. 
+We achieved this by building high-temporal-resolution time series across the entire development from multiple available datasets, which we use as a reference to stage samples. 
+Inferred age can be included as a covariate in analyses and increase their power to detect differential expression by including time-dependant effects. 
+<!-- We also show multiple examples of how development impacts gene expression studies in multiple organisms. -->
+
+<!-- `RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the true age of transcriptomic samples from their gene expression profiles.  -->
+<!-- While this is a major problem in the field of *C. elegans*, this issue occurs in various models where many factors can impact development speed (*e.g* *Drosophila*).  -->
 
 
 
@@ -178,9 +193,7 @@ Alternatively, you can take a look at the section on [building your own referenc
 For our example, the `Cel_larval` dataset would be appropriate since our samples are from mid-larval to early young adult in both datasets.
 The `n.inter` parameter corresponds to the resolution of the interpolated reference. 
 In the interest of lightening the computational load you can choose smaller values, but aim over the 500s for optimal results.
-```{r include=FALSE}
-set.seed(10)
-```
+
 
 ```{r prep_ref, cache=quick_build}
 r_larv <- prepare_refdata("Cel_larval", n.inter = 600)
@@ -192,6 +205,11 @@ Note that age estimates will be given in the time unit and scale of the chosen r
 ## Performing a simple age estimate
 
 All we need to do now is run the `ae()` function.
+
+```{r include=FALSE}
+set.seed(10)
+```
+
 
 ```{r ae_ds1, cache=quick_build, results='hold'}
 ae_ds1 <- ae(samp = ds1$g,                         # input gene expression matrix
@@ -353,7 +371,7 @@ r_ds2 <- plsr_interpol(X = ds2$g,
 ```
 
 Let's plot a few random genes to check the model's prediction. 
-It's alright if the prediction is not perfect, but we want the general dynamics to be accurate (oscillaations, increasing or decreasing trendds, *etc.*)
+It's alright if the prediction is not perfect, but we want the general dynamics to be accurate (oscillations, increasing or decreasing trends, *etc.*)
 
 ```{r plot_genes, fig.width=14, fig.height=7}
 set.seed(8)
