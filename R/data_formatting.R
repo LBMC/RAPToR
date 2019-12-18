@@ -78,13 +78,13 @@ format_to_ref <- function(samp, refdata,
 #' 
 #' @examples 
 #' # make dummy data
-#' ids <- data.frame(id.a = paste0('a', 1:10), id.b = paste0('b', 1:10), stringsAsFactors = F)
+#' ids <- data.frame(id.a = paste0('a', 1:10), id.b = paste0('b', 1:10), stringsAsFactors = FALSE)
 #' X <- matrix(rnorm(50), ncol = 5)
 #' rownames(X) <- ids$id.a
 #' 
 #' 
 #' # format ids
-#' format_ids(X, ids, from = "id.a", to = "id.b", verbose = F)
+#' format_ids(X, ids, from = "id.a", to = "id.b")
 #' 
 format_ids <- function(X, IDs, from=1, to=2, 
                        aggr.fun=mean, verbose=TRUE){
