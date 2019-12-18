@@ -15,7 +15,6 @@
 #' @eval ae_example()
 #'
 #' @importFrom utils data
-#' @importFrom limma normalizeBetweenArrays
 prepare_refdata <- function(ref, n.inter = 200)
 {
   utils::data("ref_table", envir = environment())  

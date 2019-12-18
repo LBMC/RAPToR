@@ -18,7 +18,6 @@ Imports:
   pls,
   splines,
   ica,
-  limma,
   parallel,
   data.table,
   pryr,
@@ -34,5 +33,6 @@ RdMacros: Rdpack
 Suggests:
     knitr,
     rmarkdown,
-    biomaRt
+    biomaRt,
+    wormRef
 VignetteBuilder: R.rsp
