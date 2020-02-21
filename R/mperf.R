@@ -8,7 +8,7 @@
 #' @param is.t boolean ; if TRUE, Y and Yh should be transposed.
 #' 
 #' 
-#' @section Indices
+#' @section Indices:
 #' 
 #' Let \eqn{y} and \eqn{\hat{y}} be the data and predictions respectively, with \eqn{m} dependant variables and \eqn{n} observations.
 #' The model performance indices are defined as follows.
@@ -41,7 +41,9 @@
 #' m1 <- matrix(rnorm(1000), ncol = 5)
 #' m2 <- matrix(rnorm(1000), ncol = 5)
 #' mperf(m1, m2, is.t = TRUE)
-
+#' 
+#' @export
+#' 
 mperf <- function(Y, Yh, global = TRUE, 
                   to_compute = c("aCC", "aRE", "MSE", "aRMSE"),
                   is.t = FALSE){
