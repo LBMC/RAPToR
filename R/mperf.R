@@ -15,24 +15,20 @@
 #' 
 #' \describe{
 #'   \item{aCC}{average Correlation Coefficient. 
-#'   \deqn{
-#'   aCC = \frac{1}{m}\sum^{m}_{i=1}{CC} = \frac{1}{m}\sum^{m}_{i=1}{\cfrac{\sum^{n}_{j=1}{(y_i^{(j)}-\bar{y}_i)(\hat{y}_i^{(j)}-\bar{\hat{y}}_i)}}{\sqrt{\sum^{n}_{j=1}{(y_i^{(j)}-\bar{y}_i)^2(\hat{y}_i^{(j)}-\bar{\hat{y}}_i)^2}}}}
-#'   }}
+#'   \deqn{aCC=\frac{1}{m}\sum^{m}_{i=1}{CC}=\frac{1}{m}\sum^{m}_{i=1}{\cfrac{\sum^{n}_{j=1}{(y_i^{(j)}-\bar{y}_i)(\hat{y}_i^{(j)}-\bar{\hat{y}}_i)}}{\sqrt{\sum^{n}_{j=1}{(y_i^{(j)}-\bar{y}_i)^2(\hat{y}_i^{(j)}-\bar{\hat{y}}_i)^2}}}}}
+#'   }
 #'   
 #'   \item{aRE}{average Relative Error. 
-#'   \deqn{
-#'   a\delta = \frac{1}{m}\sum^{m}_{i=1}{\delta} = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} \cfrac{| y_i^{(j)} - \hat{y}_i^{(j)} | }{y_i^{(j)}}
-#'   }}
+#'   \deqn{a\delta = \frac{1}{m}\sum^{m}_{i=1}{\delta} = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} \cfrac{| y_i^{(j)} - \hat{y}_i^{(j)} | }{y_i^{(j)}}}
+#'   }
 #'   
 #'   \item{MSE}{Mean Squared Error. 
-#'   \deqn{
-#'   MSE = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} (y_i^{(j)} - \hat{y}_i^{(j)} )^2
-#'   }}
+#'   \deqn{MSE = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} (y_i^{(j)} - \hat{y}_i^{(j)} )^2}
+#'   }
 #'   
 #'   \item{aRMSE}{average Root Mean Squared Error. 
-#'   \deqn{
-#'   aRMSE = \frac{1}{m}\sum^{m}_{i=1}{RMSE} = \frac{1}{m} \sum^{m}_{i=1} \sqrt{\cfrac{\sum^{n}_{j=1} (y_i^{(j)} - \hat{y}_i^{(j)} )^2}{n}}
-#'   }}
+#'   \deqn{aRMSE = \frac{1}{m}\sum^{m}_{i=1}{RMSE} = \frac{1}{m} \sum^{m}_{i=1} \sqrt{\cfrac{\sum^{n}_{j=1} (y_i^{(j)} - \hat{y}_i^{(j)} )^2}{n}}}
+#'   }
 #' }
 #' 
 #' 
