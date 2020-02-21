@@ -61,10 +61,11 @@ ge_im <- function(X, p, formula,
 #' @param object a geim object, as returned by \code{\link{ge_im}}
 #' @param newdata a dataframe with values of the model variables for prediction, defaults to model input.
 #' @param as.c boolean ; if TRUE, returns predictions as components of the dimensionally reduced data.
+#' @param ... ignored (needed to match the S3 standard)
 #' 
 #' @export
 #' 
-predict.geim <- function(object, newdata, as.c = FALSE){
+predict.geim <- function(object, newdata, as.c = FALSE, ...){
   method <- attr(object, "method")
   dim_red <- attr(object, "dim_red")
   

@@ -4,7 +4,7 @@
 \alias{predict.geim}
 \title{Predictions of a geim model}
 \usage{
-\method{predict}{geim}(object, newdata, as.c = FALSE)
+\method{predict}{geim}(object, newdata, as.c = FALSE, ...)
 }
 \arguments{
 \item{object}{a geim object, as returned by \code{\link{ge_im}}}
@@ -12,6 +12,8 @@
 \item{newdata}{a dataframe with values of the model variables for prediction, defaults to model input.}
 
 \item{as.c}{boolean ; if TRUE, returns predictions as components of the dimensionally reduced data.}
+
+\item{...}{ignored (needed to match the S3 standard)}
 }
 \description{
 Returns the model predictions for given data.
