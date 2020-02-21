@@ -33,6 +33,7 @@
 
 
 #' @importFrom stats as.formula update 
+#' @importFrom ica icafast
 #' @import mgcv
 .model_gam_ica <- function(X, p, formula, nc = ncol(X), center = T, drX = F){
   if(drX){
@@ -91,5 +92,36 @@
   
   if(!as.pc)
     return(tcrossprod(m$pca$x, preds))
+  else return(preds)
+}
+
+
+#' @importFrom stats as.formula update glm
+#' @importFrom ica icafast
+.model_glm_ica <- function(X, p, formula, nc = ncol(X), center = T, drX = F){
+  if(drX){
+    ica <- X
+    nc <- ncol(ica$M)
+  }
+  else ica <- ica::icafast(X, nc = nc, center = center)
+  
+  formula <- stats::as.formula(formula)
+  
+  formulas <- lapply(seq_len(nc), function(i) stats::update(formula, paste0("IC", i, " ~ .")))
+  colnames(ica$M) <- paste0("IC", seq_len(nc))
+  p <- cbind(p, ica$M)
+  
+  m <- list()
+  m$model <- lapply(formulas, stats::glm, data = p)
+  m$ica <- ica
+  
+  return(m)
+}
+
+.predict_glm_ica <- function(m, newdata, as.ic = FALSE){
+  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  
+  if(!as.ic)
+    return(tcrossprod(m$ica$S, preds))
   else return(preds)
 }
