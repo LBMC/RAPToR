@@ -37,3 +37,7 @@ Build a model to interpolate on a gene expression dataset.
 This can be done either with gam or glm models fit on the components of a PCA or ICA.
 It's also possible to have a limma model fit directly on the gene expression data.
 }
+\details{
+Using components as "eigen genes" is not uncommon to find model parameters fitting the whole
+gene set \insertCite{storey2005significance}{RAPToR}.
+}
