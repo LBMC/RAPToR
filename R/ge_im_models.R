@@ -125,3 +125,26 @@
     return(tcrossprod(m$ica$S, preds))
   else return(preds)
 }
+
+
+
+#' @importFrom stats as.formula update model.matrix model.frame terms
+#' @importFrom limma lmFit
+.model_limma <- function(X, p, formula){
+  # lmFit takes 'X' as an argument outside of the formula
+  formula <- stats::update(stats::as.formula(formula), NULL ~ .)
+  
+  dsgn <- stats::model.matrix(formula, data = p)
+  m <- limma::lmFit(X, design = dsgn)
+  
+  m$formula <- formula
+  m$mterms <- stats::terms(stats::model.frame(formula = formula, data = p))
+  
+  return(m)
+}
+
+#' @importFrom stats model.matrix
+.predict_limma <- function(m, newdata){
+  dsgn <- stats::model.matrix(m$mterms, newdata)
+  return(tcrossprod(m$coefficients, dsgn))
+}
