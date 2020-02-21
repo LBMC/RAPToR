@@ -3,6 +3,14 @@
 #' All credit for this function goes to user mrdwab on GitHub :
 #' \url{https://gist.github.com/mrdwab/6424112}
 #' 
+#' @param df The input data.frame
+#' @param group A character vector of the column or columns that make up the "strata".
+#' @param size The desired sample size or proportion in the training set
+#' @param select Allows you to subset the groups in the sampling process
+#' @param replace For sampling with replacement.
+#' @param bothSets Wether or not to return both the training and validation sets
+#' 
+#' @importFrom stats setNames
 .stratified <- function(df, group, size, select = NULL, 
                        replace = FALSE, bothSets = FALSE) {
   if (is.null(select)) {

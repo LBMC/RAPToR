@@ -6,6 +6,19 @@
 \usage{
 .stratified(df, group, size, select = NULL, replace = FALSE, bothSets = FALSE)
 }
+\arguments{
+\item{df}{The input data.frame}
+
+\item{group}{A character vector of the column or columns that make up the "strata".}
+
+\item{size}{The desired sample size or proportion in the training set}
+
+\item{select}{Allows you to subset the groups in the sampling process}
+
+\item{replace}{For sampling with replacement.}
+
+\item{bothSets}{Wether or not to return both the training and validation sets}
+}
 \description{
 All credit for this function goes to user mrdwab on GitHub :
 \url{https://gist.github.com/mrdwab/6424112}

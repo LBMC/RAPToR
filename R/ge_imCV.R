@@ -159,7 +159,7 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
 #' @return invisibly returns a list of boxplot objects that can be re-plotted through \code{\link[graphics]{bxp}}.
 #' 
 #' @importFrom beeswarm beeswarm
-#' @importFrom graphics boxplot mtext
+#' @importFrom graphics boxplot mtext par
 plot.geimCV <- function(x, join.plots = TRUE, 
                         to_plot = colnames(x$cve[[1]]), 
                         names = as.character(x$formula_list),
@@ -167,7 +167,7 @@ plot.geimCV <- function(x, join.plots = TRUE,
                         swarm = T, swarmargs = list(pch = 16),
                         main = NULL, ...){
   if(join.plots){
-    par(mfrow = c(2, length(to_plot)))
+    graphics::par(mfrow = c(2, length(to_plot)))
   }
   blist <- lapply(c("cve", "mpf"), function(ms){
     y <- x[[ms]]
