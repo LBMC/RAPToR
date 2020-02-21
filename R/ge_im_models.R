@@ -62,3 +62,34 @@
     return(tcrossprod(m$ica$S, preds))
   else return(preds)
 }
+
+
+
+#' @importFrom stats prcomp as.formula update glm
+.model_glm_pca <- function(X, p, formula, nc = ncol(X), scale = T, center = T, drX = F){
+  if(drX){
+    pca <- X
+    nc <- ncol(pca$rotation)
+  }
+  else pca <- stats::prcomp(X, rank = nc, scale = scale, center = center)
+  
+  formula <- stats::as.formula(formula)
+  
+  formulas <- lapply(seq_len(nc), function(i) stats::update(formula, paste0("PC", i, " ~ .")))
+  colnames(pca$rotation) <- paste0("PC", seq_len(nc))
+  p <- cbind(p, pca$rotation)
+  
+  m <- list()
+  m$model <- lapply(formulas, stats::glm, data = p)
+  m$pca <- pca
+  
+  return(m)
+}
+
+.predict_glm_pca <- function(m, newdata, as.pc = FALSE){
+  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  
+  if(!as.pc)
+    return(tcrossprod(m$pca$x, preds))
+  else return(preds)
+}
