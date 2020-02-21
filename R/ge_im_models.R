@@ -137,7 +137,6 @@
   dsgn <- stats::model.matrix(formula, data = p)
   m <- limma::lmFit(X, design = dsgn)
   
-  m$formula <- formula
   m$mterms <- stats::terms(stats::model.frame(formula = formula, data = p))
   
   return(m)
