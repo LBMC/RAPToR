@@ -4,6 +4,9 @@
 #' This can be done either with gam or glm models fit on the components of a PCA or ICA.
 #' It's also possible to have a limma model fit directly on the gene expression data.
 #' 
+#' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole 
+#' gene set \insertCite{storey2005significance}{RAPToR}.
+#' 
 #' @param X the gene expression matrix (genes as rows, samples as columns)
 #' @param p a dataframe with the pheno data used in the formula (samples as rows) e.g. time, covariates.
 #' @param formula the model formula, which must start with 'X ~'. See \code{\link[mgcv]{gam}}, \code{\link[stats]{glm}} or \code{\link[limma]{lmFit}} documentation for specifications.
@@ -15,6 +18,8 @@
 #' @return a '\code{geim}' model object. This object has its predict method
 #' 
 #' @export
+#' 
+#' @importFrom Rdpack reprompt
 #' 
 ge_im <- function(X, p, formula, 
                   method = c("gam", "glm", "limma"), 
