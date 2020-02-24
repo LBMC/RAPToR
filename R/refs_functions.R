@@ -45,7 +45,7 @@ plot_refs <- function(datapkg, ...){
   
   
   pr <- "plot_refs"
-  if(exists(pr, where = asNamespace(datapkg), mode = 'function'){
+  if(exists(pr, where = asNamespace(datapkg), mode = 'function')){
     pf <- utils::getFromNamespace(x = pr, ns = datapkg)
     return(invisible(pf(...)))
   } else {
