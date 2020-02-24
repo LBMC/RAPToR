@@ -1,35 +1,33 @@
 #' Prepare the reference data included in the package
 #' 
-#' This function loads (and interpolates on) the desired reference dataset.
-#' The available datasets can be found in the [ref_table].
+#' This function loads (and interpolates on) pre-built reference datasets.
+#' The available datasets of a valid data-package can be listed with \code{\link{list_refs}}.
 #' 
-#' @param ref the name of the reference dataset to load ; can be abbreviated.
-#' @param n.inter the resolution of the interpolation, as passed on to \code{\link{plsr_interpol}}.
+#' @param ref the name of the reference dataset to load (as given in \code{\link{list_refs}}).
+#' @param datapkg the name of the data-package to load the rreference from.
+#' @param n.inter the resolution of the interpolation, as in \code{seq(start, end, length.out = n.inter)}.
 #' 
-#' @return the interpolated reference dataset, as returned by \code{\link{plsr_interpol}}
+#' @return a list with the interpolated reference dataset and its associated time series. 
 #' 
-#' @seealso [plsr_interpol]
+#' @seealso [list_refs] [ge_im]
 #' 
 #' @export
 #' 
 #' @eval ae_example()
 #'
-#' @importFrom utils data
-prepare_refdata <- function(ref, n.inter = 200)
+#' @importFrom utils getFromNamespace
+prepare_refdata <- function(ref, datapkg,  n.inter = 200)
 {
-  utils::data("ref_table", envir = environment())  
-  ref <- match.arg(arg = ref, choices = ref_table$name)
+  requireNamespace(datapkg)
   
-  dpkg <- ref_table[which(ref_table$name == ref), "data_pkg"]
-  # check if needed data package is loaded
-  if(!requireNamespace(dpkg, quietly = T)){
-    stop(paste0("You must install the ", dpkg, " data package to load the ", ref, " reference"))
+  if(exists(pr, where = asNamespace(datapkg), mode = 'function'){
+    prepf <- paste0(".prepref_", ref)
+    prepf <- utils::getFromNamespace(x = prepf, ns = datapkg)
+    
+    return(invisible(prepf(n.inter = n.inter)))
+  } else {
+    stop(paste0("Reference ", ref, " not found. Check list_refs(datapkg = '", datapkg, "') for a valid reference."))
   }
-  
-  prep_func <- do.call(`::`, list(dpkg, paste0('.prepref_', ref)))
-  r_i <- prep_func(n.inter = n.inter)
-
-  return(r_i)
 }
 
 
