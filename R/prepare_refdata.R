@@ -19,9 +19,9 @@
 prepare_refdata <- function(ref, datapkg,  n.inter = 200)
 {
   requireNamespace(datapkg)
+  prepf <- paste0(".prepref_", ref)
   
-  if(exists(pr, where = asNamespace(datapkg), mode = 'function')){
-    prepf <- paste0(".prepref_", ref)
+  if(exists(prepf, where = asNamespace(datapkg), mode = 'function')){
     prepf <- utils::getFromNamespace(x = prepf, ns = datapkg)
     
     return(invisible(prepf(n.inter = n.inter)))
