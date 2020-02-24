@@ -43,6 +43,9 @@ plsr_interpol(
 \item{return.model}{if TRUE, returns the PLSR model object and the input df value.}
 }
 \description{
+\emph{NOTE : this function is deprecated, it is recommended to use ge_im functions to interpolate on gene expression data}
+}
+\details{
 This function computes the interpolated gene expression data from a reference time series.
 This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 }

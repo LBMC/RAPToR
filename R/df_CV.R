@@ -1,5 +1,7 @@
 #' Find the optimal spline df through cross-valdation
 #' 
+#' *NOTE : this function is deprecated, it is recommended to use ge_im functions to interpolate on gene expression data*
+#' 
 #' This function performs cross-validation (CV) with the aim of finding the optimal spline df parameter 
 #' for a multi-target PLSR regression \insertCite{wolfer2017dfsignif}{RAPToR}. 
 #' By default, CV is done using the sample loadings on ICA components rather than the full gene expression matrix as target variable.
