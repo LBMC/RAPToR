@@ -4,19 +4,21 @@
 \alias{prepare_refdata}
 \title{Prepare the reference data included in the package}
 \usage{
-prepare_refdata(ref, n.inter = 200)
+prepare_refdata(ref, datapkg, n.inter = 200)
 }
 \arguments{
-\item{ref}{the name of the reference dataset to load ; can be abbreviated.}
+\item{ref}{the name of the reference dataset to load (as given in \code{\link{list_refs}}).}
 
-\item{n.inter}{the resolution of the interpolation, as passed on to \code{\link{plsr_interpol}}.}
+\item{datapkg}{the name of the data-package to load the rreference from.}
+
+\item{n.inter}{the resolution of the interpolation, as in \code{seq(start, end, length.out = n.inter)}.}
 }
 \value{
-the interpolated reference dataset, as returned by \code{\link{plsr_interpol}}
+a list with the interpolated reference dataset and its associated time series.
 }
 \description{
-This function loads (and interpolates on) the desired reference dataset.
-The available datasets can be found in the \link{ref_table}.
+This function loads (and interpolates on) pre-built reference datasets.
+The available datasets of a valid data-package can be listed with \code{\link{list_refs}}.
 }
 \examples{
 \donttest{
@@ -43,5 +45,5 @@ ae_test$age.estimates
 }
 }
 \seealso{
-\link{plsr_interpol}
+\link{list_refs} \link{ge_im}
 }
