@@ -13,8 +13,8 @@
 list_refs <- function(datapkg){
   requireNamespace(datapkg)
   rl <- "ref_list"
-  if(exists(suppressWarnings(data(list = rl, package = datapkg)))){
-    dat <- get(data(list = rl, package = datapkg))
+  if(exists(suppressWarnings(data(list = rl, package = datapkg, envir = environment())))){
+    dat <- get(data(list = rl, package = datapkg, envir = environment()))
     rm(list = rl)
     print(dat)
     return(invisible(dat))
