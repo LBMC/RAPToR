@@ -19,7 +19,6 @@
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @importFrom stats predict formula
 #' @importFrom splines ns

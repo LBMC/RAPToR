@@ -18,7 +18,6 @@
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @importFrom graphics plot points abline text legend
 #' @importFrom stats median

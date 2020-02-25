@@ -26,7 +26,6 @@
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @references
 #'    \insertAllCited{}
@@ -177,7 +176,6 @@ ef <- function(xt, xe){
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @importFrom stats median
 summary.dfCV <- function(object, digits = 3, ...){
@@ -212,7 +210,6 @@ summary.dfCV <- function(object, digits = 3, ...){
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 print.dfCV <- function(x, digits = 3, ...){
   invisible(summary.dfCV(x, digits = digits))
