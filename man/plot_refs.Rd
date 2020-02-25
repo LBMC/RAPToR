@@ -13,6 +13,7 @@ plot_refs(datapkg, ...)
 }
 \description{
 Plots a timeline chart for references of the input data-package.
+This corresponds to a \code{.plot_refs} function in the data-package.
 }
 \examples{
 \donttest{

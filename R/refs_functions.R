@@ -28,6 +28,7 @@ list_refs <- function(datapkg){
 #' Plot reference timelines
 #' 
 #' Plots a timeline chart for references of the input data-package.
+#' This corresponds to a \code{.plot_refs} function in the data-package.
 #' 
 #' @param datapkg the name of the data-package to plot references from
 #' @param ... extra arguments passed on to the datapkg's plot function
@@ -44,7 +45,7 @@ plot_refs <- function(datapkg, ...){
   requireNamespace(datapkg)
   
   
-  pr <- "plot_refs"
+  pr <- ".plot_refs"
   if(exists(pr, where = asNamespace(datapkg), mode = 'function')){
     pf <- utils::getFromNamespace(x = pr, ns = datapkg)
     return(invisible(pf(...)))
