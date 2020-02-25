@@ -41,3 +41,56 @@ It's also possible to have a limma model fit directly on the gene expression dat
 Using components as "eigen genes" is not uncommon to find model parameters fitting the whole
 gene set \insertCite{storey2005significance}{RAPToR}.
 }
+\examples{
+\donttest{
+requireNamespace('wormRef', quietly = TRUE)
+requireNamespace('stats', quietly = TRUE)
+
+# gene expression data
+X <- wormRef::Cel_larval$g
+
+# pheno data (e.g time, batch)
+p <- wormRef::Cel_larval$p
+
+# do a pca & select nb of components to use for interpol
+pca <- stats::prcomp(X, rank = 20)
+nc <- sum(summary(pca)$importance[3, ] < .99) + 1 # only .99 for computational speed
+
+
+# find optimal spline type
+# setup formulas
+smooths <- c('bs', 'tp', 'cr', 'ds')
+flist <- as.list(paste0('X ~ s(age, bs = '', smooths, '') + cov'))
+# do CV
+cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
+                 cv.n = 20, nc = nc)
+# check results
+plot(cvres, names.arrange = 4) # lowest pred error with 'ds' spline
+
+# build model & interpolation data
+m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = 'ds') + cov', nc = nc)
+n.inter = 100
+ndat <- data.frame(age = seq(min(p$age), max(p$age), l = n.inter),
+                   cov = rep(p$cov[1], n.inter))
+
+# check interpolation on pca components
+pred_pca <- predict(m, ndat, as.c = T)
+
+par(mfrow = c(2,2))
+invisible(sapply(seq_len(nc), function(i){
+  plot(p$age, pca$rotation[, i], xlab = 'age', ylab = 'PC', main = paste0('PC',i),
+       lwd = (p$cov == p$cov[1]) + 1)
+  points(ndat$age, pred_pca[, i], type = 'l', lwd = 2)
+}))
+
+# get interpolated GE matrix, as a reference
+r_X <- list(interpGE = predict(m, ndat), time.series = ndat$age)
+
+# test
+ae_X <- ae(X, r_X$interpGE, r_X$time.series)
+par(mfrow = c(1,1))
+plot(p$age, ae_X$age.estimates[,1])
+
+
+}
+}

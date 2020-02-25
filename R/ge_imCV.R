@@ -24,6 +24,8 @@
 #' 
 #' @export
 #' 
+#' @eval interpol_example()
+#' 
 #' @importFrom stats as.formula prcomp
 #' @importFrom ica icafast
 #' @importFrom parallel parLapply makeForkCluster clusterExport stopCluster  
@@ -157,6 +159,8 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
 #' @export
 #' 
 #' @return invisibly returns a list of boxplot objects that can be re-plotted through \code{\link[graphics]{bxp}}.
+#' 
+#' @eval interpol_example()
 #' 
 #' @importFrom beeswarm beeswarm
 #' @importFrom graphics boxplot mtext par

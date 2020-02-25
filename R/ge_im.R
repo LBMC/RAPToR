@@ -19,6 +19,8 @@
 #' 
 #' @export
 #' 
+#' @eval interpol_example()
+#' 
 #' @importFrom Rdpack reprompt
 #' 
 ge_im <- function(X, p, formula, 
