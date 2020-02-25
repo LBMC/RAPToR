@@ -49,33 +49,3 @@ plsr_interpol(
 This function computes the interpolated gene expression data from a reference time series.
 This is done with a multi-target Partial Least Square Regression (PLSR) model, using a spline of time as descriptive variables.
 }
-\examples{
-\donttest{
-requireNamespace('wormRef', quietly = TRUE)
-
-# gene expression data
-G <- wormRef::Cel_larval$g
-
-# pheno data (e.g time, batch)
-P <- wormRef::Cel_larval$p
-
-
-
-# find optimal spline degree of freedom for PLSR interpolation
-dfCV_G <- df_CV(X = G, 
-                time.series = P$age,
-                covar = P$cov,
-                dfs = 10:20)
-
-# check minimum of CV error
-summary(dfCV_G)
-plot(dfCV_G) # min for df = 17
-
-# perform PLSR interpolation using optimal parameter
-r_G <- plsr_interpol(X = G, 
-                     time.series = P$age,
-                     covar = P$cov,
-                     df = 17) 
-
-}
-}
