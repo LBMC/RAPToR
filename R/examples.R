@@ -8,7 +8,7 @@ requireNamespace('wormRef', quietly = TRUE)
 samp <- wormRef::Cel_larval$g[,13:15]
 
 # load interpolated reference
-r_larv <- prepare_refdata('Cel_larval', n.inter = 200)
+r_larv <- prepare_refdata(ref = 'Cel_larval', datapkg = 'wormRef' , n.inter = 200)
 
 # perform age estimate
 ae_test <- ae(samp = samp, 
@@ -34,30 +34,53 @@ interpol_example <- function(){
 @examples
 \\donttest{
 requireNamespace('wormRef', quietly = TRUE)
+requireNamespace('stats', quietly = TRUE)
 
 # gene expression data
-G <- wormRef::Cel_larval$g
+X <- wormRef::Cel_larval$g
 
 # pheno data (e.g time, batch)
-P <- wormRef::Cel_larval$p
+p <- wormRef::Cel_larval$p
+
+# do a pca & select nb of components to use for interpol
+pca <- stats::prcomp(X, rank = 20)
+nc <- sum(summary(pca)$importance[3, ] < .99) + 1 # only .99 for computational speed
 
 
+# find optimal spline type
+# setup formulas
+smooths <- c('bs', 'tp', 'cr', 'ds')
+flist <- as.list(paste0('X ~ s(age, bs = \'', smooths, '\') + cov'))
+# do CV
+cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
+                 cv.n = 20, nc = nc)
+# check results
+plot(cvres, names.arrange = 4) # lowest pred error with 'ds' spline
 
-# find optimal spline degree of freedom for PLSR interpolation
-dfCV_G <- df_CV(X = G, 
-                time.series = P$age,
-                covar = P$cov,
-                dfs = 10:20)
+# build model & interpolation data
+m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = \'ds\') + cov', nc = nc)
+n.inter = 100
+ndat <- data.frame(age = seq(min(p$age), max(p$age), l = n.inter),
+                   cov = rep(p$cov[1], n.inter))
 
-# check minimum of CV error
-summary(dfCV_G)
-plot(dfCV_G) # min for df = 17
+# check interpolation on pca components
+pred_pca <- predict(m, ndat, as.c = T)
 
-# perform PLSR interpolation using optimal parameter
-r_G <- plsr_interpol(X = G, 
-                     time.series = P$age,
-                     covar = P$cov,
-                     df = 17) 
+par(mfrow = c(2,2))
+invisible(sapply(seq_len(nc), function(i){
+  plot(p$age, pca$rotation[, i], xlab = 'age', ylab = 'PC', main = paste0('PC',i),
+       lwd = (p$cov == p$cov[1]) + 1)
+  points(ndat$age, pred_pca[, i], type = 'l', lwd = 2)
+}))
+
+# get interpolated GE matrix, as a reference
+r_X <- list(interpGE = predict(m, ndat), time.series = ndat$age)
+
+# test
+ae_X <- ae(X, r_X$interpGE, r_X$time.series)
+par(mfrow = c(1,1))
+plot(p$age, ae_X$age.estimates[,1])
+
 
 }
 "
