@@ -27,7 +27,7 @@ requireNamespace('wormRef', quietly = TRUE)
 samp <- wormRef::Cel_larval$g[,13:15]
 
 # load interpolated reference
-r_larv <- prepare_refdata('Cel_larval', n.inter = 200)
+r_larv <- prepare_refdata(ref = 'Cel_larval', datapkg = 'wormRef' , n.inter = 200)
 
 # perform age estimate
 ae_test <- ae(samp = samp, 
