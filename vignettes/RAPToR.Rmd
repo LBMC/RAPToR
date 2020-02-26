@@ -399,7 +399,7 @@ set.seed(10)
 
 ```{r cv_ds1, cache=quick_build, results='hold'}
 smooth_methods <- c("tp", "ts", "cr", "ps")
-flist <- as.list(paste0("X ~ s(age, bs = \"", smooth_methods, "\") + strain"))
+flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
 flist
 
 cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
