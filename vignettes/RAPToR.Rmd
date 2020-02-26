@@ -10,7 +10,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 bibliography: ../inst/REFERENCES.bib
 author: Romain Bulteau
-date: December 2019
+date: "`r format(Sys.Date(), '%B %Y')`"
 ---
   
 ```{r, include = FALSE}
@@ -80,9 +80,9 @@ The method works in a three-step process.
 
 # What type of data can be used ?
 
-The `RAPToR` package allows you to estimate the developmental age of samples from their *transcriptome*.
-This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (preferably RPKM), MicroArray, Chips...
-Since the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data will lead to better performance of the tool.  
+The `RAPToR` package allows you to estimate the developmental age of samples from their transcriptome.
+This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (preferably RPKM), MicroArray/Chips...
+Note that the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data may lead to better performance of the tool.  
 
 <div class="alert alert-danger">
   <strong>Warning :</strong><br/>
@@ -100,11 +100,14 @@ since our method requires a reference to stage samples against, we've built seve
 For R package standards, these are large datasets so the references are stored in separate "data-packages". 
 To give an example, `wormRef` holds the *C. elegans* references.
 
-You can see the available references in the `ref_table` object.
+You can see the available references of a data-package with the `list_refs()` function.
 
-```{r ref_table}
-head(ref_table)
+```{r list_refs}
+list_refs("wormRef")
 ```
+
+The data-packages currently available are listed on the [README of the github repo](https://github.com/LBCM/RAPToR).
+You can build your own reference data packages following a few rules given in the [vignette on reference building](RAPTOR-refbuilding.html).
 
 
 # Usage example
@@ -172,8 +175,9 @@ To help with this conversion, gene ID reference tables are included in the data-
 ### Choosing a reference dataset
 
 `RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
-This means you have to select the proper dataset to run your samples against.
-By looking at `ref_table` or using the `plot_refs()` function, you can determine which reference is appropriate for your samples.
+This means you have to select the proper reference to run your samples against.
+By looking at reference list like above, or using the `plot_refs()` function, you can determine which reference is appropriate for your samples. 
+If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-reference).
 
 The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
 
