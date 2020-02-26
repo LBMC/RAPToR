@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- F # wether to cache heavy-computation chunks 
+quick_build <- T # wether to cache heavy-computation chunks 
 
 library(RAPToR)
 
@@ -170,19 +170,18 @@ For example, all the references included in the `wormRef` data-package use WormB
 To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (built directly from the `biomaRt`).
 
 
-## Performing an age estimate
 
-### Choosing a reference dataset
+## Choosing a reference dataset
 
 `RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper reference to run your samples against.
 By looking at reference list like above, or using the `plot_refs()` function, you can determine which reference is appropriate for your samples. 
-If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-reference).
+If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-reference) for a quick-start guide or the [reference-building vignette](RAPTOR-refbuilding.html) for a more in-depth explanation.
 
 The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
 
 ```{r plot_refs, fig.height=6, fig.width=9}
-plot_refs("Caenorhabditis")
+(plot_refs("wormRef"))
 ```
 
 
@@ -190,9 +189,7 @@ plot_refs("Caenorhabditis")
 ## Loading the reference
 
 To bypass the limitations of available time series' reolution and provide precise estimates, `RAPToR` interpolates on the dynamics of gene expression of the reference series.
-You can load a reference dataset with optimal parameters using the `prepare_refdata()` function.
-
-Alternatively, you can take a look at the section on [building your own reference series.](#building-your-own-reference)
+You can load a pre-built reference dataset with optimal parameters using the `prepare_refdata()` function.
 
 For our example, the `Cel_larval` dataset would be appropriate since our samples are from mid-larval to early young adult in both datasets.
 The `n.inter` parameter corresponds to the resolution of the interpolated reference. 
@@ -200,7 +197,7 @@ In the interest of lightening the computational load you can choose smaller valu
 
 
 ```{r prep_ref, cache=quick_build}
-r_larv <- prepare_refdata("Cel_larval", n.inter = 600)
+r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 ```
 
 Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C)
@@ -262,7 +259,8 @@ invisible(sapply(levels(factor(ds1$p$`strain:ch1`)), function(l){
 }))
 
 abline(lm_ds1, lwd=2, col=2)
-legend("bottomright", legend = "lm_ds1", lwd=3, col=2, bty='n')
+legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "lm_ds1"), 
+       lwd=3, col=c(1:4, 2), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 1))
 
 plot(ae_ds2$age.estimates[,1]~ds2$p$age, 
      xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
@@ -298,9 +296,9 @@ The table holds the following :
  - `cor.score`, the correlation score of the global estimate.
 
 
-### Plotting
+## Plotting
 
-Estimates and confidence intervals can be displayed in the form of a dotchart with the default plot function (as shown above).
+Estimates and confidence intervals can be displayed in the form of a dotchart with the default `plot()` function (as we did above).
 
 The `ae` object also holds the correlation scores of the samples against the entire reference series and their confidence intervals accross the bootstrap. 
 You can also plot these correlation profiles with `plot_cor.ae()`
@@ -322,18 +320,26 @@ The sample's estimate is also given below the interval.
 
 # Building your own reference
 
-Interpolating on time series data is the basis for building high-temporal-resolution references (through calling the `prepare_refdata()` function). 
-To briefly put it, this is achieved by interpolating on gene expression data using a multi-target Partial Least Squares Regression model (PLSR).
-This process is detailed below.
+Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a quick overview.
 
-If you happen to be working with organisms we have not included in the current references, you can build your own reference to stage your samples. 
-The simplicity of the staging method allows for its wide application range, though we remain dependant on a good existing reference.
+Interpolating on time series data is the basis for building high-temporal-resolution references.
+When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
 
 To build your reference, you will require a time series of gene expression data on your favourite organism.
-
 The `ds2` example dataset we loaded earlier will be used to illustrate the process.
 
-## About the model
+## The gene expression interpolation model interface
+
+Gene expression interpolation models (geim), are built with the `ge_im()` function.
+This function takes as input 3 key arguments : 
+ - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
+ - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
+ - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`.**
+
+
+## About the models
+
+We provide two
 
 PLSR essentially consists of projecting your dependent variables (gene expression) and your independant variables (time, covariate) to a space maximizing their correlation, in which the regression takes place. 
 PLSR is a linear regression method, so we must use splines (`ns()` from the `splines` core package) to correctly predict the non-linear dynamics of our data.
@@ -349,14 +355,14 @@ $B$ and $\mathcal{E}$ correspond to the model's coefficients and residuals respe
 As you may have noticed, the model needs an input of the spline's degree of freedom ($\texttt{df}$).
 This value can be determined with the help of a Cross-Validation (CV) procedure we have implemented in the `df_CV()` function.
 
-```{r df_CV, cache=quick_build}
+```{r df_CV, eval = F}
 dfCV_ds2 <- df_CV(X = ds2$g, 
                   time.series = ds2$p$age, 
                   dfs = 2:14, 
                   cv.n = 100,
                   nb.cores = 2)
 ```
-```{r plot_dfCV, fig.width=6, fig.height=6, out.width="60%"}
+```{r plot_dfCV, fig.width=6, fig.height=6, out.width="60%", eval = F}
 plot(dfCV_ds2, main = "CV Error for ds2 df selection")
 ```
 
@@ -367,7 +373,7 @@ Looking at the plot above, we can select $\texttt{df} = 8$ for our reference.
 ## Constructing the reference.
 
 Once the $\texttt{df}$ has been selected, the model is built with the `plsr_interpol()` function.
-```{r plsr_interpol}
+```{r plsr_interpol, eval = F}
 r_ds2 <- plsr_interpol(X = ds2$g, 
                        time.series = ds2$p$age, 
                        df = 8, 
@@ -377,7 +383,7 @@ r_ds2 <- plsr_interpol(X = ds2$g,
 Let's plot a few random genes to check the model's prediction. 
 It's alright if the prediction is not perfect, but we want the general dynamics to be accurate (oscillations, increasing or decreasing trends, *etc.*)
 
-```{r plot_genes, fig.width=14, fig.height=7}
+```{r plot_genes, fig.width=14, fig.height=7, eval = F}
 set.seed(8)
 to_plot <- sample(nrow(ds2$g), size = 12)
 par(mfrow = c(3,4))
@@ -393,10 +399,10 @@ That's it. The reference is ready to be used to stage samples.
 
 A good test is to stage the samples used to build the reference.
 
-```{r ae_ds2_r2, cache=quick_build}
+```{r ae_ds2_r2, eval = F}
 ae_ds2_rds2 <- ae(ds2$g, r_ds2$interpGE, r_ds2$time.series)
 ```
-```{r plot_ae_ds2_rds2, fig.height=6, fig.width=6, out.width="60%"}
+```{r plot_ae_ds2_rds2, fig.height=6, fig.width=6, out.width="60%", eval = F}
 plot(ds2$p$age, ae_ds2_rds2$age.estimates[,1], lwd = 2, 
      xlab = "Chronological age", ylab = "Predicted age", 
      main = "ds2 sample predictions on its reference")
