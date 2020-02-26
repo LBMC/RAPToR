@@ -76,7 +76,9 @@ The method works in a three-step process.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
-
+<center>
+![tool_overview](tool_overview.png){width=60%}
+</center>
 
 # What type of data can be used ?
 
@@ -176,7 +178,7 @@ To help with this conversion, gene ID reference tables are included in the data-
 `RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper reference to run your samples against.
 By looking at reference list like above, or using the `plot_refs()` function, you can determine which reference is appropriate for your samples. 
-If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-reference) for a quick-start guide or the [reference-building vignette](RAPTOR-refbuilding.html) for a more in-depth explanation.
+If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-references) for a quick-start guide or the [reference-building vignette](RAPTOR-refbuilding.html) for a more in-depth explanation.
 
 The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
 
@@ -318,7 +320,7 @@ The sample's estimate is also given below the interval.
 
 
 
-# Building your own reference
+# Building your own references
 
 Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a broad overview.
 
