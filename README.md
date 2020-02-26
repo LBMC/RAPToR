@@ -39,7 +39,7 @@ The method works in a three-step process.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
-
+![tool_overview](vignettes/tool_overview.png){width=60%}
 
 ### What data can be used ?
 The `RAPToR` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
@@ -47,10 +47,27 @@ This means that any data providing information on gene expression on a large sca
 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 
+<br>
+<br>
+
 <hr>
 
 ## Update info
 
+### v1.1
+ - Further split the references from the main package : 
+ ..- removed `ref_table` object (available data-packages are now listed in this README)
+ ..- added `list_refs()` function to list the references in given data-package
+ ..- `plot_refs()` now takes `datapkg` as an argument
+ ..- `prepare_refdata()` now takes `datapkg` as an argument
+ 
+ - Major changes to the gene expression interpolation method :
+ ..- deprecated `plsr_interpol()` and `df_CV()`
+ ..- added `ge_im()` and `ge_imCV()` functions, with an improved, more flexible model interface for reference building (see vignettes)
+ ..- Started a vignette specifically on reference building (`vignette("RAPToR-refbuilding")`)
+ 
+ - Updated general vignette with a broad overview on reference building. 
+ 
 ### v1.0 Major Update
  - Changed the name of the package from `wormAge` to `RAPToR`. (As the tool is not limited to *C.elegans*)
  
