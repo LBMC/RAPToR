@@ -228,7 +228,7 @@ Let's look at the results.
 
 
 ```{r plot_ae1, fig.width=12, fig.height=7}
-plot(ae_ds1, groups = factor(ds1$p$`strain:ch1`), show.boot_estimates = T)
+plot(ae_ds1, groups = ds1$p$strain, show.boot_estimates = T)
 ```
 
 ```{r plot_ae2, fig.width=12, fig.height=4}
@@ -251,11 +251,11 @@ summary(lm_ds2)
 par(mfrow = c(1,2))
 plot(ae_ds1$age.estimates[,1]~ds1$p$age, 
      xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
-     main = "Chronological vs Estimated ages for ds1", lwd = 2, col = factor(ds1$p$`strain:ch1`))
-invisible(sapply(levels(factor(ds1$p$`strain:ch1`)), function(l){
-  s <- ds1$p$`strain:ch1` == l
+     main = "Chronological vs Estimated ages for ds1", lwd = 2, col = factor(ds1$p$strain))
+invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+  s <- ds1$p$strain == l
   points(ae_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-         lty = 2, col = which(l==levels(factor(ds1$p$`strain:ch1`))))
+         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
 }))
 
 abline(lm_ds1, lwd=2, col=2)
@@ -284,7 +284,7 @@ summary(ae_ds2)
 
 
 <br>
-If you want to retreive the estimates and their confidence intervals, they are accessible through `$age.estimates`.
+If you want to get the estimates and their confidence intervals, they are accessible through `$age.estimates`.
 ```{r show_ae}
 head(ae_ds2$age.estimates)
 ```
@@ -320,7 +320,7 @@ The sample's estimate is also given below the interval.
 
 # Building your own reference
 
-Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a quick overview.
+Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a broad overview.
 
 Interpolating on time series data is the basis for building high-temporal-resolution references.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
@@ -330,87 +330,176 @@ The `ds2` example dataset we loaded earlier will be used to illustrate the proce
 
 ## The gene expression interpolation model interface
 
-Gene expression interpolation models (geim), are built with the `ge_im()` function.
+Gene expression interpolation models (GEIM), are built with the `ge_im()` function.
 This function takes as input 3 key arguments : 
+
  - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
  - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
- - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`.**
+ - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`**.
+
+For example, using the `ds1` dataset we could build the following model.
+```{r model_ds1}
+m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = 24)
+```
 
 
 ## About the models
+The strategy we put forward for predicting on such a large scale of output variables, is to interpolate in a dimensionally reduced space. 
+We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
 
-We provide two
+Both PCA and ICA perform the same type of linear transformation on the data (they just maximize a different criteria). We get the following :
 
-PLSR essentially consists of projecting your dependent variables (gene expression) and your independant variables (time, covariate) to a space maximizing their correlation, in which the regression takes place. 
-PLSR is a linear regression method, so we must use splines (`ns()` from the `splines` core package) to correctly predict the non-linear dynamics of our data.
+$$
+X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
+$$
+with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample loadings ($n$ samples by $c$ components). 
+$S$ is what's usually looked at when performing a PCA (or ICA) on gene expression data, to look at the samples in the component space. 
 
-The model used is of the following form.
-$$ X \sim B\left[\texttt{ns}(time, \texttt{df}) + covar\right]+ \mathcal{E} $$
-with $X$ the transposed gene expression matrix ($n$ samples by $m$ genes), $time$ the time series (length $n$), $covar$ the optional covariate (length $n$).
-$B$ and $\mathcal{E}$ correspond to the model's coefficients and residuals respectively.
+@alter2000singular previously demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the dynamics of gene expression. 
+We essentially use the same property for a GEIM.
+We build a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
+
+We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
+GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
+The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
 
-## Finding the appropriate $\texttt{df}$
+Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on the components.
 
-As you may have noticed, the model needs an input of the spline's degree of freedom ($\texttt{df}$).
-This value can be determined with the help of a Cross-Validation (CV) procedure we have implemented in the `df_CV()` function.
 
-```{r df_CV, eval = F}
-dfCV_ds2 <- df_CV(X = ds2$g, 
-                  time.series = ds2$p$age, 
-                  dfs = 2:14, 
-                  cv.n = 100,
-                  nb.cores = 2)
+## Finding the appropriate model and parameters
+### Model type
+The default GEIM is fitted using GAMs on PCA components.
+PCA and ICA interpolation yield near-identical results in most scenarios.
+This is a robust choice when applying a smoothing spline to the data.
+
+### Parameter estimation
+
+The number of components to use for the interpolation is by default set to the number of samples.
+However, we recommend to set a cutoff on explained variance of PCA components to select it. 
+For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
+
+```{r pca_ds1}
+pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
+nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
+nc
 ```
-```{r plot_dfCV, fig.width=6, fig.height=6, out.width="60%", eval = F}
-plot(dfCV_ds2, main = "CV Error for ds2 df selection")
+
+
+Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 
+The function inputs the `X`, `p` and a `formula_list` to test. 
+Other parameters on the CV itself can also be given (*e.g.* training set size).
+
+
+Below is an example of usage to choose between 4 available smooth terms on the `ds1` GEIM.
+```{r include = F}
+set.seed(10)
 ```
 
-The PLSR model and `RAPToR`'s results are fairly robust to $\texttt{df}$ selection (within $\texttt{df}_{optimal} \pm 2$). 
-Looking at the plot above, we can select $\texttt{df} = 8$ for our reference. 
+```{r cv_ds1, cache=quick_build, results='hold'}
+smooth_methods <- c("tp", "ts", "cr", "ps")
+flist <- as.list(paste0("X ~ s(age, bs = '", smooth_methods, "') + strain"))
+flist
 
-
-## Constructing the reference.
-
-Once the $\texttt{df}$ has been selected, the model is built with the `plsr_interpol()` function.
-```{r plsr_interpol, eval = F}
-r_ds2 <- plsr_interpol(X = ds2$g, 
-                       time.series = ds2$p$age, 
-                       df = 8, 
-                       n.inter = 200)
+cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
+                  cv.n = 20, nc = nc, nb.cores = 3)
 ```
 
-Let's plot a few random genes to check the model's prediction. 
-It's alright if the prediction is not perfect, but we want the general dynamics to be accurate (oscillations, increasing or decreasing trends, *etc.*)
+```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+     swarmargs = list(cex = .8))
+```
 
-```{r plot_genes, fig.width=14, fig.height=7, eval = F}
-set.seed(8)
-to_plot <- sample(nrow(ds2$g), size = 12)
-par(mfrow = c(3,4))
-invisible(sapply(to_plot, function(i){
-  plot(ds2$p$age, ds2$g[i,], lwd = 2, main = rownames(ds2$g)[i], xlab = 'time', ylab = 'gene expression')
-  points(r_ds2$time.series, r_ds2$interpGE[i,], col = 'firebrick', lwd = 2, type = 'l')
+`ge_imCV()` computes various indices of model performance :
+the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`), Mean Squared Error (`MSE`) and average Root MSE (`aRMSE`). 
+These indices all compare model predictions and the true data. 
+The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
+
+From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
+
+
+## Predicting from the model
+
+The `geim` object returned by `ge_im()` has its predict method which can be used like for any model.
+You can also specify if you want the predictions as components or as the full gene expression matrix.
+
+On our `ds1` example :
+```{r pred_ds1}
+# setup new data
+n.inter <- 100
+ndat <- data.frame(age = seq(min(ds1$p$age), max(ds1$p$age),  l = n.inter), 
+                   strain = rep("N2", n.inter))
+
+# predict
+pred_ds1_comp <- predict(m_ds1, ndat, as.c = TRUE)
+pred_ds1_ge <- predict(m_ds1, ndat)
+```
+
+
+## Checking/Validating the interpolation
+
+We have built our model, now we can have a look at the interpolation results.
+To do this, one can do two things : 
+
+ - Check the model predictions against components (plots)
+ - Stage the samples on their own interpolated data, or better (if possible) stage another time series on your reference for external validation.
+
+We can do both with our example, the `ds2` dataset can be used for external validation.
+
+```{r plot_pca_ds1, echo = F, fig.width=12, fig.height=6}
+par(mfrow = c(2,4))
+invisible(sapply(seq_len(8), function(i){
+  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+           type = 'l', lty = 2)
+  })
+  points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
+           pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
 }))
-legend('bottomright', lwd = c(2,3), legend = c("data", "PLSR"), 
-       pch = c(1,NA), lty = c(0,1), col = c("grey20", "firebrick"), bty = "n", )
 ```
 
-That's it. The reference is ready to be used to stage samples.
+```{r ae_ds1_test, cache=quick_build}
+r_ds1 <- list(interpGE = pred_ds1_ge, time.series = ndat$age)
 
-A good test is to stage the samples used to build the reference.
-
-```{r ae_ds2_r2, eval = F}
-ae_ds2_rds2 <- ae(ds2$g, r_ds2$interpGE, r_ds2$time.series)
-```
-```{r plot_ae_ds2_rds2, fig.height=6, fig.width=6, out.width="60%", eval = F}
-plot(ds2$p$age, ae_ds2_rds2$age.estimates[,1], lwd = 2, 
-     xlab = "Chronological age", ylab = "Predicted age", 
-     main = "ds2 sample predictions on its reference")
-abline(a = 0, b = 1, lty= 2)
+ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
+ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
 ```
 
 
 
+
+```{r echo=F, fig.height=6, fig.width=12}
+par(mfrow = c(1,2))
+rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
+plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
+invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+  s <- ds1$p$strain == l
+  points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+}))
+
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
+       lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
+
+rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
+plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
+points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+```
 
 
 <!-- # Advanced usage -->
@@ -551,6 +640,8 @@ P_ds1 <- Biobase::pData(GEOquery::getGEO(geo_ds1, getGPL = F)[[1]])
 P_ds1[,10:34] <- NULL
 P_ds1[, 3:8] <- NULL
 
+colnames(P_ds1)[4] <- "strain"
+P_ds1$strain <- factor(P_ds1$strain)
 P_ds1$title <- gsub('[-\\(\\);]', '.', P_ds1$title)
 
 colnames(X_ds1) <- gsub('RNASeq_riboM_', '', colnames(X_ds1), fixed = T)
