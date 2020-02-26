@@ -54,7 +54,7 @@ p <- wormRef::Cel_larval$p
 
 # do a pca & select nb of components to use for interpol
 pca <- stats::prcomp(X, rank = 20)
-nc <- sum(summary(pca)$importance[3, ] < .99) + 1 # only .99 for computational speed
+nc <- sum(summary(pca)$importance[3, ] < .999) + 1
 
 
 # find optimal spline type
