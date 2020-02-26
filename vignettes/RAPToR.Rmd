@@ -322,11 +322,11 @@ The sample's estimate is also given below the interval.
 
 Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a broad overview.
 
-Interpolating on time series data is the basis for building high-temporal-resolution references.
+Interpolating on time series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
 
 To build your reference, you will require a time series of gene expression data on your favourite organism.
-The `ds2` example dataset we loaded earlier will be used to illustrate the process.
+The `ds1` example dataset we loaded earlier will be used to illustrate the process.
 
 ## The gene expression interpolation model interface
 
@@ -369,9 +369,8 @@ Note that a single model formula is specified and applied to all the components,
 
 ## Finding the appropriate model and parameters
 ### Model type
-The default GEIM is fitted using GAMs on PCA components.
+The default GEIM is fitted using GAMs on PCA components, this is a robust choice when applying a smoothing spline to the data.
 PCA and ICA interpolation yield near-identical results in most scenarios.
-This is a robust choice when applying a smoothing spline to the data.
 
 ### Parameter estimation
 
@@ -464,6 +463,7 @@ invisible(sapply(seq_len(8), function(i){
 ```
 
 ```{r ae_ds1_test, cache=quick_build}
+# make a 'reference object' 
 r_ds1 <- list(interpGE = pred_ds1_ge, time.series = ndat$age)
 
 ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
