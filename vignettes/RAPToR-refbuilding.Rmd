@@ -1,0 +1,37 @@
+---
+title: "`RAPToR` - Building References"
+output: 
+  rmarkdown::html_document :
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{RAPToR-refbuilding}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: ../inst/REFERENCES.bib
+author: Romain Bulteau
+date: "`r format(Sys.Date(), '%B %Y')`"
+---
+  
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+quick_build <- F # wether to cache heavy-computation chunks 
+
+library(RAPToR)
+
+requireNamespace("limma", quietly = T)
+```
+
+This vignette is specifically focused on building references to stage samples with `RAPToR`.
+For a more general use of the package, [see the `"RAPToR"` vignette](RAPToR.html).
+
+## Contents coming soon :-)
+
+
+<hr>
