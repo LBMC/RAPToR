@@ -54,7 +54,7 @@ This means that any data providing information on gene expression on a large sca
 
 Data-packages hold pre-built references for quick & easy usage.
 
- - [`wormRef` Nematode references](https://www.github.com/LMBC/wormRef) (*C. elegans* development)
+ - [`wormRef` Nematode references](https://www.github.com/LBMC/wormRef) (*C. elegans* development)
 
 
 <br>
