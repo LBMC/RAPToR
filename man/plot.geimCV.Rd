@@ -63,7 +63,7 @@ nc <- sum(summary(pca)$importance[3, ] < .999) + 1
 # find optimal spline type
 # setup formulas
 smooths <- c('bs', 'tp', 'cr', 'ds')
-flist <- as.list(paste0('X ~ s(age, bs = '', smooths, '') + cov'))
+flist <- as.list(paste0('X ~ s(age, bs = \'', smooths, '\') + cov'))
 # do CV
 cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
                  cv.n = 20, nc = nc)
@@ -71,7 +71,7 @@ cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
 plot(cvres, names.arrange = 4) # lowest pred error with 'ds' spline
 
 # build model & interpolation data
-m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = 'ds') + cov', nc = nc)
+m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = \'ds\') + cov', nc = nc)
 n.inter = 100
 ndat <- data.frame(age = seq(min(p$age), max(p$age), l = n.inter),
                    cov = rep(p$cov[1], n.inter))
