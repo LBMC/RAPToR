@@ -109,7 +109,7 @@ list_refs("wormRef")
 ```
 
 The data-packages currently available are listed on the [README of the github repo](https://github.com/LBCM/RAPToR).
-You can build your own reference data packages following a few rules given in the [vignette on reference building](RAPTOR-refbuilding.html).
+You can build your own reference data packages following a few rules given in the [vignette on reference building](RAPToR-refbuilding.html).
 
 
 # Usage example
@@ -178,7 +178,7 @@ To help with this conversion, gene ID reference tables are included in the data-
 `RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
 This means you have to select the proper reference to run your samples against.
 By looking at reference list like above, or using the `plot_refs()` function, you can determine which reference is appropriate for your samples. 
-If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-references) for a quick-start guide or the [reference-building vignette](RAPTOR-refbuilding.html) for a more in-depth explanation.
+If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-references) for a quick-start guide or the [reference-building vignette](RAPToR-refbuilding.html) for a more in-depth explanation.
 
 The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
 
@@ -322,7 +322,7 @@ The sample's estimate is also given below the interval.
 
 # Building your own references
 
-Note that [there is a vignette entirely dedicated to this process](RAPTOR-refbuilding.html), so this section is just a broad overview.
+Note that [there is a vignette entirely dedicated to this process](RAPToR-refbuilding.html), so this section is just a broad overview.
 
 Interpolating on time series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
