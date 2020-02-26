@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- T # wether to cache heavy-computation chunks 
+quick_build <- F # wether to cache heavy-computation chunks 
 
 library(RAPToR)
 
