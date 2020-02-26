@@ -49,9 +49,16 @@ This means that any data providing information on gene expression on a large sca
 
 **The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 
-<br>
-<br>
 
+## Current available data-packages
+
+Data-packages hold pre-built references for quick & easy usage.
+
+ - [`wormRef` Nematode references](https://www.github.com/LMBC/wormRef) (*C. elegans* development)
+
+
+<br>
+<br>
 <hr>
 
 ## Update info
