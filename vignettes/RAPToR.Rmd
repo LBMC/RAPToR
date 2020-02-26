@@ -557,7 +557,11 @@ P_ds1$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds1$`time in development:
 X_ds1 <- X_ds1[, P_ds1$title]
 
 ds1 <- list(g = X_ds1, p = P_ds1)
-save(ds1, file = "../inst/extdata/ds1.RData")
+save(ds1, file = "../inst/extdata/ds1.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_ds1)
+rm(geo_ds1, g_url_ds1, g_file_ds1, X_ds1, P_ds1)
 ```
 
 ```{r load_ds2_c, eval = F}
@@ -593,7 +597,11 @@ colnames(X_ds2) <- gsub('RNASeq_polyA_','', colnames(X_ds2))
 X_ds2 <- X_ds2[, P_ds2$title]
 
 ds2 <- list(g = X_ds2, p = P_ds2)
-save(ds2, file = "../inst/extdata/ds2.RData")
+save(ds2, file = "../inst/extdata/ds2.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_ds2)
+rm(geo_ds2, g_url_ds2, g_file_ds2, X_ds2, P_ds2)
 ```
 
 
