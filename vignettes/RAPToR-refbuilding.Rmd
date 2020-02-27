@@ -28,6 +28,11 @@ library(RAPToR)
 requireNamespace("limma", quietly = T)
 ```
 
+```{r load_ds, include=FALSE}
+load("../inst/extdata/ds1.RData")
+load("../inst/extdata/ds2.RData")
+```
+
 
 # Preamble
 
@@ -55,7 +60,7 @@ Thankfully, these time-series experiments are (increasingly) numerous in the lit
 You may also have your own time-series data on hand.
 
 ### Databases
-There are a few databases from where you can download datasets. 
+There are a few databases you can download datasets from. 
 The most well-known the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
 
 Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts).
@@ -63,14 +68,69 @@ Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery
 ### What to look out for
 Several points of the experimental design should be kept in mind when selecting a dataset for a reference.
 
-   * *Are there replicates ?* If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a high-resolution experiment with one batch to build a reference.
-   * *Is the timepoint sampling even ?* Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
-   * *What's the developmental range ?* The bigger, the better ! (Though as long as the samples to stage fit within, this is good).
-   * *Is the profiling done on whole-organism or specific parts ?* You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
-   * *What's the profiling technology* RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do.
+   * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a high-resolution experiment with one batch to build a reference.
+   * ***Is the timepoint sampling even ?*** Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
+   * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the samples to stage fit within, this is good).
+   * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
+   * ***What's the profiling technology*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do.
    
+   
+### ID formatting
 
-## Contents coming soon :-)
+One of the plagues of bioinformatics is the large and fast-changing set of IDs for genes, transcripts, etc.
+When you build a reference, you should always convert it to IDs that are **conventional and stable**.
+We like to use the organism-specific IDs (*e.g*, Wormbase for *C. elegans* : `WBGene00016153`, Flybase for *Drosophila* : `FBgn0010583`).
+
+The [ensembl biomart](https://www.ensembl.org/info/data/biomart/index.html) or its associated R package [`biomaRt`](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) are a very useful ressource to get gene, transcript or probe ID lists for conversion.
+
+Below is a code snippet with an example getting gene IDs for drosophila with `biomaRt`.
+
+```{r biomart_example, eval = F}
+requireNamespace("biomaRt", quietly = TRUE)
+
+# setup connection to ensembl
+mart <- biomaRt::useMart("ensembl", dataset = "dmelanogaster_gene_ensembl")
+
+# get list of attributes
+droso_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", 
+                                             "ensembl_transcript_id",
+                                             "external_gene_name",
+                                             "flybase_gene_id"),
+                              mart = mart)
+
+head(droso_genes)
+#>   ensembl_gene_id ensembl_transcript_id external_gene_name flybase_gene_id
+#> 1     FBgn0053882           FBtr0091886      His2B:CG33882     FBgn0053882
+#> 2     FBgn0035648           FBtr0113148            CG13288     FBgn0035648
+#> 3     FBgn0035648           FBtr0331563            CG13288     FBgn0035648
+#> 4     FBgn0032726           FBtr0342927            CG10621     FBgn0032726
+#> 5     FBgn0032726           FBtr0342926            CG10621     FBgn0032726
+#> 6     FBgn0032726           FBtr0081191            CG10621     FBgn0032726
+```
+
+When multiple probe or transcript IDs match a single gene ID, we usually go for mean-aggregation of expression values. 
+This is taken care of with the `format_ids()` function.
+
+
+### Normalize and log expression
+
+It's common practice to normalize expression datasets (*e.g.* to account for technical bias).
+You may deal with many different profiling technologies when building references, and may join multiple datasets together for a reference.
+
+To stay as consistent as possible, we apply quantile-normalization on our datasets regardless of its source.
+For this, we use the `normalizeBetweenArrays()` function of the [`limma`](https://bioconductor.org/packages/release/bioc/html/limma.html) package.
+
+We also apply a $log(X + 1)$.
+
+```{r quantile_norm_log}
+ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
+ds1$g <- log(ds1$g + 1)
+
+ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
+ds2$g <- log(ds2$g + 1)
+```
+
+## Rest of contents coming soon :-)
 
 
 <hr>
