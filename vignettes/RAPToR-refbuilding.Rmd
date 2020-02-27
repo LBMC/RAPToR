@@ -21,12 +21,13 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- F # wether to cache heavy-computation chunks 
+quick_build <- T # wether to cache heavy-computation chunks 
 
 library(RAPToR)
 library(RColorBrewer)
 
 requireNamespace("limma", quietly = T)
+requireNamespace("stats")
 ```
 
 ```{r load_ds, include=FALSE}
@@ -143,6 +144,13 @@ ds2$g <- log(ds2$g + 1)
 
 It's usually a good practice to take a look at what's inside your data before doing anything else to it.
 
+```{r obs_head, results='markup'}
+ds1$g[1:5, 1:5]
+
+head(ds1$p, n = 5)
+```
+
+
 ### Correlation
 With our time series data, we can look at correlation heatmaps or boxplots of the samples to catch potential ouliers and observe the clear correlation between samples of similar development.
 
@@ -176,6 +184,223 @@ legend(23,.86, fill = transp(1:4), legend = c("let-7", "lin-41", "let-7/lin-41",
 </div>
 </div>
 <div style="clear: both;"></div>
+
+### Plotting components
+You can also plot components (PCA or ICA) with respect to time, to get an idea of the dynamics.
+
+```{r obs_prcomp}
+pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
+```
+
+```{r plot_pcads1, echo = F, fig.height=6, fig.width=12}
+par(mfrow = c(2,4))
+invisible(sapply(seq_len(8), function(i){
+  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+           type = 'l', lty = 2)
+  })
+  # points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+}))
+```
+
+In this data, we see that between different strains, we get very consistent dynamics. 
+Also, PC3 and PC4 capture an oscillatory dynamic characteristic of the molting processes of *C. elegans* larval development.
+
+
+### Plotting random genes
+Another approach can be to look at a few random genes. You get a first hand look at the noise in your data.
+
+```{r plot_rdgn, echo = F, fig.height=3, fig.width=12}
+set.seed(3)
+gtp <- sample(nrow(ds1$g), size = 4)
+par(mfrow = c(1,4))
+invisible(sapply(gtp, function(i){
+  plot(ds1$p$age, ds1$g[i,], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "GExpr", main = rownames(ds1$g)[i])
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], ds1$g[i,s], col = l, 
+           type = 'l', lty = 2)
+  })
+  # points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+}))
+```
+
+
+<br>
+<br>
+<br>
+
+# The gene expression interpolation model
+
+To increase the resolution of our time series, we are faced with a very unbalanced regression problem.
+We essentially want to predict tens of thousands of dependent variables (genes) with our few independent variables (time, batch, ...).
+
+We refer to the gene expression interpolation model as GEIM in the following text. 
+
+
+## About the model
+
+The principal strategy we put forward for predicting on such a large scale of output variables, is to interpolate in a dimensionally reduced space. 
+We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
+
+Both PCA and ICA perform the same type of linear transformation on the data, they just maximize a different criteria. 
+PCA maximizes the variance of each component and ICA their independance. We get the following :
+
+$$
+X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
+$$
+with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample loadings ($n$ samples by $c$ components). 
+$S$ is what's usually looked at when performing a PCA (or ICA) on gene expression data, to look at the samples in the component space. It's what we plotted in the section on observing data, for instance. 
+
+@alter2000singular previously demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the dynamics of gene expression. 
+We essentially use the same property for a GEIM.
+We build a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
+
+We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
+GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
+
+As you'll see in the next section, a standard R formula will be specifed to the model.
+This formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs. 
+With GLMs, you can also use splines from the `splines` core package, such as `ns()` for natural cubic splines.
+
+
+## The GEIM interface
+
+GEIMs, are built with the `ge_im()` function, which outputs a `geim` object.
+This function takes as input 3 key arguments : 
+
+ - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
+ - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
+ - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`**.
+ 
+Another important argument is the number of components used for the interpolation, `nc`.
+
+For example, using the `ds1` dataset we could build the following model.
+```{r model_ds1}
+m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = 24)
+```
+
+Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on each component.
+
+Feel free to have a look at the documentation of the function for additionnal parameters `?ge_im()`.
+
+To get model predictions, you simply use the `predict()` function, like for any standard R model.
+
+
+## Finding the appropriate model and parameters
+### Model type
+There are 5 types of GEIM you can fit with the `ge_im()` function.
+
+* A GAM on PCA components (`method = "gam", dim_red = "pca"`) (default)
+* A GLM on PCA components (`method = "glm", dim_red = "pca"`)
+* A GAM on ICA components (`method = "gam", dim_red = "ica"`)
+* A GLM on ICA components (`method = "glm", dim_red = "ica"`)
+* A gene-by-gene linear model directly on the gene expression matrix (`method = "limma"`)
+
+The default option is a robust choice when applying a smoothing spline to the data.
+
+Using PCA or ICA components yields near-identical results in most scenarios. 
+ICA tends to outperform PCA when the data is very noisy. 
+This is by design since ICA essentially performs signal extraction.
+It is however slower, especially if `nc` is large.
+
+The last option (`"limma"`) corresponds to a solution that makes no effort to reduce the dimensionality of the problem (the `dim_red` and `nc` arguments are ignored). 
+As a result, there is no information loss or bias introduced by dimension reduction. 
+This approach is however very sensitive to noise.
+The model is fit with the `lmFit()` function of the `limma` package (hence the name).
+
+### Model performance
+One can use a number of criteria to evaluate model performance. 
+We provide the `mperf()` function to compute various indices by inputing the data and the model predictions. 
+
+In the formulas below, $X$ corresponds to the input gene expression matrix ($m$ genes as rows, $n$ samples as columns), $\hat{X}$ to the model predictions. $x_i$ corresponds to row $i$ of matrix $X$ and $x_i^{(j)}$ to sample $j$ of that row. 
+This notation is derived from the general regression problem, where $X^T$ corresponds to the set of $m$ dependant variable to predict.
+
+ - `aCC` : average Correlation Coefficient.
+ 
+$$ 
+ aCC = \frac{1}{m}\sum^{m}_{i=1}{CC} = \frac{1}{m}\sum^{m}_{i=1}{\cfrac{\sum^{n}_{j=1}{(x_i^{(j)}-\bar{x}_i)(\hat{x}_i^{(j)}-\bar{\hat{x}}_i)}}{\sqrt{\sum^{n}_{j=1}{(x_i^{(j)}-\bar{x}_i)^2(\hat{x}_i^{(j)}-\bar{\hat{x}}_i)^2}}}}
+$$
+
+ - `aRE` : average Relative Error. 
+ 
+$$ 
+a\delta = \frac{1}{m}\sum^{m}_{i=1}{\delta} = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} \cfrac{| x_i^{(j)} - \hat{x}_i^{(j)} | }{x_i^{(j)}}
+$$
+
+ - `MSE` : Mean Squared Error. 
+
+$$ 
+MSE = \frac{1}{m} \sum^{m}_{i=1} \frac{1}{n} \sum^{n}_{j=1} (x_i^{(j)} - \hat{x}_i^{(j)} )^2
+$$
+
+ - `aRMSE` : average Root MSE.
+ 
+$$ 
+aRMSE = \frac{1}{m}\sum^{m}_{i=1}{RMSE} = \frac{1}{m} \sum^{m}_{i=1} \sqrt{\cfrac{\sum^{n}_{j=1} (x_i^{(j)} - \hat{x}_i^{(j)} )^2}{n}}
+$$
+
+Note that these indices are computed and averaged *with respect to variables, not observations*. 
+You can either get the overall value or the
+
+### Number of components 
+The number of components to use for the interpolation is by default set to the number of samples.
+However, we recommend to set a cutoff on explained variance of PCA components to select it. 
+You can do this (on PCA explained variance) even if you choose to use ICA for interpolation.
+
+For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
+
+```{r nc_ds1}
+nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
+nc
+```
+
+### Comparing formulas
+
+Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 
+The function inputs the `X`, `p` and a `formula_list` to test. 
+Other parameters on the CV itself can also be given (*e.g.* training set size).
+
+Note that the model type is fixed for all formulas in one call of `ge_imCV()`.
+
+`ge_imCV()` computes various indices of model performance. These are computed *by variable* (gene) and then averaged :
+the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`), Mean Squared Error (`MSE`) and average Root MSE (`aRMSE`). 
+These indices all compare model predictions and the true data. 
+The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
+
+Below is an example of usage to choose between 4 available smooth terms on the `ds1` GEIM.
+```{r include = F}
+set.seed(10)
+```
+
+```{r cv_ds1, cache=quick_build, results='markup'}
+smooth_methods <- c("tp", "ts", "cr", "ps")
+flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
+flist
+
+cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
+                  cv.n = 20, nc = nc, nb.cores = 3)
+```
+
+```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+     swarmargs = list(cex = .8))
+```
+
+
+
+
+From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
 
 <br>
 
