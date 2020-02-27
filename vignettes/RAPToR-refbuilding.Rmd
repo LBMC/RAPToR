@@ -24,6 +24,7 @@ options(width=100)
 quick_build <- F # wether to cache heavy-computation chunks 
 
 library(RAPToR)
+library(RColorBrewer)
 
 requireNamespace("limma", quietly = T)
 ```
@@ -31,6 +32,13 @@ requireNamespace("limma", quietly = T)
 ```{r load_ds, include=FALSE}
 load("../inst/extdata/ds1.RData")
 load("../inst/extdata/ds2.RData")
+```
+
+```{r transp_function, echo=F}
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
 ```
 
 
@@ -129,6 +137,48 @@ ds1$g <- log(ds1$g + 1)
 ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
 ds2$g <- log(ds2$g + 1)
 ```
+
+
+## Observing the data
+
+It's usually a good practice to take a look at what's inside your data before doing anything else to it.
+
+### Correlation
+With our time series data, we can look at correlation heatmaps or boxplots of the samples to catch potential ouliers and observe the clear correlation between samples of similar development.
+
+```{r obs_data_corr}
+cor_ds1 <- cor(ds1$g, method = "spearman")
+```
+
+<div style = "display:block">
+<div style="width:40%; float:left">
+```{r hm_cor, echo = F, fig.height=5, fig.width=5}
+ord <- order(ds1$p$age)
+heatmap(cor_ds1[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
+        RowSideColors = transp(as.numeric(ds1$p$strain[ord])), labRow = "", labCol = "")
+par(xpd = T)
+mtext(text = unique(ds1$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11))
+
+```
+</div>
+<div style="width:59%; float:right">
+```{r bxplot_cor, echo = F, fig.show='hold', warning=FALSE}
+# p <- par()
+# layout(matrix(1:2, ncol = 2), widths = c(.8,.2))
+boxplot(cor_ds1 ~ interaction(ds1$p$strain, ds1$p$age), col = transp(1:4), xaxt = "n", ylab = "Spearman correlation",
+        xlab = "age", at = seq(1,44, l = 55)[c(T,T,T,T,F)])
+axis(side = 1, at = seq(2,42, l = 11), labels = unique(ds1$p$age))
+# par(mar = rep(1,4))
+# plot.new()
+legend(23,.86, fill = transp(1:4), legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+       bty = "n")
+```
+</div>
+</div>
+<div style="clear: both;"></div>
+
+<br>
+
 
 ## Rest of contents coming soon :-)
 
