@@ -35,7 +35,7 @@ vignette("RAPToR")
 
 The method works in a three-step process. 
 
- 1. From a reference gene expression time series (several of which are included in this package), a near-continous, **high-temporal-resolution reference** is built.
+ 1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
