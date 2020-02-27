@@ -28,8 +28,47 @@ library(RAPToR)
 requireNamespace("limma", quietly = T)
 ```
 
-This vignette is specifically focused on building references to stage samples with `RAPToR`.
+
+# Preamble
+
+This vignette is specifically focused on building references needed to stage samples with `RAPToR`.
 For a more general use of the package, [see the `"RAPToR"` vignette](RAPToR.html).
+
+
+Building references is one of the key aspects of `RAPToR`. 
+An appropriate reference is needed to stage samples, and since they are re-usable we believe they are worth the trouble to set up.
+
+Throughout this vignette, you will see the general workflow of building a reference from the selection of an appropriate dataset, to choosing and validating a model for interpolation. 
+In the midst of the explanations, examples will be given using the same `ds1` and `ds2` datasets as in the general usage vignette ( [you can check out how these were built at the end of that vignette](RAPToR.html#load_ds1_ds2) ).
+
+Finally, a few more examples of reference building on different datasets will be included at the end of this document.
+
+I hope this material will be sufficient for your reference-building needs. 
+
+
+# The data
+
+## Selecting / Preparing a dataset
+
+Without a transcriptomic timecourse dataset spanning the developmental stages of your samples' organism, I'm afraid there's not much we can do for you ! 
+Thankfully, these time-series experiments are (increasingly) numerous in the literature and most model organisms will have some kind of dataset we can use. 
+You may also have your own time-series data on hand.
+
+### Databases
+There are a few databases from where you can download datasets. 
+The most well-known the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
+
+Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts).
+
+### What to look out for
+Several points of the experimental design should be kept in mind when selecting a dataset for a reference.
+
+   * *Are there replicates ?* If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a high-resolution experiment with one batch to build a reference.
+   * *Is the timepoint sampling even ?* Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
+   * *What's the developmental range ?* The bigger, the better ! (Though as long as the samples to stage fit within, this is good).
+   * *Is the profiling done on whole-organism or specific parts ?* You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
+   * *What's the profiling technology* RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do.
+   
 
 ## Contents coming soon :-)
 
