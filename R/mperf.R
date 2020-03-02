@@ -52,7 +52,7 @@ mperf <- function(Y, Yh, global = TRUE,
   }
     
   res <- list()
-  d <- ncolw(Y)
+  d <- ncol(Y)
   n <- nrow(Y)
   
   
