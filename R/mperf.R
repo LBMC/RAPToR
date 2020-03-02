@@ -52,8 +52,8 @@ mperf <- function(Y, Yh, global = TRUE,
   }
     
   res <- list()
-  d <- nrow(Y)
-  n <- ncol(Y)
+  d <- ncolw(Y)
+  n <- nrow(Y)
   
   
   if("aCC" %in% to_compute){
