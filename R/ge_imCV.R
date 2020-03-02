@@ -32,7 +32,7 @@
 #' 
 ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8, 
                     method = c("gam", "glm", "limma"), dim_red = c("pca", "ica"), nc = ncol(X), 
-                    to_compute = c("aCC", "aRE", "MSE", "aRMSE"), 
+                    to_compute = c("aRE", "MSE", "aRMSE"), 
                     nb.cores = 2, verbose = T, ...)
 {
   if(verbose)
