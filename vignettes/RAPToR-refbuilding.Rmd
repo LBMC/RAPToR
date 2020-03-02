@@ -296,6 +296,7 @@ Note that a single model formula is specified and applied to all the components,
 Feel free to have a look at the documentation of the function for additionnal parameters `?ge_im()`.
 
 To get model predictions, you simply use the `predict()` function, like for any standard R model.
+**Note that predictions correspond to a scaled version of `X` because of the dimension reduction procedure.**
 
 
 ## Finding the appropriate model and parameters
@@ -320,9 +321,14 @@ As a result, there is no information loss or bias introduced by dimension reduct
 This approach is however very sensitive to noise.
 The model is fit with the `lmFit()` function of the `limma` package (hence the name).
 
+
+Note that when using GAMs, there is by definition no interaction possible between terms. 
+It is possible to include a `by` argument to the `s()` function, but this essentialy corresponds to separate fits on the levels of the specified variable.
+
 ### Model performance
+
 One can use a number of criteria to evaluate model performance. 
-We provide the `mperf()` function to compute various indices by inputing the data and the model predictions. 
+We provide the `mperf()` function to compute the indices described below by inputing the data and the model predictions. 
 
 In the formulas below, $X$ corresponds to the input gene expression matrix ($m$ genes as rows, $n$ samples as columns), $\hat{X}$ to the model predictions. $x_i$ corresponds to row $i$ of matrix $X$ and $x_i^{(j)}$ to sample $j$ of that row. 
 This notation is derived from the general regression problem, where $X^T$ corresponds to the set of $m$ dependant variable to predict.
@@ -354,23 +360,24 @@ $$
 Note that these indices are computed and averaged *with respect to variables, not observations*. 
 You can either get the overall (averaged) index or the value per gene with the `global` parameter.
 
+
 ```{r mperf_ds1, results='markup'}
-g_mp <- mperf(ds1$g, predict(m_ds1), is.t = T)
+g_mp <- mperf(scale(ds1$g), predict(m_ds1), is.t = T)
 g_mp
-ng_mp <- mperf(ds1$g, predict(m_ds1), is.t = T, global = F)
+ng_mp <- mperf(scale(ds1$g), predict(m_ds1), is.t = T, global = F)
 ```
 
 It's possible to check the model performance by looking at the index distributions over all genes, *e.g. :*
 ```{r bxp_mperf_ds1, echo = F, fig.height=5, fig.width=8}
 par(mfrow = c(2,2))
 invisible(sapply(names(ng_mp), function(idx){
+  rg <- range(na.omit(ng_mp[[idx]]))
   if(idx == "aCC"){
-    d <- density(na.omit(ng_mp[[idx]]), from = 0, to = 1)
     pos <- 2
   } else {
-    d <- density(na.omit(ng_mp[[idx]]))
     pos <- 4
   }
+  d <- density(na.omit(ng_mp[[idx]]), from = rg[1], to = rg[2])
   plot(d, main = paste0(gsub("a", "", idx, fixed = T), " density (", length(ng_mp[[idx]]), " genes)"), xlab = idx, lwd = 2)
   abline(v = g_mp[[idx]], lty = 2, lwd = 2, col = "firebrick")
   text(g_mp[[idx]], .9*max(d$y), pos = pos, labels = idx, font = 2, col = "firebrick")
@@ -461,8 +468,139 @@ plot(cv_ds1k, names = c("na", paste0("k=", ks, rep(c("", ", fx=T"), each = 4))),
 ```
 
 
+## Predicting new timepoints
+
+The entire reason we need GEIMs is to interpolate. 
+We want a higher precision time series to stage samples.
+
+To do this, as for any R model, we will use the `predict()` function.
+We first need to set up the new data to predict from. 
+
+```{r ndat_mds1, results='markup'}
+n.inter <- 100 # nb of new timepoints
+newdat <- data.frame(
+  age = seq(min(ds1$p$age), max(ds1$p$age), l = n.inter),
+  strain = rep("N2", n.inter) # we want to predict as N2 
+  )
+head(newdat)
+
+# predict 
+pred_m_ds1 <- predict(m_ds1, newdata = newdat)
+```
+
+You can choose to output the predictions directly as the full gene expression matrix (default) or as components.
+Predictions as components with the `as.c = TRUE` option can be useful when checking the interpolation (see the next section).
+
+```{r pred_mds1_comp}
+pred_m_ds1_comp <- predict(m_ds1, newdata = newdat, as.c = TRUE)
+```
+
+
+## Validating / Checking model predictions
+
+We have built our model and predicted new data, now we can have a look at the interpolation results. 
+To do this, one can do two things.
+
+### Checking model predictions against components
+Checking model predictions against components allows you to see immediately if some dynamics get mishandled by the model. 
+
+Don't hope for perfect fits ! 
+It's perfectly acceptable to have slight offsets. 
+You may also notice some noisy components get "flattened", with a null model fitted. 
+These have little impact on the results as they usually correspond to a minuscule part of total variance. 
+They also sometimes actually get rid of some unwanted variation.
+ 
+On the `ds1` dataset, the predictions of the first few components are plotted below.
+
+```{r plot_pca_ds1, echo = F, fig.width=12, fig.height=6}
+par(mfrow = c(2,4))
+invisible(sapply(seq_len(8), function(i){
+  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+           type = 'l', lty = 2)
+  })
+  points(newdat$age, pred_m_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
+           pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
+}))
+```
+
+ 
+The interpolation should translates well back on the (*scaled*) full expression matrix :
+
+```{r plot_rd_genes_pred, echo = F, fig.height = 3, fig.width=12}
+par(mfrow = c(1,4))
+sX <- scale(ds1$g)
+invisible(sapply(gtp, function(i){
+  plot(ds1$p$age, sX[i,], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "Scaled GExpr", main = rownames(ds1$g)[i])
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], sX[i,s], col = l, 
+           type = 'l', lty = 2)
+  })
+  points(newdat$age, pred_m_ds1[i, ], col = "royalblue", type = 'l', lwd = 3)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+}))
+```
+
+### Staging samples
+
+Testing your reference on its final purpose is a good practice.
+
+A first test is to stage the samples you used to build the reference on their own interpolated reference.
+
+Finally, the best validation is to stage another time series from the literature on your reference if such data exists.
+This provides external validation, confirming the dynamics you interpolated on indeed correspond to development processes and not a specific effect of the dataset (which is unlikely, but not impossible).
+
+We can do this with our example, and the `ds2` dataset can be used for external validation.
+
+```{r ae_ds1_test, cache=quick_build, results='hide'}
+# make a 'reference object' 
+r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+
+ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
+ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
+```
+
+
+```{r echo=F, fig.height=6, fig.width=12}
+par(mfrow = c(1,2))
+rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
+plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
+invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+  s <- ds1$p$strain == l
+  points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+}))
+
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
+       lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
+
+rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
+plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
+points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+```
+
 <br>
 
+# Reference-Building examples
 
 ## Rest of contents coming soon :-)
 
