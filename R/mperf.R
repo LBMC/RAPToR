@@ -46,7 +46,7 @@ mperf <- function(Y, Yh, global = TRUE,
   
   if(!all(dim(Y) == dim(Yh)))
     stop("Y and Yh must have the same dimensions")
-  if(!is.t){
+  if(is.t){
     Y <- t(Y)
     Yh <- t(Yh)
   }
@@ -58,9 +58,9 @@ mperf <- function(Y, Yh, global = TRUE,
   
   if("aCC" %in% to_compute){
     if(global){
-      acc <- sum(diag(cor(Y, Yh)), na.rm = T)/d
+      suppressWarnings(acc <- sum(mapply(cor, as.data.frame(Y), as.data.frame(Yh)), na.rm = T)/d)
     }
-    else acc <- diag(cor(Y, Yh))
+    else suppressWarnings(acc <- mapply(cor, as.data.frame(Y), as.data.frame(Yh)))
     
     res$aCC <- acc
   }
@@ -70,7 +70,7 @@ mperf <- function(Y, Yh, global = TRUE,
     if(global){
       are <- abs(Y-Yh)/ Y
       are <- sum(are[are < Inf], na.rm = T)/(d*n)
-    } else are <- rowSums( abs(Y-Yh)/ Y)/n
+    } else are <- colSums( abs(Y-Yh)/ Y)/n
     
     res$aRE <- are
   }
@@ -79,7 +79,7 @@ mperf <- function(Y, Yh, global = TRUE,
     
     if(global){
       mse <- sum((Y-Yh)^2, na.rm = TRUE)/(d*n)
-    } else mse <- rowSums((Y-Yh)^2)/n
+    } else mse <- colSums((Y-Yh)^2)/n
     
     res$MSE <- mse
   }
