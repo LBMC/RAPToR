@@ -25,6 +25,7 @@ quick_build <- T # wether to cache heavy-computation chunks
 
 library(RAPToR)
 library(RColorBrewer)
+library(beeswarm)
 
 requireNamespace("limma", quietly = T)
 requireNamespace("stats")
@@ -351,7 +352,32 @@ aRMSE = \frac{1}{m}\sum^{m}_{i=1}{RMSE} = \frac{1}{m} \sum^{m}_{i=1} \sqrt{\cfra
 $$
 
 Note that these indices are computed and averaged *with respect to variables, not observations*. 
-You can either get the overall value or the
+You can either get the overall (averaged) index or the value per gene with the `global` parameter.
+
+```{r mperf_ds1, results='markup'}
+g_mp <- mperf(ds1$g, predict(m_ds1), is.t = T)
+g_mp
+ng_mp <- mperf(ds1$g, predict(m_ds1), is.t = T, global = F)
+```
+
+It's possible to check the model performance by looking at the index distributions over all genes, *e.g. :*
+```{r bxp_mperf_ds1, echo = F, fig.height=5, fig.width=8}
+par(mfrow = c(2,2))
+invisible(sapply(names(ng_mp), function(idx){
+  if(idx == "aCC"){
+    d <- density(na.omit(ng_mp[[idx]]), from = 0, to = 1)
+    pos <- 2
+  } else {
+    d <- density(na.omit(ng_mp[[idx]]))
+    pos <- 4
+  }
+  plot(d, main = paste0(gsub("a", "", idx, fixed = T), " density (", length(ng_mp[[idx]]), " genes)"), xlab = idx, lwd = 2)
+  abline(v = g_mp[[idx]], lty = 2, lwd = 2, col = "firebrick")
+  text(g_mp[[idx]], .9*max(d$y), pos = pos, labels = idx, font = 2, col = "firebrick")
+}))
+
+```
+
 
 ### Number of components 
 The number of components to use for the interpolation is by default set to the number of samples.
@@ -371,14 +397,16 @@ Choosing from different splines (and/or parameters) can be done with cross-valid
 The function inputs the `X`, `p` and a `formula_list` to test. 
 Other parameters on the CV itself can also be given (*e.g.* training set size).
 
-Note that the model type is fixed for all formulas in one call of `ge_imCV()`.
+The default training/validation set ratio is `cv.s = 0.8`, so $80\%$ of the data is used to build the model. 
+When including (factor) covariates in the model, the training set is built such that all groups are proportionately represented in the training set (based on terms of the first formula in the list).
+The number of repeats to do for the CV is defined by `cv.n`.
 
-`ge_imCV()` computes various indices of model performance. These are computed *by variable* (gene) and then averaged :
-the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`), Mean Squared Error (`MSE`) and average Root MSE (`aRMSE`). 
-These indices all compare model predictions and the true data. 
-The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
+Note that the model type (GAM/GLM, PCA/ICA) is fixed for all formulas in one call of `ge_imCV()`.
 
-Below is an example of usage to choose between 4 available smooth terms on the `ds1` GEIM.
+`ge_imCV()` computes the indices of model performance with `mperf()`, excluding `aCC` due to computing time. 
+Indices are computed on the validation set (CV Error) *and* on the training set (Model PerFormance).
+
+Below is an example of usage to choose between 4 available GAM smooth terms on the `ds1` GEIM.
 ```{r include = F}
 set.seed(10)
 ```
@@ -392,17 +420,16 @@ cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
                   cv.n = 20, nc = nc, nb.cores = 3)
 ```
 
-```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+```{r plot_cv_ds1, fig.width=8, fig.height=8, fig.align='center'}
 plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
 ```
 
 
-
 From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
 
 
-You can go a step further and specify extra spline parameters for a finer fit. 
+You can also specify extra spline parameters for a fit. 
 With `s()`, you can give the number of knots to use with the `k` parameters. 
 By default, the spline is a *penalized spline*, so it will not necessarily use `k` knots, but it will stay around that value. 
 In our experience, this is not really necessary as the parameter estimation done with `gam()` is usually sufficient.
@@ -441,3 +468,5 @@ plot(cv_ds1k, names = c("na", paste0("k=", ks, rep(c("", ", fx=T"), each = 4))),
 
 
 <hr>
+
+# References
