@@ -399,8 +399,40 @@ plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
 
 
 
-
 From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
+
+
+You can go a step further and specify extra spline parameters for a finer fit. 
+With `s()`, you can give the number of knots to use with the `k` parameters. 
+By default, the spline is a *penalized spline*, so it will not necessarily use `k` knots, but it will stay around that value. 
+In our experience, this is not really necessary as the parameter estimation done with `gam()` is usually sufficient.
+
+To force a spline with `k` knots, you must also set `fx = TRUE` (note this fits a spline of `k` knots on *all* components, whereas the penalized spline will adjust). 
+You can look at the `s()` or `choose.k` documentation for further information.
+
+Below is an example with the `ds1` data.
+
+```{r cv_ds1_k, cache = quick_build}
+ks <- c(4,6,8,10)
+flistk <- as.list(c(
+  "X ~ s(age, bs =  'cr') + strain",
+  paste0("X ~ s(age, bs =  'cr', k = ", ks , ") + strain"), 
+  paste0("X ~ s(age, bs =  'cr', k = ", ks , ", fx=TRUE) + strain")
+  ))
+flistk
+
+cv_ds1k <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flistk,
+                   cv.n = 20, nc = nc, nb.cores = 3)
+```
+
+```{r plot_cv_ds1k, echo = F, fig.width=12, fig.height=9, fig.align='center'}
+par(mar = c(7,4,3,1))
+plot(cv_ds1k, names = c("na", paste0("k=", ks, rep(c("", ", fx=T"), each = 4))), outline = F,
+     col = transp(c("royalblue", rep(c(1, "firebrick"), each = 4))), 
+     tcol = c("royalblue", rep(c(1, "firebrick"), each = 4)),
+     names.arrange = 5, swarmargs = list(cex = .8))
+```
+
 
 <br>
 
