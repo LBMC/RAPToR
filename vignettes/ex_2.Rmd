@@ -1,0 +1,340 @@
+---
+output: 
+  rmarkdown::html_document :
+    keep_md: yes
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+quick_build <- T # wether to cache heavy-computation chunks 
+
+library(RAPToR)
+library(RColorBrewer)
+library(beeswarm)
+
+requireNamespace("limma", quietly = T)
+requireNamespace("stats")
+
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+```
+
+### The data
+
+We are using two *Drosophila melanogaster*  embryonic development time series datasets. 
+The dataset used to build the reference was chosen with a very low time resolution on purpose to display the effectiveness of interpolating on gene expression data
+
+1. A time series Drosophila embryonic development, part of the modENCODE project and published by @graveley2011developmental, hereafter called `ds3`. This is the dataset used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
+ 1. A high-resolution time series of embryonic development published by @hendriks2014extensive, called `ds4`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+
+#### {.tabset}
+Code to generate `ds3` and `ds4` :
+
+##### Hide
+
+##### Show
+```{r raw2rpkm_func, eval = FALSE}
+raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
+  # Compute RPKM from raw counts
+  if(!all(rownames(X)%in%gene.length[, id.col])){
+    stop("Some genes are missing length info !")
+  }
+  res <- sapply(colnames(X), function(samp){
+    pm <- sum(X[,samp])/1e6
+    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
+  })
+  rownames(res) <- rownames(X)
+  return(res)
+}
+```
+
+```{r load_droso_genes, eval = F}
+requireNamespace("biomaRt", quietly = TRUE)
+
+mart <- biomaRt::useMart("ensembl", dataset = "dmelanogaster_gene_ensembl")
+droso_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", 
+                                             "ensembl_transcript_id",
+                                             "external_gene_name",
+                                             "transcript_length"),
+                              mart = mart)
+colnames(droso_genes)[1:3] <- c("fb_id", "transcript_id", "gene_name")
+
+rm(mart)
+```
+
+<br>
+
+###### `ds3`
+
+```{r load_ds3_c, eval = F}
+g_url_ds3 <- "ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz"
+g_file_ds3 <- "../inst/extdata/ds3.csv.gz"
+utils::download.file(g_url_ds3, destfile = g_file_ds3)
+
+
+X_ds3 <- read.table(gzfile(g_file_ds3), sep = ',', row.names = 1, h = T)
+
+# convert gene ids to FBgn
+X_ds3 <- format_ids(X_ds3, droso_genes, from = "gene_name", to = "fb_id")
+
+# select embryo time series samples
+X_ds3 <- X_ds3[,1:12]
+
+P_ds3 <- data.frame(sname = colnames(X_ds3),
+                    age = as.numeric(gsub("em(\\d+)\\.\\d+hr", "\\1", colnames(X_ds3))),
+                    stringsAsFactors = FALSE)
+
+ds3 <- list(g = X_ds3, p = P_ds3)
+
+save(ds3, file = "../inst/extdata/ds3.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_ds3)
+rm(g_url_ds3, g_file_ds3, X_ds3, P_ds3)
+```
+
+
+
+<br>
+
+###### `ds4`
+```{r load_ds4_c, eval = F}
+geo_ds4 <- "GSE60471"
+
+g_url_ds4 <- GEOquery::getGEOSuppFiles(geo_ds4, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_ds4 <- "../inst/extdata/ds4.txt.gz"
+utils::download.file(url = as.character(g_url_ds4$url[3]), destfile = g_file_ds4)
+
+X_ds4 <- read.table(gzfile(g_file_ds4), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
+
+# filter poor quality samples
+cm_ds4 <- RAPToR::cor.gene_expr(X_ds4, X_ds4)
+f_ds4 <- which(0.6 > apply(cm_ds4, 1, quantile, probs = .99))
+X_ds4 <- X_ds4[, -f_ds4]
+
+# convert to rpkm & wb_id
+X_ds4 <- RAPToR::format_ids(X_ds4, droso_genes, from = "fb_id", to = "fb_id")
+X_ds4 <- raw2rpkm(X = X_ds4, gene.length = droso_genes, id.col = "fb_id", l.col = "transcript_length")
+
+
+# pheno data
+P_ds4 <- Biobase::pData(GEOquery::getGEO(geo_ds4, getGPL = F)[[1]])
+
+# filter relevant fields/samples
+P_ds4 <- P_ds4[, c("title", "geo_accession", "time (minutes cellularization stage):ch1")]
+colnames(P_ds4)[3] <- "time"
+P_ds4$title <- as.character(P_ds4$title)
+
+P_ds4 <- P_ds4[P_ds4$title %in% colnames(X_ds4),]
+X_ds4 <- X_ds4[, P_ds4$title]
+
+# formatting
+P_ds4$title <- gsub('Metazome_Drosophila_timecourse_', '', P_ds4$title)
+colnames(X_ds4) <- P_ds4$title
+
+P_ds4$age <- as.numeric(P_ds4$time) / 60
+
+ds4 <- list(g = X_ds4, p = P_ds4)
+save(ds4, file = "../inst/extdata/ds4.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_ds4)
+rm(geo_ds4, g_url_ds4, g_file_ds4, X_ds4, P_ds4)
+```
+
+```{r cleanup_genes, eval = F}
+rm(droso_genes, raw2rpkm)
+```
+
+
+#### Normalization & Quick look
+```{r ex2_load, include=FALSE}
+load("../inst/extdata/ds3.RData")
+load("../inst/extdata/ds4.RData")
+```
+
+```{r ex2_qnorm_log}
+ds3$g <- limma::normalizeBetweenArrays(ds3$g, method = "quantile")
+ds3$g <- log(ds3$g + 1)
+
+ds4$g <- limma::normalizeBetweenArrays(ds4$g, method = "quantile")
+ds4$g <- log(ds4$g + 1)
+```
+
+```{r ex2_ql_c1, results='markup'}
+ds3$g[1:5, 1:5]
+
+head(ds3$p, n = 5)
+```
+
+##### Correlation Matrix
+```{r ex2_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
+cor_ds3 <- cor(ds3$g, method = "spearman")
+ord <- order(ds3$p$age)
+heatmap(cor_ds3[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+        labRow = "", labCol = "")
+par(xpd = T)
+mtext(text = unique(ds3$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
+
+# color key
+image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
+      z = matrix(seq(min(cor_ds3), max(cor_ds3), l = 9), ncol = 9),
+      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+text(.975, 1, pos = 3, labels = expression(rho), font = 2)
+text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
+     labels = round(seq(min(cor_ds3), max(cor_ds3), l = 9)[c(T,F)], 2), cex = .6)
+
+
+xlp <- 1.025
+mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
+
+```
+
+##### Plotting components
+
+```{r ex2_ql_c3}
+pca_ds3 <- stats::prcomp(ds3$g, rank = 12)
+```
+
+```{r ex2_ql_c4, echo = F, fig.height=6, fig.width=12}
+par(mfrow = c(2,4))
+invisible(sapply(seq_len(8), function(i){
+  plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+
+  points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
+}))
+```
+
+
+### Model fitting
+
+#### Component number
+
+```{r ex2_mf_c1}
+nc <- sum(summary(pca_ds3)$importance[3,] < .999) + 1
+nc
+```
+
+#### Model
+
+```{r ex2_mf_c2}
+m_ds3 <- ge_im(X = ds3$g, p = ds3$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
+```
+
+```{r ex2_mf_c3, echo = F}
+mp_ds3 <- mperf(scale(ds3$g), predict(m_ds3), is.t = T)
+as.data.frame(mp_ds3, row.names = "")
+```
+
+
+#### Validation
+
+##### Predict
+
+```{r ex2_vd_c1, results='markup'}
+# setup newdat
+n.inter <- 100 # nb of new timepoints
+newdat <- data.frame(
+  age = seq(min(ds3$p$age), max(ds3$p$age), l = n.inter)
+  )
+head(newdat)
+
+# predict 
+pred_m_ds3 <- predict(m_ds3, newdata = newdat)
+pred_m_ds3_comp <- predict(m_ds3, newdata = newdat, as.c = TRUE)
+```
+
+##### Plot component predictions
+
+```{r ex2_vd_c2, echo = F, fig.width=12, fig.height=6}
+par(mfrow = c(2,4))
+invisible(sapply(seq_len(8), function(i){
+  plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+
+  points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
+  points(newdat$age, pred_m_ds3_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("ds3", "pred"),
+           pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
+}))
+```
+
+##### Build reference & stage samples
+
+```{r ex2_vd_c3, eval = F}
+# make a 'reference object' 
+r_ds3 <- list(interpGE = pred_m_ds3, time.series = newdat$age)
+
+ae_ds3 <- ae(ds3$g, r_ds3$interpGE, r_ds3$time.series)
+ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series)
+```
+
+```{r ex2_vd_c3bis, include = F}
+# make a 'reference object' 
+r_ds3 <- list(interpGE = pred_m_ds3, time.series = newdat$age)
+
+# speed up w/ no bootstrap
+ae_ds3 <- ae(ds3$g, r_ds3$interpGE, r_ds3$time.series, bootstrap.n = 1)
+ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series, bootstrap.n = 1)
+```
+
+
+```{r ex2_vd_c4, echo=F, fig.height=6, fig.width=12}
+par(mfrow = c(1,2))
+rg <- range(c(ae_ds3$age.estimates[,1], ds3$p$age))
+plot(ae_ds3$age.estimates[,1] ~ ds3$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds3 (on ds3 reference)", lwd = 2)
+points(ae_ds3$age.estimates[,1]~ds3$p$age, type = 'l', lty = 2)
+
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+
+rg <- range(c(ae_ds4$age.estimates[,1], ds4$p$age))
+plot(ae_ds4$age.estimates[,1] ~ ds4$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds4 (on ds3 reference)", lwd = 2)
+# points(ae_ds4$age.estimates[,1] ~ ds4$p$age, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+```
+
+
+Notice here, that our validation dataset's estimates appear quite noisy.
+However, if we look at the dynamics of the `ds4` data, we'll see that the chronological age specified for the samples is erroneous.
+
+```{r ex2_vd_c5}
+pca_ds4 <- stats::prcomp(ds4$g, rank = 20)
+```
+
+```{r ex2_vd_c6, echo = F, fig.height=12, fig.width=12}
+par(mfrow = c(4,4))
+invisible(sapply(c(0,4), function(ipp){
+  sapply(seq_len(4), function(i){
+    i <- i + ipp
+    plot(ds4$p$age, pca_ds4$rotation[,i], lwd = 2,
+         xlab = "age", ylab = "PC", main = paste0("PC", i))
+  })
+  sapply(seq_len(4), function(i){
+    i <- i + ipp
+    plot(ae_ds4$age.estimates[,1], pca_ds4$rotation[,i], lwd = 2, col = "firebrick",
+         xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
+    box(col = "firebrick", lwd = 2)
+  })
+}))
+```
+
+This demonstrates the difficulty of producing high-resolution time series due to developmental asynchronicity between the samples.
