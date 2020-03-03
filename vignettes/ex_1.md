@@ -16,6 +16,9 @@ We are using the two *C. elegans* time series datasets.
  1. A high-resolution time series of late larval development published by @hendriks2014extensive, called `ds2`. This is the dataset used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
 
 #### {.tabset}
+
+<a name="code-gen_ds1-ds2"></a>
+
 Code to generate `ds1` and `ds2` :
 
 ##### Hide
@@ -51,7 +54,7 @@ utils::download.file(url = as.character(g_url_ds1$url[2]), destfile = g_file_ds1
 X_ds1 <- read.table(gzfile(g_file_ds1), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
 
 # convert to rpkm & wb_id
-X_ds1 <- RAPToR::format_ids(X_ds1, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
+X_ds1 <- format_ids(X_ds1, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
 X_ds1 <- raw2rpkm(X = X_ds1, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
 
 
@@ -98,7 +101,7 @@ utils::download.file(url = as.character(g_url_ds2$url[2]), destfile = g_file_ds2
 X_ds2 <- read.table(gzfile(g_file_ds2), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
 
 # convert to rpkm & wb_id
-X_ds2 <- RAPToR::format_ids(X_ds2, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
+X_ds2 <- format_ids(X_ds2, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
 X_ds2 <- raw2rpkm(X = X_ds2, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
 
 

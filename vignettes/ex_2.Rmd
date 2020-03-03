@@ -121,7 +121,7 @@ f_ds4 <- which(0.6 > apply(cm_ds4, 1, quantile, probs = .99))
 X_ds4 <- X_ds4[, -f_ds4]
 
 # convert to rpkm & FBgn
-X_ds4 <- RAPToR::format_ids(X_ds4, droso_genes, from = "fb_id", to = "fb_id")
+X_ds4 <- format_ids(X_ds4, droso_genes, from = "fb_id", to = "fb_id")
 X_ds4 <- raw2rpkm(X = X_ds4, gene.length = droso_genes, id.col = "fb_id", l.col = "transcript_length")
 
 
