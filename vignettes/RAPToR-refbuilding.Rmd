@@ -427,7 +427,7 @@ cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
                   cv.n = 20, nc = nc, nb.cores = 3)
 ```
 
-```{r plot_cv_ds1, fig.width=8, fig.height=8, fig.align='center'}
+```{r plot_cv_ds1, fig.width=9, fig.height=8, fig.align='center'}
 plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
 ```
