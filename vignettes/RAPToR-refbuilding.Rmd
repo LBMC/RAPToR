@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- F # wether to cache heavy-computation chunks 
+quick_build <- T # wether to cache heavy-computation chunks 
 
 library(RAPToR)
 library(RColorBrewer)
@@ -601,6 +601,27 @@ legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 <br>
 
 # Reference-Building examples
+
+Here you will find a few examples of reference building on different organisms.
+
+ - [*C. elegans* larval development](#ex-1) (used in the vignette above)
+ - [*D. melanogaster* embryonic development](#ex-2) 
+ - [*Danio rerio* embryonic development](#ex-3)
+
+## *C. elegans* larval development
+<a name="ex-1"></a>
+```{r ex_1, child = "ex_1.md"}
+
+```
+
+## *D. melanogaster* embryonic development
+<a name="ex-2"></a>
+
+<br style="line-height:500pt">
+
+## *Danio rerio* larval development
+<a name="ex-3"></a>
+
 
 ## Rest of contents coming soon :-)
 
