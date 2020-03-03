@@ -464,7 +464,7 @@ invisible(sapply(seq_len(8), function(i){
 }))
 ```
 
-```{r ae_ds1_test, cache=quick_build}
+```{r ae_ds1_test_print, eval = F}
 # make a 'reference object' 
 r_ds1 <- list(interpGE = pred_ds1_ge, time.series = ndat$age)
 
@@ -472,7 +472,13 @@ ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
 ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
 ```
 
+```{r ae_ds1_test, include = F}
+# make a 'reference object' 
+r_ds1 <- list(interpGE = pred_ds1_ge, time.series = ndat$age)
 
+ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+```
 
 
 ```{r echo=F, fig.height=6, fig.width=12}
