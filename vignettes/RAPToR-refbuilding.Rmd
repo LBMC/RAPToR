@@ -561,7 +561,7 @@ This provides external validation, confirming the dynamics you interpolated on i
 
 We can do this with our example, and the `ds2` dataset can be used for external validation.
 
-```{r ae_ds1_test, cache=quick_build, results='hide'}
+```{r ae_ds1_test_print, eval = F}
 # make a 'reference object' 
 r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
 
@@ -569,6 +569,13 @@ ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
 ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
 ```
 
+```{r ae_ds1_test, include = F}
+# make a 'reference object' 
+r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+
+ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+```
 
 ```{r echo=F, fig.height=6, fig.width=12}
 par(mfrow = c(1,2))
