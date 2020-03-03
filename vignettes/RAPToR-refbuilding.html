@@ -1086,7 +1086,7 @@ cm_ds4 &lt;- RAPToR::cor.gene_expr(X_ds4, X_ds4)
 f_ds4 &lt;- which(0.6 &gt; apply(cm_ds4, 1, quantile, probs = .99))
 X_ds4 &lt;- X_ds4[, -f_ds4]
 
-# convert to rpkm &amp; wb_id
+# convert to rpkm &amp; FBgn
 X_ds4 &lt;- RAPToR::format_ids(X_ds4, droso_genes, from = &quot;fb_id&quot;, to = &quot;fb_id&quot;)
 X_ds4 &lt;- raw2rpkm(X = X_ds4, gene.length = droso_genes, id.col = &quot;fb_id&quot;, l.col = &quot;transcript_length&quot;)
 
