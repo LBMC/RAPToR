@@ -12,7 +12,7 @@ We are using two *Drosophila melanogaster*  embryonic development time series da
 The dataset used to build the reference was chosen with a very low time resolution on purpose to display the effectiveness of interpolating on gene expression data
 
 1. A time series Drosophila embryonic development, part of the modENCODE project and published by @graveley2011developmental, hereafter called `ds3`. This is the dataset used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
- 1. A high-resolution time series of embryonic development published by @hendriks2014extensive, called `ds4`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+ 1. A high-resolution time series of embryonic development published by @levin2016mid, called `ds4`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
 
 #### {.tabset}
 Code to generate `ds3` and `ds4` :
