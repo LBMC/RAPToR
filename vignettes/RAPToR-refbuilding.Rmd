@@ -615,19 +615,30 @@ Here you will find a few examples of reference building on different organisms.
  - [*D. melanogaster* embryonic development](#ex-2) 
  - [*Danio rerio* embryonic development](#ex-3)
 
-## *C. elegans* larval development
+<br>
+<br>
 <a name="ex-1"></a>
+
+## *C. elegans* larval development
 ```{r ex_1, child = "ex_1.md"}
 
 ```
 
-## *D. melanogaster* embryonic development
+<br>
+<br>
 <a name="ex-2"></a>
 
-<br style="line-height:500pt">
+## *D. melanogaster* embryonic development
+```{r ex_2, child = "ex_2.md"}
+
+```
+
+
+<br>
+<br>
+<a name="ex-3"></a>
 
 ## *Danio rerio* larval development
-<a name="ex-3"></a>
 
 
 ## Rest of contents coming soon :-)
