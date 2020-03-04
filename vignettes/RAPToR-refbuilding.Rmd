@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T # wether to generate figures or read from RAPToR-refbuilding_files/figs
+gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
 
 figpath <- "RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
