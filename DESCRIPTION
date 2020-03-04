@@ -24,7 +24,8 @@ Imports:
   pls,
   pryr,
   beeswarm,
-  Rdpack
+  Rdpack,
+  R.rsp
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
@@ -36,4 +37,4 @@ Suggests:
     rmarkdown,
     biomaRt,
     wormRef
-VignetteBuilder: rmarkdown
+VignetteBuilder: R.rsp
