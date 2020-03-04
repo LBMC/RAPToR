@@ -1,0 +1,15 @@
+---
+title: "`RAPToR` - Data-packages"
+output: 
+  rmarkdown::html_document :
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{RAPToR-datapkgs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: ../inst/REFERENCES.bib
+author: Romain Bulteau
+date: "`r format(Sys.Date(), '%B %Y')`"
+---
+
