@@ -39,7 +39,7 @@ requireNamespace("stats")
 
 ```{r genfig_setup, include = F}
 png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 72, ...){
+                       fig.width = 7, fig.height = 5, res = 150, ...){
   png(filename = paste0(path, figname, ".png"), 
       width = fig.width, height = fig.height, res = res, units = "in")
 }
