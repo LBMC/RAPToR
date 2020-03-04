@@ -25,7 +25,7 @@ install.packages("devtools")
 
 ## Getting started
 
-Everything you need to know to make this work is detailed in the package's vignette. You can access it from your R console with
+Everything you need to know to make this work is detailed in the package's main vignette. You can access it from your R console with
 
 ```r
 vignette("RAPToR")
@@ -40,7 +40,7 @@ The method works in a three-step process.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
 <center>
-<img src="inst/doc/tool_overview.png" alt="tool_overview" width="60%"/>
+<img src="inst/cdoc/tool_overview.png" alt="tool_overview" width="60%"/>
 </center>
 
 ### What data can be used ?
@@ -64,6 +64,11 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.1
+ - Created a detailed vignette on reference building, with examples `vignette("RAPToR-refbuilding")`
+ - Created a vignette on data-package building `vignette("RAPToR-datapkgs")`
+ 
+#### v1.1.0
  - Further split the references from the main package : 
    - removed `ref_table` object (available data-packages are now listed in this README)
    - added `list_refs()` function to list the references in given data-package

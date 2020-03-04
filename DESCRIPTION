@@ -1,6 +1,6 @@
 Package: RAPToR
 Title: Real Age Prediction from Transcriptome staging On Reference
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: c(
   person("Romain", "Bulteau", email = "romain.bulteau@ens-lyon.fr",
     role = c("aut", "cre")),
