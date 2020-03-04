@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 options(width=100)
 
 gen_figs <- T
-figpath <- "../inst/doc/RAPToR-refbuilding_figs/"
+figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
 }

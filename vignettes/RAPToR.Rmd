@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 options(width=100)
 gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
 
-figpath <- "../inst/doc/RAPToR_figs/"
+figpath <- "../inst/cdoc/RAPToR_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
 }
@@ -101,7 +101,7 @@ The method works in a three-step process.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
 <center>
-![tool_overview](../inst/doc/tool_overview.png){width=60%}
+![tool_overview](../inst/cdoc/tool_overview.png){width=60%}
 </center>
 
 # What type of data can be used ?
