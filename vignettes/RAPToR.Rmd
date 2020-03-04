@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 options(width=100)
 gen_figs <- T # wether to generate figures or read from RAPToR-refbuilding_files/figs
 
-figpath <- "RAPToR_files/figs/"
+figpath <- "RAPToR_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
 }
@@ -152,7 +152,7 @@ Both datasets are available on GEO
 
 
 ## Loading the data
-```{r load_pkgs, message=FALSE, warning=FALSE, results='hide'}
+```{r load_pkg,  eval = F}
 library(RAPToR)
 ```
 
@@ -314,6 +314,7 @@ Let's look at the results.
 ```{r plot_ae1_print, eval = F}
 plot(ae_ds1, groups = ds1$p$strain, show.boot_estimates = T)
 ```
+
 ```{r plot_ae1, echo = F, fig.width=12, fig.height=7}
 show_fig(expr = {
   plot(ae_ds1, groups = ds1$p$strain, show.boot_estimates = T)
@@ -412,7 +413,7 @@ The output of `ae()` is an `ae` object including various elements such as the ag
 
 <br>
 General information can be accessed via the `summary()` function.
-```{r summ_ae}
+```{r summ_ae, eval = gen_figs}
 summary(ae_ds2)
 #> 
 #> Span of samples : 23.339
@@ -442,7 +443,7 @@ summary(ae_ds2)
 
 <br>
 If you want to get the estimates and their confidence intervals, they are accessible through `$age.estimates`.
-```{r show_ae}
+```{r show_ae, eval = gen_figs}
 head(ae_ds2$age.estimates)
 #>                 age.estimate       lb       ub cor.score
 #> contDevA_N2_21h     31.70057 31.58651 31.81462 0.9296414
@@ -595,7 +596,7 @@ cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
 plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
 ```
-```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+```{r plot_cv_ds1, echo = F, fig.width=12, fig.height=8, fig.align='center'}
 show_fig(expr = {
   plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
        swarmargs = list(cex = .8))
@@ -805,7 +806,7 @@ plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates 
 
 all(ae_ds2_prior$age.estimates[,1]==ae_ds2$age.estimates[,1])
 ```
-```{r plot_ae_prior, fig.height=5, fig.width=9, fig.align='center'}
+```{r plot_ae_prior, echo = F, fig.height=5, fig.width=9, fig.align='center'}
 show_fig(expr = {
   
   plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates = T,
