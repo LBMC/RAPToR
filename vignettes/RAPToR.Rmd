@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-gen_figs <- T # wether to generate figures or read from RAPToR-refbuilding_files/figs
+gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
 
 figpath <- "RAPToR_figs/"
 if(!file.exists(figpath)){
@@ -37,7 +37,7 @@ requireNamespace("limma", quietly = T)
 
 ```{r genfig_setup, include = F}
 png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 72, ...){
+                       fig.width = 7, fig.height = 5, res = 150, ...){
   png(filename = paste0(path, figname, ".png"), 
       width = fig.width, height = fig.height, res = res, units = "in")
 }
