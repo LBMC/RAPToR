@@ -24,7 +24,6 @@ Imports:
   pls,
   pryr,
   beeswarm,
-  R.rsp,
   Rdpack
 License: file LICENSE
 LazyData: true
@@ -37,4 +36,4 @@ Suggests:
     rmarkdown,
     biomaRt,
     wormRef
-VignetteBuilder: R.rsp
+VignetteBuilder: rmarkdown
