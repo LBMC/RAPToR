@@ -771,7 +771,7 @@ Here you will find a few examples of reference building on different organisms.
 <a name="ex-3"></a>
 
 ## *Danio rerio* embryonic development
-```{r ex_3, child = "ex_3.md"}
+```{r ex_3, child = "ex_3.Rmd"}
 
 ```
 
