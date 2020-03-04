@@ -52,7 +52,7 @@ Hadley Wickam gives thourough advice on organizing data in packages in his [*R p
 
 `RAPToR` relies on references to operate. 
 These references sometimes being tedious to build, we want to give access to pre-built references for users, which can be quite large.
-References correspond to pre-processed gene expression datasets, and their optimal interpolation parameters.
+Here, a reference corresponds to a pre-processed gene expression dataset, and its optimal interpolation parameters.
 
 To avoid overcharging the end user, we split references to data-packages.
 Their data is then used through the interface from `RAPToR` described below.
@@ -70,12 +70,12 @@ An example of the structure of the `Cel_larval` reference object is detailed bel
 
 A list with
 
- * `$ g` The gene expression matrix (genes as rows, samples as columns)
+ * `$ g` The gene expression matrix (genes as rows, samples as columns).
  * `$ p` A dataframe of phenotypic data on the samples :
    * `sname` sample names,
    * `age`   *developmental* age of the samples (scaled),
    * `cov`   covariate, factor indicating which of 3 time series,
-   * `age_ini`  *Chronological* age of the samples,
+   * `age_ini`  *chronological* age of the samples,
    * `accession` sample accession ID for GEO.
  * `$ geim_params`  A list with necessary information for interpolation :
    * `$ formula = "X ~ s(age, bs = 'ds') + cov"`
@@ -152,4 +152,9 @@ Including a `.plot_refs()` function (note the “dot”) in the data-package wil
 
 You're free to include any extra objects in your data-package that may be useful.
 For example, the `wormRef` package has a `Cel_devstages` object with information on key developmental stages of development. 
-The data is used for building the plot in `.plot_refs()` 
+The data is used for building the plot in `.plot_refs()` (*cf.* above).
+
+
+<br>
+<br>
+<br>

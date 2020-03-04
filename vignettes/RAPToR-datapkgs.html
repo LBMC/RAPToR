@@ -402,7 +402,7 @@ summary {
 </div>
 <div id="raptor-data-packages" class="section level1">
 <h1>RAPToR data-packages</h1>
-<p><code>RAPToR</code> relies on references to operate. These references sometimes being tedious to build, we want to give access to pre-built references for users, which can be quite large. References correspond to pre-processed gene expression datasets, and their optimal interpolation parameters.</p>
+<p><code>RAPToR</code> relies on references to operate. These references sometimes being tedious to build, we want to give access to pre-built references for users, which can be quite large. Here, a reference corresponds to a pre-processed gene expression dataset, and its optimal interpolation parameters.</p>
 <p>To avoid overcharging the end user, we split references to data-packages. Their data is then used through the interface from <code>RAPToR</code> described below.</p>
 <div id="references" class="section level2">
 <h2>References</h2>
@@ -411,13 +411,13 @@ summary {
 <p>An example of the structure of the <code>Cel_larval</code> reference object is detailed below.</p>
 <p>A list with</p>
 <ul>
-<li><code>$ g</code> The gene expression matrix (genes as rows, samples as columns)</li>
+<li><code>$ g</code> The gene expression matrix (genes as rows, samples as columns).</li>
 <li><code>$ p</code> A dataframe of phenotypic data on the samples :
 <ul>
 <li><code>sname</code> sample names,</li>
 <li><code>age</code> <em>developmental</em> age of the samples (scaled),</li>
 <li><code>cov</code> covariate, factor indicating which of 3 time series,</li>
-<li><code>age_ini</code> <em>Chronological</em> age of the samples,</li>
+<li><code>age_ini</code> <em>chronological</em> age of the samples,</li>
 <li><code>accession</code> sample accession ID for GEO.</li>
 </ul></li>
 <li><code>$ geim_params</code> A list with necessary information for interpolation :
@@ -477,7 +477,8 @@ summary {
 </div>
 <div id="other-objects" class="section level3">
 <h3>Other objects</h3>
-<p>You’re free to include any extra objects in your data-package that may be useful. For example, the <code>wormRef</code> package has a <code>Cel_devstages</code> object with information on key developmental stages of development. The data is used for building the plot in <code>.plot_refs()</code></p>
+<p>You’re free to include any extra objects in your data-package that may be useful. For example, the <code>wormRef</code> package has a <code>Cel_devstages</code> object with information on key developmental stages of development. The data is used for building the plot in <code>.plot_refs()</code> (<em>cf.</em> above).</p>
+<p><br> <br> <br></p>
 </div>
 </div>
 </div>
