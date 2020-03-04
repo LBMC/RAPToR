@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 options(width=100)
 gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
 
-figpath <- "RAPToR_figs/"
+figpath <- "../inst/doc/RAPToR_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
 }
