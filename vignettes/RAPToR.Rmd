@@ -101,7 +101,7 @@ The method works in a three-step process.
  1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
 
 <center>
-![tool_overview](tool_overview.png){width=60%}
+![tool_overview](../inst/doc/tool_overview.png){width=60%}
 </center>
 
 # What type of data can be used ?
