@@ -21,7 +21,12 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- F # wether to cache heavy-computation chunks 
+gen_figs <- T # wether to generate figures or read from RAPToR-refbuilding_files/figs
+
+figpath <- "RAPToR_files/figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
 
 library(RAPToR)
 
@@ -30,6 +35,25 @@ library(ggpubr)
 requireNamespace("limma", quietly = T)
 ```
 
+```{r genfig_setup, include = F}
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 72, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
+}
+
+```
 
 <br>
 <br>
@@ -137,7 +161,7 @@ As the code to create the `ds1` and `ds2` objects is quite lengthy and is not th
 
 
 
-```{r load_ds, include=FALSE}
+```{r load_ds, include=FALSE, eval=gen_figs}
 load("../inst/extdata/ds1.RData")
 load("../inst/extdata/ds2.RData")
 ```
@@ -145,18 +169,50 @@ load("../inst/extdata/ds2.RData")
 
 
 Here is what our data looks like 
-```{r head_ds1}
-ds1$g[1:5,1:5]
+```{r head_ds1, eval = gen_figs}
+ds1$g[1:5,1:4]
+#>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
+#> WBGene00000001         12.681443         11.267268         11.778583         11.581853
+#> WBGene00000002          8.004784         11.242239          7.244600          5.837729
+#> WBGene00000003          8.051166          6.108188          7.324310          8.981919
+#> WBGene00000004         11.035511          9.075311          8.019064          8.234069
+#> WBGene00000005          3.713297          7.289794          3.474924          1.972653
+
 head(ds1$p, n = 5)
+#>                        title geo_accession           organism_ch1       strain
+#> GSM2113587 let.7.n2853._18hr    GSM2113587 Caenorhabditis elegans let-7(n2853)
+#> GSM2113588 let.7.n2853._20hr    GSM2113588 Caenorhabditis elegans let-7(n2853)
+#> GSM2113589 let.7.n2853._22hr    GSM2113589 Caenorhabditis elegans let-7(n2853)
+#> GSM2113590 let.7.n2853._24hr    GSM2113590 Caenorhabditis elegans let-7(n2853)
+#> GSM2113591 let.7.n2853._26hr    GSM2113591 Caenorhabditis elegans let-7(n2853)
+#>            time in development:ch1 age
+#> GSM2113587                18 hours  18
+#> GSM2113588                20 hours  20
+#> GSM2113589                22 hours  22
+#> GSM2113590                24 hours  24
+#> GSM2113591                26 hours  26
 ```
 
-```{r head_ds2}
+```{r head_ds2, eval = gen_figs}
 ds2$g[1:5,1:5]
+#>                contDevA_N2_21h contDevA_N2_22h contDevA_N2_23h contDevA_N2_24h contDevA_N2_25h
+#> WBGene00000001       11.215486       10.561063        10.41683        9.703136       11.210885
+#> WBGene00000002        5.954298        7.922576        11.32737       13.220574        9.781628
+#> WBGene00000003       46.333242       29.539269        18.65796       12.425843       18.007778
+#> WBGene00000004       13.939740       11.806423        10.60732       10.098591        9.553716
+#> WBGene00000005        4.854516        7.360959        11.17349       13.243724       10.057926
+
 head(ds2$p, n = 5)
+#>                      title geo_accession time in development:ch1 age
+#> GSM1277118 contDevA_N2_21h    GSM1277118                22 hours  22
+#> GSM1277119 contDevA_N2_22h    GSM1277119                23 hours  23
+#> GSM1277120 contDevA_N2_23h    GSM1277120                24 hours  24
+#> GSM1277121 contDevA_N2_24h    GSM1277121                25 hours  25
+#> GSM1277122 contDevA_N2_25h    GSM1277122                26 hours  26
 ```
 
 We'll quantile-normalize and log the expression data.
-```{r quantile_norm_log}
+```{r quantile_norm_log, eval = gen_figs}
 ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
 ds1$g <- log(ds1$g + 1)
 
@@ -198,7 +254,7 @@ The `n.inter` parameter corresponds to the resolution of the interpolated refere
 In the interest of lightening the computational load you can choose smaller values, but aim over the 500s for optimal results.
 
 
-```{r prep_ref, cache=quick_build}
+```{r prep_ref, eval=gen_figs}
 r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 ```
 
@@ -209,68 +265,145 @@ Note that age estimates will be given in the time unit and scale of the chosen r
 
 All we need to do now is run the `ae()` function.
 
-```{r include=FALSE}
+```{r include=FALSE, eval=gen_figs}
 set.seed(10)
 ```
 
 
-```{r ae_ds1, cache=quick_build, results='hold'}
+```{r ae_ds1, eval=gen_figs, results='hold'}
 ae_ds1 <- ae(samp = ds1$g,                         # input gene expression matrix
              refdata = r_larv$interpGE,            # reference gene expression matrix
              ref.time_series = r_larv$time.series) # reference time series
+#> Bootstrap set size is 6239
+#> Performing age estimation...
+#> Bootstrapping...
+#>  Building gene subsets...
+#>  Computing correlations...
+#>  Performing age estimation...
+#> Computing summary statistics...
+#> Warning in ae(samp = ds1$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series): Some estimates come near the edges of the reference.
+#> If possible, stage those on a different reference for confirmation.
+#>                 nb.genes
+#> refdata            18718
+#> samp               19595
+#> intersect.genes    18718
 ```
 
-```{r ae_ds2, cache=quick_build, results='hold'}
+```{r ae_ds2, eval=gen_figs, results='hold'}
 ae_ds2 <- ae(samp = ds2$g,                         # input gene expression matrix
              refdata = r_larv$interpGE,            # reference gene expression matrix
              ref.time_series = r_larv$time.series) # reference time series
+#> Bootstrap set size is 6239
+#> Performing age estimation...
+#> Bootstrapping...
+#>  Building gene subsets...
+#>  Computing correlations...
+#>  Performing age estimation...
+#> Computing summary statistics...
+#> Warning in ae(samp = ds2$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series): Some estimates come near the edges of the reference.
+#> If possible, stage those on a different reference for confirmation.
+#>                 nb.genes
+#> refdata            18718
+#> samp               19595
+#> intersect.genes    18718
 ```
 
 Let's look at the results.
 
 
-```{r plot_ae1, fig.width=12, fig.height=7}
+```{r plot_ae1_print, eval = F}
 plot(ae_ds1, groups = ds1$p$strain, show.boot_estimates = T)
 ```
+```{r plot_ae1, echo = F, fig.width=12, fig.height=7}
+show_fig(expr = {
+  plot(ae_ds1, groups = ds1$p$strain, show.boot_estimates = T)
+}, fig.width=12, fig.height=7)
+```
 
-```{r plot_ae2, fig.width=12, fig.height=4}
+
+```{r plot_ae2_print, eval = F}
 plot(ae_ds2, show.boot_estimates = T)
 ```
+```{r plot_ae2, echo = F, fig.width=12, fig.height=4}
+show_fig(expr = {
+  plot(ae_ds2, show.boot_estimates = T)
+}, fig.width=12, fig.height=4)
+```
+
 
 Since the staged samples were all grown at 25$^\circ$C, and the reference time is on 20$^\circ$C development, 
 we can observe the well-known growth speed difference of 1.5 between *C. elegans* worms grown at these temperatures by fitting a simple linear model.
 
 
-```{r lm_ds}
+```{r lm_ds, eval = gen_figs}
 lm_ds1 <- lm(ae_ds1$age.estimates[,1] ~ ds1$p$age)
 summary(lm_ds1)
+#> 
+#> Call:
+#> lm(formula = ae_ds1$age.estimates[, 1] ~ ds1$p$age)
+#> 
+#> Residuals:
+#>      Min       1Q   Median       3Q      Max 
+#> -2.01733 -0.77423  0.03879  0.57014  2.04296 
+#> 
+#> Coefficients:
+#>             Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept) -4.17218    0.70058  -5.955 5.01e-07 ***
+#> ds1$p$age    1.50745    0.02462  61.223  < 2e-16 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 1.002 on 41 degrees of freedom
+#> Multiple R-squared:  0.9892, Adjusted R-squared:  0.9889 
+#> F-statistic:  3748 on 1 and 41 DF,  p-value: < 2.2e-16
 
 lm_ds2 <- lm(ae_ds2$age.estimates[,1] ~ ds2$p$age)
 summary(lm_ds2)
+#> 
+#> Call:
+#> lm(formula = ae_ds2$age.estimates[, 1] ~ ds2$p$age)
+#> 
+#> Residuals:
+#>     Min      1Q  Median      3Q     Max 
+#> -0.7945 -0.2882 -0.1206  0.1447  0.8391 
+#> 
+#> Coefficients:
+#>             Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept) -2.76603    0.76488  -3.616  0.00281 ** 
+#> ds2$p$age    1.55868    0.02562  60.845  < 2e-16 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 0.4724 on 14 degrees of freedom
+#> Multiple R-squared:  0.9962, Adjusted R-squared:  0.996 
+#> F-statistic:  3702 on 1 and 14 DF,  p-value: < 2.2e-16
 ```
 
-```{r echo=F, fig.height=6, fig.width=12}
-par(mfrow = c(1,2))
-plot(ae_ds1$age.estimates[,1]~ds1$p$age, 
-     xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
-     main = "Chronological vs Estimated ages for ds1", lwd = 2, col = factor(ds1$p$strain))
-invisible(sapply(levels(factor(ds1$p$strain)), function(l){
-  s <- ds1$p$strain == l
-  points(ae_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
-}))
+```{r plot_compae, echo=F, fig.height=6, fig.width=12}
+show_fig(expr = {
 
-abline(lm_ds1, lwd=2, col=2)
-legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "lm_ds1"), 
-       lwd=3, col=c(1:4, 2), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 1))
-
-plot(ae_ds2$age.estimates[,1]~ds2$p$age, 
-     xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
-     main = "Chronological vs Estimated ages for ds2", lwd = 2)
-points(ae_ds2$age.estimates[,1]~ds2$p$age, type = 'l', lty = 2)
-abline(lm_ds2, lwd=2, col=2)
-
-legend("bottomright", legend = "lm_ds2", lwd=3, col=2, bty='n')
+  par(mfrow = c(1,2))
+  plot(ae_ds1$age.estimates[,1]~ds1$p$age, 
+       xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
+       main = "Chronological vs Estimated ages for ds1", lwd = 2, col = factor(ds1$p$strain))
+  invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+    s <- ds1$p$strain == l
+    points(ae_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+  }))
+  
+  abline(lm_ds1, lwd=2, col=2)
+  legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "lm_ds1"), 
+         lwd=3, col=c(1:4, 2), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 1))
+  
+  plot(ae_ds2$age.estimates[,1]~ds2$p$age, 
+       xlab = "Chronological age (25C)", ylab = "Estimated age (20C)", 
+       main = "Chronological vs Estimated ages for ds2", lwd = 2)
+  points(ae_ds2$age.estimates[,1]~ds2$p$age, type = 'l', lty = 2)
+  abline(lm_ds2, lwd=2, col=2)
+  
+  legend("bottomright", legend = "lm_ds2", lwd=3, col=2, bty='n')
+}, fig.height=6, fig.width=12)
 ```
 
 
@@ -281,6 +414,28 @@ The output of `ae()` is an `ae` object including various elements such as the ag
 General information can be accessed via the `summary()` function.
 ```{r summ_ae}
 summary(ae_ds2)
+#> 
+#> Span of samples : 23.339
+#> Range of samples :  [ 31.701 , 55.04 ]
+#> -----------------------------------------------------------
+#>                 age.estimate     lb     ub
+#> contDevA_N2_21h       31.701 31.587 31.815
+#> contDevA_N2_22h       33.079 33.033 33.125
+#> contDevA_N2_23h       34.273 34.227 34.319
+#> contDevA_N2_24h       35.927 35.881 35.973
+#> contDevA_N2_25h       37.673 37.491 37.855
+#> contDevA_N2_26h       39.143 39.097 39.189
+#> contDevA_N2_27h       41.716 41.534 41.898
+#> contDevA_N2_28h       43.186 43.072 43.300
+#> contDevA_N2_29h       44.105 43.923 44.287
+#> contDevA_N2_30h       45.300 45.117 45.482
+#> contDevA_N2_31h       46.770 46.588 46.952
+#> contDevA_N2_32h       48.516 48.333 48.698
+#> contDevA_N2_33h       49.435 49.252 49.617
+#> contDevA_N2_34h       51.456 51.274 51.638
+#> contDevA_N2_35h       54.121 54.075 54.167
+#> contDevA_N2_36h       55.040 54.994 55.085
+#> -----------------------------------------------------------
 ```
 
 
@@ -289,6 +444,13 @@ summary(ae_ds2)
 If you want to get the estimates and their confidence intervals, they are accessible through `$age.estimates`.
 ```{r show_ae}
 head(ae_ds2$age.estimates)
+#>                 age.estimate       lb       ub cor.score
+#> contDevA_N2_21h     31.70057 31.58651 31.81462 0.9296414
+#> contDevA_N2_22h     33.07885 33.03291 33.12479 0.9297492
+#> contDevA_N2_23h     34.27337 34.22742 34.31931 0.9331700
+#> contDevA_N2_24h     35.92731 35.88137 35.97325 0.9312395
+#> contDevA_N2_25h     37.67314 37.49096 37.85531 0.9315294
+#> contDevA_N2_26h     39.14331 39.09736 39.18925 0.9345927
 ```
 
 The table holds the following :
@@ -305,11 +467,16 @@ Estimates and confidence intervals can be displayed in the form of a dotchart wi
 The `ae` object also holds the correlation scores of the samples against the entire reference series and their confidence intervals accross the bootstrap. 
 You can also plot these correlation profiles with `plot_cor.ae()`
 
-```{r plot_cor, fig.height=6, fig.width=12, fig.align='center'}
+```{r plot_cor_print, eval = F}
 par(mfrow=c(2,2))
 plot_cor.ae(ae_ds2, subset = c(1,4,9,12))
 ```
-
+```{r plot_cor, echo = F, fig.height=6, fig.width=12, fig.align='center'}
+show_fig(expr = {
+  par(mfrow=c(2,2))
+  plot_cor.ae(ae_ds2, subset = c(1,4,9,12))
+}, fig.height=6, fig.width=12)
+```
 The confidence interval of the estimates is represented with the red bars and the bootstrap correlation scores' 95% interval along the reference series are shown (as the black dotted lines). 
 The sample's estimate is also given below the interval.
 
@@ -340,7 +507,7 @@ This function takes as input 3 key arguments :
  - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`**.
 
 For example, using the `ds1` dataset we could build the following model.
-```{r model_ds1}
+```{r model_ds1, eval = gen_figs}
 m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = 24)
 ```
 
@@ -380,10 +547,11 @@ The number of components to use for the interpolation is by default set to the n
 However, we recommend to set a cutoff on explained variance of PCA components to select it. 
 For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
 
-```{r pca_ds1}
+```{r pca_ds1, eval = gen_figs}
 pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
 nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
 nc
+#> [1] 24v
 ```
 
 
@@ -393,22 +561,46 @@ Other parameters on the CV itself can also be given (*e.g.* training set size).
 
 
 Below is an example of usage to choose between 4 available smooth terms on the `ds1` GEIM.
-```{r include = F}
+```{r include = F, eval = gen_figs}
 set.seed(10)
 ```
 
-```{r cv_ds1, cache=quick_build, results='hold'}
+```{r cv_ds1, eval = gen_figs, results='markup'}
 smooth_methods <- c("tp", "ts", "cr", "ps")
 flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
 flist
+#> [[1]]
+#> [1] "X ~ s(age, bs = 'tp') + strain"
+#> 
+#> [[2]]
+#> [1] "X ~ s(age, bs = 'ts') + strain"
+#> 
+#> [[3]]
+#> [1] "X ~ s(age, bs = 'cr') + strain"
+#> 
+#> [[4]]
+#> [1] "X ~ s(age, bs = 'ps') + strain"
 
 cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
                   cv.n = 20, nc = nc, nb.cores = 3)
+#> CV on 4 models. cv.n = 20 | cv.s = 0.8
+#> 
+#> ...Building training sets
+#> ...Setting up cluster
+#> ...Running CV
+#> ...Cleanup and formatting
 ```
 
-```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+```{r plot_cv_ds1_print, eval = F}
 plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
+```
+```{r plot_cv_ds1, fig.width=12, fig.height=8, fig.align='center'}
+show_fig(expr = {
+  plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+       swarmargs = list(cex = .8))
+  
+}, fig.width=12, fig.height=8)
 ```
 
 `ge_imCV()` computes various indices of model performance :
@@ -425,7 +617,7 @@ The `geim` object returned by `ge_im()` has its predict method which can be used
 You can also specify if you want the predictions as components or as the full gene expression matrix.
 
 On our `ds1` example :
-```{r pred_ds1}
+```{r pred_ds1, eval = gen_figs}
 # setup new data
 n.inter <- 100
 ndat <- data.frame(age = seq(min(ds1$p$age), max(ds1$p$age),  l = n.inter), 
@@ -448,20 +640,23 @@ To do this, one can do two things :
 We can do both with our example, the `ds2` dataset can be used for external validation.
 
 ```{r plot_pca_ds1, echo = F, fig.width=12, fig.height=6}
-par(mfrow = c(2,4))
-invisible(sapply(seq_len(8), function(i){
-  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
-       xlab = "age", ylab = "PC", main = paste0("PC", i))
-  sapply(seq_along(levels(ds1$p$strain)), function(l){
-    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
-           type = 'l', lty = 2)
-  })
-  points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
-  if(i == 1)
-    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
-           pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
-}))
+show_fig(expr = {
+  
+  par(mfrow = c(2,4))
+  invisible(sapply(seq_len(8), function(i){
+    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+         xlab = "age", ylab = "PC", main = paste0("PC", i))
+    sapply(seq_along(levels(ds1$p$strain)), function(l){
+      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+             type = 'l', lty = 2)
+    })
+    points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    if(i == 1)
+      legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
+             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
+  }))
+}, fig.width=12, fig.height=6)
 ```
 
 ```{r ae_ds1_test_print, eval = F}
@@ -472,7 +667,7 @@ ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
 ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
 ```
 
-```{r ae_ds1_test, include = F}
+```{r ae_ds1_test, include = F, eval = gen_figs}
 # make a 'reference object' 
 r_ds1 <- list(interpGE = pred_ds1_ge, time.series = ndat$age)
 
@@ -481,32 +676,34 @@ ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
 ```
 
 
-```{r echo=F, fig.height=6, fig.width=12}
-par(mfrow = c(1,2))
-rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
-plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
-     xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
-invisible(sapply(levels(factor(ds1$p$strain)), function(l){
-  s <- ds1$p$strain == l
-  points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
-}))
-
-abline(a = 0, b = 1, lty = 3, lwd = 2)
-legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
-       lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
-
-rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
-plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
-     xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
-points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
-abline(a = 0, b = 1, lty = 3, lwd = 2)
-
-legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+```{r plot_comp_aeref, echo=F, fig.height=6, fig.width=12}
+show_fig(expr = {
+  par(mfrow = c(1,2))
+  rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
+  plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+       xlim = rg, ylim = rg,
+       main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
+  invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+    s <- ds1$p$strain == l
+    points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+  }))
+  
+  abline(a = 0, b = 1, lty = 3, lwd = 2)
+  legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
+         lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
+  
+  rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
+  plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+       xlim = rg, ylim = rg,
+       main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
+  points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+  abline(a = 0, b = 1, lty = 3, lwd = 2)
+  
+  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+}, fig.height=6, fig.width=12)
 ```
 
 
@@ -578,7 +775,7 @@ Once the priors are determined, you will need to set the standard deviation of t
 This parameter will also indirectly change the weight of the prior over the correlation score for estimate selection.
 
 On our `ds2` example, we can use ajusted known chronological ages for 20$^\circ$C.
-```{r hend_prior, cache=quick_build}
+```{r hend_prior, eval = gen_figs}
 priors <- ds2$p$age * 1.6 - 5 # rough approximation based on our previous lm
 
 ae_ds2_prior <- ae(samp = ds2$g,
@@ -586,15 +783,39 @@ ae_ds2_prior <- ae(samp = ds2$g,
                    ref.time_series = r_larv$time.series,
                    prior = priors,
                    prior.params = 10)
+#>                 nb.genes
+#> refdata            18718
+#> samp               19595
+#> intersect.genes    18718
+#> Bootstrap set size is 6239
+#> Performing age estimation...
+#> Bootstrapping...
+#>  Building gene subsets...
+#>  Computing correlations...
+#>  Performing age estimation...
+#> Computing summary statistics...
+#> Warning in ae(samp = ds2$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series, : Some estimates come near the edges of the reference.
+#> If possible, stage those on a different reference for confirmation.
 ```
 
 
-```{r plot_ae_prior, fig.height=5, fig.width=9, fig.align='center'}
+```{r plot_ae_prior_print, eval=F}
 plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates = T,
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
 
 all(ae_ds2_prior$age.estimates[,1]==ae_ds2$age.estimates[,1])
 ```
+```{r plot_ae_prior, fig.height=5, fig.width=9, fig.align='center'}
+show_fig(expr = {
+  
+  plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates = T,
+       show.prior = T, col.p = 'red', l.pos = 'bottomright')
+  
+  all(ae_ds2_prior$age.estimates[,1]==ae_ds2$age.estimates[,1])
+}, fig.height=5, fig.width=9)
+```
+
+
 
 As you can see, here the estimates are the same as without the prior. 
 
@@ -604,14 +825,14 @@ As you can see, here the estimates are the same as without the prior.
 # Loading `ds1` and `ds2`
 
 
-```{r load_namespaces, include = F}
+```{r load_namespaces, include = F, eval = F}
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
 requireNamespace("Biobase", quietly = T)
 requireNamespace("GEOquery", quietly = T)
 ```
 
-```{r raw2rpkm_func}
+```{r raw2rpkm_func, eval = F}
 raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
   # Compute RPKM from raw counts
   if(!all(rownames(X)%in%gene.length[, id.col])){
