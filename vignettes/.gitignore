@@ -1,8 +1,7 @@
 *.R
 *.RData
 old*
-RAPToR_*
-RAPToR-refbuilding_*
+RAPToR-refbuilding.html
 ex_1.html
 ex_2.html
 ex_3.html
