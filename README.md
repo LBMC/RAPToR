@@ -28,6 +28,7 @@ install.packages("devtools")
 Everything you need to know to make this work is detailed in the package's main vignette. You can access it from your R console with
 
 ```r
+library(RAPToR)
 vignette("RAPToR")
 ```
 
