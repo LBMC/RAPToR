@@ -1,10 +1,5 @@
----
-output: 
-  rmarkdown::html_document :
-    keep_md: yes
----
-
-```{r, include = FALSE}
+```{r, include = FALSE, eval = F}
+knitr::opts_knit$set(out.format = "html")
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -12,7 +7,13 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-quick_build <- T # wether to cache heavy-computation chunks 
+
+gen_figs <- T
+figpath <- "../inst/doc/RAPToR-refbuilding_figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
+
 
 library(RAPToR)
 library(RColorBrewer)
@@ -24,6 +25,23 @@ requireNamespace("stats")
 transp <- function(col, a=.5){
   colr <- col2rgb(col)
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 150, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
 }
 ```
 
@@ -41,7 +59,7 @@ Code to generate `ds3` and `ds4` :
 ##### Hide
 
 ##### Show
-```{r raw2rpkm_func, eval = FALSE}
+```{r ex2_raw2rpkm_func, eval = FALSE}
 raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
   # Compute RPKM from raw counts
   if(!all(rownames(X)%in%gene.length[, id.col])){
@@ -156,12 +174,12 @@ rm(droso_genes, raw2rpkm)
 
 
 #### Normalization & Quick look
-```{r ex2_load, include=FALSE}
+```{r ex2_load, include=FALSE, eval=gen_figs}
 load("../inst/extdata/ds3.RData")
 load("../inst/extdata/ds4.RData")
 ```
 
-```{r ex2_qnorm_log}
+```{r ex2_qnorm_log, eval=gen_figs}
 ds3$g <- limma::normalizeBetweenArrays(ds3$g, method = "quantile")
 ds3$g <- log(ds3$g + 1)
 
@@ -169,49 +187,65 @@ ds4$g <- limma::normalizeBetweenArrays(ds4$g, method = "quantile")
 ds4$g <- log(ds4$g + 1)
 ```
 
-```{r ex2_ql_c1, results='markup'}
+```{r ex2_ql_c1, results='markup', eval=gen_figs}
 ds3$g[1:5, 1:5]
+#>               em0.2hr   em2.4hr   em4.6hr   em6.8hr  em8.10hr
+#> FBgn0000003 3.9651391 4.2738527 3.3174101 4.5644242 4.6982706
+#> FBgn0000008 1.2949845 0.9215699 0.6958672 0.6476801 0.7445991
+#> FBgn0000014 0.5099295 0.9512866 1.3952815 1.8610406 1.8421960
+#> FBgn0000015 0.2435639 0.6423988 1.0511912 1.1094674 1.0194280
+#> FBgn0000017 1.7968429 2.0901351 1.3389420 1.5336183 1.6777064
+
 
 head(ds3$p, n = 5)
+#>      sname age
+#> 1  em0.2hr   0
+#> 2  em2.4hr   2
+#> 3  em4.6hr   4
+#> 4  em6.8hr   6
+#> 5 em8.10hr   8
 ```
 
 ##### Correlation Matrix
 ```{r ex2_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
-cor_ds3 <- cor(ds3$g, method = "spearman")
-ord <- order(ds3$p$age)
-heatmap(cor_ds3[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
-        labRow = "", labCol = "")
-par(xpd = T)
-mtext(text = unique(ds3$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
-
-# color key
-image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
-      z = matrix(seq(min(cor_ds3), max(cor_ds3), l = 9), ncol = 9),
-      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-text(.975, 1, pos = 3, labels = expression(rho), font = 2)
-text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
-     labels = round(seq(min(cor_ds3), max(cor_ds3), l = 9)[c(T,F)], 2), cex = .6)
-
-
-xlp <- 1.025
-mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
-
+show_fig(expr = {
+  cor_ds3 <- cor(ds3$g, method = "spearman")
+  ord <- order(ds3$p$age)
+  heatmap(cor_ds3[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+          labRow = "", labCol = "")
+  par(xpd = T)
+  mtext(text = unique(ds3$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
+  
+  # color key
+  image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
+        z = matrix(seq(min(cor_ds3), max(cor_ds3), l = 9), ncol = 9),
+        col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+  text(.975, 1, pos = 3, labels = expression(rho), font = 2)
+  text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
+       labels = round(seq(min(cor_ds3), max(cor_ds3), l = 9)[c(T,F)], 2), cex = .6)
+  
+  
+  xlp <- 1.025
+  mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
+}, fig.height=5, fig.width=5)
 ```
 
 ##### Plotting components
 
-```{r ex2_ql_c3}
+```{r ex2_ql_c3, eval=gen_figs}
 pca_ds3 <- stats::prcomp(ds3$g, rank = 12)
 ```
 
 ```{r ex2_ql_c4, echo = F, fig.height=6, fig.width=12}
-par(mfrow = c(2,4))
-invisible(sapply(seq_len(8), function(i){
-  plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
-       xlab = "age", ylab = "PC", main = paste0("PC", i))
-
-  points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
-}))
+show_fig(expr = {
+  par(mfrow = c(2,4))
+  invisible(sapply(seq_len(8), function(i){
+    plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+         xlab = "age", ylab = "PC", main = paste0("PC", i))
+  
+    points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
+  }))
+}, fig.height=6, fig.width=12)
 ```
 
 
@@ -219,20 +253,26 @@ invisible(sapply(seq_len(8), function(i){
 
 #### Component number
 
-```{r ex2_mf_c1}
+```{r ex2_mf_c1, eval=gen_figs}
 nc <- sum(summary(pca_ds3)$importance[3,] < .999) + 1
 nc
+#> [1] 10
 ```
 
 #### Model
 
-```{r ex2_mf_c2}
+```{r ex2_mf_c2, eval=gen_figs}
 m_ds3 <- ge_im(X = ds3$g, p = ds3$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
 ```
 
-```{r ex2_mf_c3, echo = F}
+```{r ex2_mf_c3, echo = F, eval=gen_figs}
 mp_ds3 <- mperf(scale(ds3$g), predict(m_ds3), is.t = T)
 as.data.frame(mp_ds3, row.names = "")
+```
+
+```{r ex2_mf_print}
+#>        aCC         aRE         MSE      aRMSE
+#>  0.9094025 -0.04019692 0.005621654 0.07497769
 ```
 
 
@@ -240,13 +280,21 @@ as.data.frame(mp_ds3, row.names = "")
 
 ##### Predict
 
-```{r ex2_vd_c1, results='markup'}
+```{r ex2_vd_c1, results='markup', eval = gen_figs}
 # setup newdat
 n.inter <- 100 # nb of new timepoints
 newdat <- data.frame(
   age = seq(min(ds3$p$age), max(ds3$p$age), l = n.inter)
   )
 head(newdat)
+#>         age
+#> 1 0.0000000
+#> 2 0.2222222
+#> 3 0.4444444
+#> 4 0.6666667
+#> 5 0.8888889
+#> 6 1.1111111
+
 
 # predict 
 pred_m_ds3 <- predict(m_ds3, newdata = newdat)
@@ -256,17 +304,19 @@ pred_m_ds3_comp <- predict(m_ds3, newdata = newdat, as.c = TRUE)
 ##### Plot component predictions
 
 ```{r ex2_vd_c2, echo = F, fig.width=12, fig.height=6}
-par(mfrow = c(2,4))
-invisible(sapply(seq_len(8), function(i){
-  plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
-       xlab = "age", ylab = "PC", main = paste0("PC", i))
-
-  points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
-  points(newdat$age, pred_m_ds3_comp[, i], col = "royalblue", type = 'l', lwd = 3)
-  if(i == 1)
-    legend("topleft", bty = 'n', legend = c("ds3", "pred"),
-           pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
-}))
+show_fig(expr = {
+  par(mfrow = c(2,4))
+  invisible(sapply(seq_len(8), function(i){
+    plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+         xlab = "age", ylab = "PC", main = paste0("PC", i))
+  
+    points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
+    points(newdat$age, pred_m_ds3_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    if(i == 1)
+      legend("topleft", bty = 'n', legend = c("ds3", "pred"),
+             pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
+  }))
+}, fig.width=12, fig.height=6)
 ```
 
 ##### Build reference & stage samples
@@ -279,7 +329,7 @@ ae_ds3 <- ae(ds3$g, r_ds3$interpGE, r_ds3$time.series)
 ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series)
 ```
 
-```{r ex2_vd_c3bis, include = F}
+```{r ex2_vd_c3bis, include = F, eval = gen_figs}
 # make a 'reference object' 
 r_ds3 <- list(interpGE = pred_m_ds3, time.series = newdat$age)
 
@@ -290,51 +340,55 @@ ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series, bootstrap.n = 1)
 
 
 ```{r ex2_vd_c4, echo=F, fig.height=6, fig.width=12}
-par(mfrow = c(1,2))
-rg <- range(c(ae_ds3$age.estimates[,1], ds3$p$age))
-plot(ae_ds3$age.estimates[,1] ~ ds3$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds3)", 
-     xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds3 (on ds3 reference)", lwd = 2)
-points(ae_ds3$age.estimates[,1]~ds3$p$age, type = 'l', lty = 2)
-
-abline(a = 0, b = 1, lty = 3, lwd = 2)
-legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
-
-rg <- range(c(ae_ds4$age.estimates[,1], ds4$p$age))
-plot(ae_ds4$age.estimates[,1] ~ ds4$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds3)", 
-     xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds4 (on ds3 reference)", lwd = 2)
-# points(ae_ds4$age.estimates[,1] ~ ds4$p$age, type = 'l', lty = 2)
-abline(a = 0, b = 1, lty = 3, lwd = 2)
-
-legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+show_fig(expr = {
+  par(mfrow = c(1,2))
+  rg <- range(c(ae_ds3$age.estimates[,1], ds3$p$age))
+  plot(ae_ds3$age.estimates[,1] ~ ds3$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+       xlim = rg, ylim = rg,
+       main = "Chron. vs Estimated ages for ds3 (on ds3 reference)", lwd = 2)
+  points(ae_ds3$age.estimates[,1]~ds3$p$age, type = 'l', lty = 2)
+  
+  abline(a = 0, b = 1, lty = 3, lwd = 2)
+  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+  
+  rg <- range(c(ae_ds4$age.estimates[,1], ds4$p$age))
+  plot(ae_ds4$age.estimates[,1] ~ ds4$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+       xlim = rg, ylim = rg,
+       main = "Chron. vs Estimated ages for ds4 (on ds3 reference)", lwd = 2)
+  # points(ae_ds4$age.estimates[,1] ~ ds4$p$age, type = 'l', lty = 2)
+  abline(a = 0, b = 1, lty = 3, lwd = 2)
+  
+  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+}, fig.height=6, fig.width=12)
 ```
 
 
 Notice here, that our validation dataset's estimates appear quite noisy.
 However, if we look at the dynamics of the `ds4` data, we'll see that the chronological age specified for the samples is erroneous.
 
-```{r ex2_vd_c5}
+```{r ex2_vd_c5, eval=gen_figs}
 pca_ds4 <- stats::prcomp(ds4$g, rank = 20)
 ```
 
 ```{r ex2_vd_c6, echo = F, fig.height=12, fig.width=12}
-par(mfrow = c(4,4))
-invisible(sapply(c(0,4), function(ipp){
-  sapply(seq_len(4), function(i){
-    i <- i + ipp
-    plot(ds4$p$age, pca_ds4$rotation[,i], lwd = 2,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-  })
-  sapply(seq_len(4), function(i){
-    i <- i + ipp
-    plot(ae_ds4$age.estimates[,1], pca_ds4$rotation[,i], lwd = 2, col = "firebrick",
-         xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
-    box(col = "firebrick", lwd = 2)
-  })
-}))
+show_fig(expr = {
+  par(mfrow = c(4,4))
+  invisible(sapply(c(0,4), function(ipp){
+    sapply(seq_len(4), function(i){
+      i <- i + ipp
+      plot(ds4$p$age, pca_ds4$rotation[,i], lwd = 2,
+           xlab = "age", ylab = "PC", main = paste0("PC", i))
+    })
+    sapply(seq_len(4), function(i){
+      i <- i + ipp
+      plot(ae_ds4$age.estimates[,1], pca_ds4$rotation[,i], lwd = 2, col = "firebrick",
+           xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
+      box(col = "firebrick", lwd = 2)
+    })
+  }))
+}, fig.height=12, fig.width=12)
 ```
 
 This demonstrates the difficulty of producing high-resolution time series due to developmental asynchronicity between the samples.
