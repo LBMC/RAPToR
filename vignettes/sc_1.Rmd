@@ -1,0 +1,475 @@
+```{r, include = FALSE, eval = T}
+knitr::opts_knit$set(out.format = "html", header = "")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+
+gen_figs <- F
+figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
+
+
+library(RAPToR)
+library(RColorBrewer)
+library(beeswarm)
+library(parallel)
+
+library(limma)
+requireNamespace("wormRef")
+library(stats)
+
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 150, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
+}
+```
+
+### The data
+
+The dataset used in this example corresponds to a *C. elegans* profiling experiment by @lehrbach2012, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
+
+**Add some context to the data !**
+
+#### {.tabset}
+
+<a name="code-gen_ds1-ds2"></a>
+  
+Code to generate `dslehrbach2012` :
+  
+##### Hide
+  
+##### Show
+
+###### `dslehrbach202`
+```{r load_dslehrbach_c, eval = F}
+library("biomaRt")
+library("limma")
+library("affy")
+library("gcrma")
+
+# get probe ids from the arrayexpress
+probe_ids <- read.table("https://www.ebi.ac.uk/arrayexpress/files/A-AFFY-60/A-AFFY-60.adf.txt", h=T,
+                        comment.char = "", sep = "\t", skip = 17, as.is = T)
+
+
+# pheno data
+p_url <- "https://www.ebi.ac.uk/arrayexpress/files/E-MTAB-1333/E-MTAB-1333.sdrf.txt"
+p <- read.table(p_url, h = T, sep = "\t", comment.char = "", as.is = T)
+
+# geno data
+g_url <- unique(p$Comment..ArrayExpress.FTP.file.)
+g_dir <- "../inst/extdata/dslehrbach2012_raw/"
+g_file <- paste0(g_dir, "raw.zip")
+
+if(!file.exists(g_file)){
+  dir.create(g_dir)
+  utils::download.file(g_url, destfile = g_file)
+}
+utils::unzip(g_file, exdir = g_dir)
+
+g <- affy::ReadAffy(filenames = p$Array.Data.File, celfile.path = g_dir, phenoData = p)
+g <- affy::expresso(g, bg.correct = F, normalize = F,
+                    pmcorrect.method = "pmonly", summary.method = "median")
+g <- 2^exprs(g) # expresso log2s the data
+colnames(g) <- p$Source.Name
+
+# format ids
+g <- format_ids(g, probe_ids, from = 1, to = 7)
+g <- format_ids(g, wormRef::Cel_genes, from = 3, to = 1)
+
+
+# filter relevant fields
+p <- p[, c(1,22,24)]
+colnames(p) <- c("title", "tpastL4", "strain")
+p$strain <- factor(p$strain, levels = c('wild type', 'pash-1(mj100)'), labels = c('wt', 'strain'))
+p$rep <- factor(gsub("\\w+_h\\d+\\.(\\d)","\\1", p$title))
+
+dslehrbach2012 <- list(g = g, p = p)
+save(dslehrbach2012, file = "../inst/extdata/dslerhbach2012.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file)
+unlink(g_dir, recursive = T)
+
+rm(g, g_url, g_dir, g_file, p, p_url, probe_ids)
+```
+
+<br>
+
+
+```{r sc1_load, include=F, eval=gen_figs}
+load("../inst/extdata/dslerhbach2012.RData")
+```
+
+### Normalization
+
+```{r sc1_qnormlog, eval = gen_figs}
+dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, method = "quantile")
+dslehrbach2012$g <- log(dslehrbach2012$g + 1)
+```
+
+
+### Staging the samples
+```{r sc1_ae_lb, eval=gen_figs}
+r_ya <- prepare_refdata("Cel_YA_2", datapkg = "wormRef", n.inter = 200)
+
+ae_dslb <- ae(dslehrbach2012$g, r_ya$interpGE, r_ya$time.series)
+```
+
+
+
+```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F}
+show_fig(expr = { 
+plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
+     show.boot_estimates = T)
+}, fig.width=8, fig.height=6)
+```
+
+Re-ordering by batch : 
+```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F}
+show_fig(expr = {
+plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24), 
+     show.boot_estimates = T)
+}, fig.width=8, fig.height=6)
+```
+
+
+Quite some imprecise development !
+
+
+### Correlation is stronger with development than strain
+
+```{r sc1_cor_dev, eval = gen_figs}
+cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
+```
+
+```{r sc1_cor_dev_plot, fig.height=6, fig.width=8}
+show_fig(expr = {
+xa <- cc["wt_h06.3",]
+ya <- ae_dslb$age.estimates[,1]-ae_dslb$age.estimates["wt_h06.3",1]
+plot(xa, ya, xlab = "Spearman correlation with wt_h06.3",
+     ylab = "Estimated age difference with wt_h06.3",
+     cex=.5, xlim = rev(range(xa)),
+     lwd=2, col = dslehrbach2012$p$strain)
+abline(h=0, col='grey50', lty=2)
+poss <- c(1,3,1, 1,2,3, 
+          1,3,1, 1,3,1, 
+          3,1,4, 2,4,2, 
+          4,4,1, 4,4,2)
+
+cols <- transp(c('black', 'red')[as.numeric(dslehrbach2012$p$strain)])
+notransp <- c(7:12)
+cols[notransp] <- c('black','red')[as.numeric(dslehrbach2012$p$strain)][notransp]
+text(xa, ya, labels = dslehrbach2012$p$title, cex=.7, font=2,
+     pos=poss, col=cols, offset = .4)
+legend('bottomleft', lty = 0, pch=1, lwd=3,
+       col=1:2, pt.cex = .6, adj = c(.2),
+       legend = c('wild type', 'strainant'), bty='n',
+       text.font = 2, text.col = c(1,2))
+}, fig.height=6, fig.width=8)
+```
+
+
+
+### Differential Gene Expression analysis
+
+Let's perform a simple DGE analysis using limma, with the following model : 
+
+$$X \sim \texttt{ns(age, df = 2)} \times strain $$
+
+We'll compare the number of genes differentially expressed due to development or strains, which translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
+
+$$
+\begin{align}
+Y & = \beta_0 +
+\beta_1 I_{strain} +
+(\alpha_1 age_{sp1} + \alpha_2 age_{sp2}) +
+(\gamma_1 I_{strain} age_{sp1} + \gamma_2 I_{strain} age_{sp2})\\
+Y & = \beta_0 + \beta_1 I_{strain}\\
+Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
+\end{align}
+$$
+
+### {.tabset}
+DGE code :
+
+#### Hide
+#### Show
+```{r sc1_dge_setup_funcs, eval = gen_figs}
+pred_lmFit <- function(Fit){
+  tcrossprod(Fit$coefficients, Fit$design)
+}
+
+GoF <- function(Fit, X){
+  pred <- pred_lmFit(Fit)
+  res <- (X - pred)
+  ss <- apply(X, 1, function(ro) sum((ro - mean(ro))^2))
+  Rsq <- sapply(seq_len(nrow(X)), function(i){
+    1 - sum(res[i,]^2)/ss[i]
+  })
+  return(Rsq)
+}
+```
+
+```{r sc1_dge_main_func, eval = gen_figs}
+DGE <- function(X, strain, age, df = 2, name = NULL){
+  require(splines)
+  if(! length(strain) == ncol(X) | ! length(age) == ncol(X))
+    stop("strain and age must be of length ncol(X).")
+  
+  # make pdat df
+  pdat <- data.frame(strain = factor(strain), age = as.numeric(age), row.names = colnames(X))
+  
+  # build design matrix
+  d <- model.matrix(~ 0 + strain * ns(age, df = df), data = pdat) 
+  
+  # fix colnames
+  colnames(d)[3:(2+2*df)] <- paste0(c(rep("a", df), rep("strainmut.a", df)), 1:df)
+  
+  # build contrast matrices for mut and age tests
+  if(df == 2){
+    cm.mut <- makeContrasts(mut = strainwt - strainmut,
+                            mut.i1 = strainmut.a1,
+                            mut.i2 = strainmut.a2,
+                            levels = d)
+    cm.age <- makeContrasts(a1, a2,
+                            a.i1 = strainmut.a1,
+                            a.i2 = strainmut.a2,
+                            levels = d)
+  }
+  
+  if(df == 3){
+    cm.mut <- makeContrasts(mut = strainwt - strainmut,
+                            mut.i1 = strainmut.a1,
+                            mut.i2 = strainmut.a2,
+                            mut.i3 = strainmut.a3,
+                            levels = d)
+    cm.age <- makeContrasts(a1, a2, a3,
+                            a.i1 = strainmut.a1,
+                            a.i2 = strainmut.a2,
+                            a.i3 = strainmut.a3,
+                            levels = d)
+  }
+  
+  # fit model
+  m.0 <- lmFit(object = X, design = d)
+  # get GoF
+  gof <- GoF(Fit = m.0, X = X)
+  
+  # find DE genes for mut
+  m.m <- contrasts.fit(m.0, contrasts = cm.mut)
+  m.m <- eBayes(m.m)
+  
+  # find DE genes for age
+  m.a <- contrasts.fit(m.0, contrasts = cm.age)
+  m.a <- eBayes(m.a)
+  
+  Tmut <- topTable(m.m, adjust.method = "BH", number = Inf, sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
+  Tage <- topTable(m.a, adjust.method = "BH", number = Inf, sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
+  
+  res <- list(gof  = gof,
+              tmut = Tmut,
+              tage = Tage,
+              name = name)
+  
+  rm(m.0, m.m, m.a, Tmut, Tage, d, X, pdat, gof)
+  gc(verbose = F)
+  return(res)
+}
+```
+
+### {}
+
+```{r do_dge, eval = gen_figs}
+# format gdata
+X <- log2(exp(dslehrbach2012$g))
+
+dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, name = "dge.ca")
+dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], name = "dge.ae")
+```
+
+```{r plot_dge_func, echo = F}
+plot_DGE_pval_vs <- function(pv.x, pv.y, 
+                             xlab = "-log10(pv.x)", ylab = "-log10(pv.y)", 
+                             main = "DE genes with pv.x vs pv.y", ...)
+{ 
+  cols <- rowSums(cbind((pv.x < 0.05), (pv.y < 0.05),
+                     (pv.x > 0.05)+1 & (pv.y < 0.05)))+1
+  
+  plot(-log10(pv.x), -log10(pv.y), cex=.3, pch=16, 
+       xlab = xlab, ylab = ylab, main = main,
+       col = cols, ...)
+  
+  abline(v=-log10(0.05), h=-log10(0.05), col=2)
+  
+  legend('bottomright', legend = paste(table(cols)), text.col = 1:4,
+         text.font = 2, horiz = T, bty='n')
+  invisible(cols)
+}
+
+```
+
+```{r plot_dge, echo = F, fig.height=5, fig.width=10}
+show_fig(expr = { 
+
+par(mfrow = c(1,2))
+cols <- plot_DGE_pval_vs(dge.ca$tmut$adj.P.Val, dge.ae$tmut$adj.P.Val, main = "Strain effect detection (chron. vs ae)", 
+                         xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
+# plot(dge.ca$gof, dge.ae$gof, pch = 16, cex = .4, col = cols)
+# points(dge.ca$gof[cols>1], dge.ae$gof[cols>1], pch = 16, cex = .6, col = cols[cols>1])
+
+cols <- plot_DGE_pval_vs(dge.ca$tage$adj.P.Val, dge.ae$tage$adj.P.Val, main = "Development effect detection (chron. vs ae)",
+                         xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
+# plot(dge.ca$gof, dge.ae$gof, pch = 16, cex = .4, col = cols)
+# points(dge.ca$gof[cols>1], dge.ae$gof[cols>1], pch = 16, cex = .6, col = cols[cols>1])
+}, fig.height=5, fig.width=10)
+```
+
+
+### Compare with random noise on chron. age
+
+Let's compare the DGE results we have on the estimate ages with random perturbations of similar distribution.
+If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using estimates in the model.
+
+```{r sc1_comp_dge1, eval = gen_figs}
+age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_dslb$age.estimates[,1]
+# Note : + 50 to shift tpastL4 to age and avoid negative ages,
+#        this has no impact on the DGE.
+
+# estimate density function of age_diff
+d_ad <- density(age_diffs)
+
+# generate age sets of with random age_diff-like noise 
+set.seed(1)
+
+n <- 100
+rd_ages <- lapply(seq_len(n), function(i){
+  dslehrbach2012$p$tpastL4 + sample(x = d_ad$x, size = nrow(dslehrbach2012$p), prob = d_ad$y, replace = T) 
+})
+
+```
+
+
+```{r sc1_comp_dge2, eval = gen_figs, results='hide'}
+# do DGE on all age sets
+cl <- makeCluster(3, "FORK")
+
+rd_dges <- parLapply(cl, seq_len(n), function(i){
+  cat("\r", i,"/",n)
+  DGE(X, dslehrbach2012$p$strain, rd_ages[[i]], name = paste0("rd.",i))
+})
+
+stopCluster(cl)
+gc()
+```
+
+
+```{r sc1_format_forplot, echo = F, eval=gen_figs}
+qts <- seq(0,1, length.out = 100)
+quants <- lapply(seq_len(n), function(i){
+  quantile(rd_dges[[i]]$gof, probs = qts)
+})
+quants <- do.call(rbind, quants)
+```
+
+```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=9}
+show_fig(expr = {
+
+layout(mat = matrix(c(1,1,2,3), ncol = 2), widths = c(.7,.3))
+
+plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "QQ-plot of Goodness of Fit distribution")
+invisible(apply(quants, 1, function(ro) points(qts, ro, type = 'l', col = transp("black", a = .4))))
+points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
+points(qts, quantile(dge.ae$gof, probs = qts), type = "l", lwd = 4, col = 4)
+
+legend('bottomright', legend = c("Chronological age", "Estimated age", "Chron.Age + noise"), 
+       col = c(2,4, 1), lwd = c(4,4,1), bty = "n")
+
+
+diffgens <- lapply(seq_len(n), function(i){
+  data.frame(mut = sum(rd_dges[[i]]$tmut$adj.P.Val < 0.05), age = sum(rd_dges[[i]]$tage$adj.P.Val < 0.05))
+})
+
+diffgens <- do.call(rbind, diffgens)
+
+hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain")
+abline(v = sum(dge.ca$tmut$adj.P.Val < 0.05), lwd = 3, col = 2)
+abline(v = sum(dge.ae$tmut$adj.P.Val < 0.05), lwd = 3, col = 4)
+
+hist(diffgens$age, breaks = 30, xlim = c(3000, 12000), main = "Nb of DE genes for devpt.")
+abline(v = sum(dge.ca$tage$adj.P.Val < 0.05), lwd = 3, col = 2)
+abline(v = sum(dge.ae$tage$adj.P.Val < 0.05), lwd = 3, col = 4)
+}, fig.height=6, fig.width=9)
+```
+
+We can also look at the GoF distributions ordered by chronological age quantiles
+
+```{r sc1_plot_resdge2, echo = F, eval = gen_figs}
+ord <- order(dge.ca$gof)
+# par(mfrow = c(1,1))
+# plot(dge.ca$gof[ord], type = 'l')
+
+
+gofs <- lapply(seq_len(n), function(i){
+  rd_dges[[i]]$gof[ord]
+})
+gofs <- do.call(rbind, gofs)
+```
+
+```{r sc1_plot_resdge3, echo = F, eval = gen_figs}
+plot_QQGoFbox <- function(gof, bins = 10, at = seq(0,1,l = bins), boxwex = .5/bins, add = F, plotargs = list(), ...){
+  grps <- cut(1:length(gof), bins)
+  
+  bxs <- lapply(levels(grps), function(l){
+    s <- which(grps == l)
+    return(boxplot(gof[s], plot = F))
+  })
+  if(!add){
+    do.call(plot, c(list(x = range(at), y=range(gof), type = "n"), plotargs))
+  }
+  
+  invisible(lapply(seq_len(bins), function(i){
+    bxp(z = bxs[[i]], at = at[i], add = T, frame.plot = F, axes = F, boxwex = boxwex, ...)
+  }))
+}
+```
+
+```{r sc1_plot_resdge4, echo = F, fig.height=8, fig.width=16}
+show_fig(expr = {
+  
+par(mfrow = c(1,2))
+plot(0:1, 0:1, type = "n", ylab = "GoF", xlab = "quantile", main = "Goodness of Fit distribution in chron. age quantile order")
+points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
+plot_QQGoFbox(dge.ae$gof[ord], bins = 50, add = T, cex = .2, lwd = 2, boxcol=4, medcol = 4, medlwd=6, boxwex = .8/50)
+
+
+plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "Goodness of Fit distribution")
+points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
+plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
+
+}, fig.height=8, fig.width=16)
+```
+
