@@ -1,0 +1,254 @@
+```{r, include = FALSE, eval = T}
+knitr::opts_knit$set(out.format = "html", header = "")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+
+gen_figs <- F
+figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
+
+
+library(RAPToR)
+library(RColorBrewer)
+library(beeswarm)
+library(parallel)
+# library(vioplot)
+
+library(limma)
+requireNamespace("wormRef")
+library(stats)
+
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 150, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
+}
+```
+
+
+### The data
+
+
+
+#### {.tabset}
+
+Code to generate `dslevin2016dmel`, `dslevin2016cel`, `dsgraveley2011` and `sc2_glist`.
+
+##### Hide
+##### Show
+```{r sc2_raw2rpkm_func, eval = FALSE}
+raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
+  # Compute RPKM from raw counts
+  if(!all(rownames(X)%in%gene.length[, id.col])){
+    stop("Some genes are missing length info !")
+  }
+  res <- sapply(colnames(X), function(samp){
+    pm <- sum(X[,samp])/1e6
+    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
+  })
+  rownames(res) <- rownames(X)
+  return(res)
+}
+```
+
+```{r load_dmel_genes, eval = F}
+requireNamespace("biomaRt", quietly = TRUE)
+
+mart <- biomaRt::useMart("ensembl", dataset = "dmelanogaster_gene_ensembl")
+dmel_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", 
+                                            "ensembl_transcript_id",
+                                            "external_gene_name",
+                                            "transcript_length"),
+                              mart = mart)
+colnames(dmel_genes)[1:3] <- c("fb_id", "transcript_id", "gene_name")
+
+dmel_cel_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id",
+                                                "celegans_homolog_ensembl_gene"),
+                                                mart = mart)
+
+colnames(dmel_cel_genes) <- c("fb_id", "wb_id")
+
+sc2_glist <- list(dmel_genes = dmel_genes, dmel_cel_genes = dmel_cel_genes)
+save(sc2_glist, file = "../inst/extdata/sc2_glist.RData", compress = "xz")
+rm(mart, dmel_genes, dmel_cel_genes)
+```
+
+
+```{r sc2_load_dslevin2016dmel, eval = F}
+geo_dslevin2016dmel <- "GSE60471"
+
+g_url_dslevin2016dmel <- GEOquery::getGEOSuppFiles(geo_dslevin2016dmel, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_dslevin2016dmel <- "../inst/extdata/dslevin2016dmel.txt.gz"
+utils::download.file(url = as.character(g_url_dslevin2016dmel$url[3]), destfile = g_file_dslevin2016dmel)
+
+X_dslevin2016dmel <- read.table(gzfile(g_file_dslevin2016dmel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
+
+# filter poor quality samples
+cm_dslevin2016dmel <- RAPToR::cor.gene_expr(X_dslevin2016dmel, X_dslevin2016dmel)
+f_dslevin2016dmel <- which(0.6 > apply(cm_dslevin2016dmel, 1, quantile, probs = .99))
+X_dslevin2016dmel <- X_dslevin2016dmel[, -f_dslevin2016dmel]
+
+# convert to rpkm & FBgn
+X_dslevin2016dmel <- format_ids(X_dslevin2016dmel, sc2_glist$dmel_genes, from = "fb_id", to = "fb_id")
+X_dslevin2016dmel <- raw2rpkm(X = X_dslevin2016dmel, gene.length = sc2_glist$dmel_genes, id.col = "fb_id", l.col = "transcript_length")
+
+
+# pheno data
+P_dslevin2016dmel <- Biobase::pData(GEOquery::getGEO(geo_dslevin2016dmel, getGPL = F)[[1]])
+
+# filter relevant fields/samples
+P_dslevin2016dmel <- P_dslevin2016dmel[, c("title", "geo_accession", "time (minutes cellularization stage):ch1")]
+colnames(P_dslevin2016dmel)[3] <- "time"
+P_dslevin2016dmel$title <- as.character(P_dslevin2016dmel$title)
+
+P_dslevin2016dmel <- P_dslevin2016dmel[P_dslevin2016dmel$title %in% colnames(X_dslevin2016dmel),]
+X_dslevin2016dmel <- X_dslevin2016dmel[, P_dslevin2016dmel$title]
+
+# formatting
+P_dslevin2016dmel$title <- gsub('Metazome_Drosophila_timecourse_', '', P_dslevin2016dmel$title)
+colnames(X_dslevin2016dmel) <- P_dslevin2016dmel$title
+
+P_dslevin2016dmel$age <- as.numeric(P_dslevin2016dmel$time) / 60
+
+dslevin2016dmel <- list(g = X_dslevin2016dmel, p = P_dslevin2016dmel)
+save(dslevin2016dmel, file = "../inst/extdata/dslevin2016dmel.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_dslevin2016dmel)
+rm(geo_dslevin2016dmel, g_url_dslevin2016dmel, g_file_dslevin2016dmel, 
+   f_dslevin2016dmel, cm_dslevin2016dmel, X_dslevin2016dmel, P_dslevin2016dmel)
+```
+
+
+```{r sc2_load_dslevin2016cel, eval = F}
+geo_dslevin2016cel <- "GSE60755"
+
+g_url_dslevin2016cel <- GEOquery::getGEOSuppFiles(geo_dslevin2016cel, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_dslevin2016cel <- "../inst/extdata/dslevin2016cel.txt.gz"
+utils::download.file(url = as.character(g_url_dslevin2016cel$url[1]), destfile = g_file_dslevin2016cel)
+
+X_dslevin2016cel <- read.table(gzfile(g_file_dslevin2016cel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
+
+# filter poor quality samples
+cm_dslevin2016cel <- RAPToR::cor.gene_expr(X_dslevin2016cel, X_dslevin2016cel)
+f_dslevin2016cel <- which(0.67 > apply(cm_dslevin2016cel, 1, quantile, probs = .99))
+X_dslevin2016cel <- X_dslevin2016cel[, -f_dslevin2016cel]
+
+# convert to rpkm & FBgn
+X_dslevin2016cel <- format_ids(X_dslevin2016cel, wormRef::Cel_genes, from = "sequence_name", to = "wb_id")
+X_dslevin2016cel <- raw2rpkm(X = X_dslevin2016cel, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
+
+
+# pheno data
+P_dslevin2016cel <- Biobase::pData(GEOquery::getGEO(geo_dslevin2016cel, getGPL = F)[[1]])
+
+# filter relevant fields/samples
+P_dslevin2016cel <- P_dslevin2016cel[, c("title", "geo_accession", "time point (minutes after 4-cell):ch1")]
+colnames(P_dslevin2016cel)[3] <- "time"
+P_dslevin2016cel$title <- as.character(P_dslevin2016cel$title)
+
+P_dslevin2016cel <- P_dslevin2016cel[P_dslevin2016cel$title %in% colnames(X_dslevin2016cel),]
+
+# formatting
+P_dslevin2016cel$age <- as.numeric(P_dslevin2016cel$time) / 60
+P_dslevin2016cel <- P_dslevin2016cel[order(P_dslevin2016cel$age),]
+X_dslevin2016cel <- X_dslevin2016cel[, P_dslevin2016cel$title]
+
+P_dslevin2016cel$title <- gsub('Metazome_CE_timecourse_', '', P_dslevin2016cel$title)
+colnames(X_dslevin2016cel) <- P_dslevin2016cel$title
+
+
+
+dslevin2016cel <- list(g = X_dslevin2016cel, p = P_dslevin2016cel)
+save(dslevin2016cel, file = "../inst/extdata/dslevin2016cel.RData", compress = "xz")
+
+# cleanup
+file.remove(g_file_dslevin2016cel)
+rm(geo_dslevin2016cel, g_url_dslevin2016cel, g_file_dslevin2016cel, 
+   f_dslevin2016cel, cm_dslevin2016cel, X_dslevin2016cel, P_dslevin2016cel)
+```
+
+###  Normalization
+```{r sc2_qnorm}
+dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
+dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
+
+dslevin2016cel$g <- limma::normalizeBetweenArrays(dslevin2016cel$g, method = "quantile")
+dslevin2016cel$g <- log(dslevin2016cel$g + 1)
+```
+
+
+```{r sc1_cel_gom, eval = gen_figs}
+Xdmel_cel_homologs <- dslevin2016dmel$g
+Xdmel_cel_homologs <- format_ids(Xdmel_cel_homologs, sc2_glist$dmel_cel_genes, from = "fb_id", to = "wb_id")
+
+```
+
+
+```{r sc2_ae, eval = gen_figs}
+r_emb_cel <- prepare_refdata("Cel_embryo", "wormRef", n.inter = 400)
+
+
+ae_cel_onCel <- ae(dslevin2016cel$g, r_emb_cel$interpGE, r_emb_cel$time.series)
+ae_dmel_onCel <- ae(Xdmel_cel_homologs, r_emb_cel$interpGE, r_emb_cel$time.series)
+```
+
+
+```{r sc2_ae_plot, fig.height=8, fig.width=8}
+plot(ae_cel_onCel, show.boot_estimates = T, cex = .8)
+```
+
+
+
+```{r sc2_ae_plot2, fig.height=8, fig.width=8}
+plot(ae_dmel_onCel, show.boot_estimates = T, cex = .8)
+```
+
+
+```{r ds3_shennanigans}
+load("../inst/extdata/ds3.RData")
+ds3$g <- limma::normalizeBetweenArrays(ds3$g, method = "quantile")
+ds3$g <- log(ds3$g + 1)
+
+m_ds3 <- ge_im(X = ds3$g, p = ds3$p, formula = "X ~ s(age, bs = 'cr')", nc = 10)
+n.inter <- 100 # nb of new timepoints
+newdat <- data.frame(
+  age = seq(min(ds3$p$age), max(ds3$p$age), l = n.inter)
+)
+
+r_ds3 <- list(interpGE = predict(m_ds3, newdata = newdat), time.series = newdat$age)
+
+ae_dmel_onDmel <- ae(dslevin2016dmel$g, r_ds3$interpGE, r_ds3$time.series)
+```
+
+```{r}
+plot(ae_dmel_onDmel, show.boot_estimates = T)
+```
+
+```{r, fig.height=6, fig.width=6}
+plot(ae_dmel_onDmel$age.estimates[,1], ae_dmel_onCel$age.estimates[,1])
+```
+
