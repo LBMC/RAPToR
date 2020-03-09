@@ -19,6 +19,7 @@ library(RAPToR)
 library(RColorBrewer)
 library(beeswarm)
 library(parallel)
+library(vioplot)
 
 library(limma)
 requireNamespace("wormRef")
@@ -51,7 +52,12 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 The dataset used in this example corresponds to a *C. elegans* profiling experiment by @lehrbach2012, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
 
-**Add some context to the data !**
+
+The experimental setup is the following. 
+Two *C. elegans* strains : wild-type (`wt`) and pash-1(mj100) (`mut`) were profiled at 0, 6, 12 and 24 hours past the L4 stage (~ 50 hours post-hatching). These were done in triplicates.
+
+In this scenario, performing a Differential Gene Expression (DGE) analysis to uncover the effect of the strain relies on the inclusion of the effect of development.
+This is true in any time series context, even more so here because the late larval development of *C. elegans* is known to lead to drastic changes in gene expression within a short time frame.
 
 #### {.tabset}
 
@@ -133,6 +139,10 @@ dslehrbach2012$g <- log(dslehrbach2012$g + 1)
 
 
 ### Staging the samples
+
+The samples' (chronological) ages range from after L4 to 24h past L4.
+The `Cel_YA_2` reference from `wormRef` covers this range, so we'll select it to stage the samples.
+
 ```{r sc1_ae_lb, eval=gen_figs}
 r_ya <- prepare_refdata("Cel_YA_2", datapkg = "wormRef", n.inter = 200)
 
@@ -144,20 +154,25 @@ ae_dslb <- ae(dslehrbach2012$g, r_ya$interpGE, r_ya$time.series)
 ```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F}
 show_fig(expr = { 
 plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
+     main = "ae of samples grouped by timepoint",
      show.boot_estimates = T)
 }, fig.width=8, fig.height=6)
 ```
 
-Re-ordering by batch : 
+We can see quite a bit of variation in the sample timings, especially at the 0 and 6 hour timepoints.
+Another interesting effect can be seen if we group the samples by replicate.
+
 ```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F}
 show_fig(expr = {
 plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24), 
+     main = "ae of samples grouped by replicate",
      show.boot_estimates = T)
 }, fig.width=8, fig.height=6)
 ```
 
 
-Quite some imprecise development !
+Notice how, in the first two replicates, the `mut` samples are consistantly older than the `wt` ones, which is the opposite way around for the 3rd replicate.
+We can maybe speculate about a potential effect of their sampling order.
 
 
 ### Correlation is stronger with development than strain
@@ -166,7 +181,10 @@ Quite some imprecise development !
 cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
 ```
 
-```{r sc1_cor_dev_plot, fig.height=6, fig.width=8}
+Let's look at the correlation between the samples and compare it to their estimated age difference.
+In the plot below, we chose the `wt_h06.3` sample and plotted the correlation and age difference of all samples with it.
+
+```{r sc1_cor_dev_plot, fig.height=6, fig.width=8, echo = F}
 show_fig(expr = {
 xa <- cc["wt_h06.3",]
 ya <- ae_dslb$age.estimates[,1]-ae_dslb$age.estimates["wt_h06.3",1]
@@ -192,6 +210,7 @@ legend('bottomleft', lty = 0, pch=1, lwd=3,
 }, fig.height=6, fig.width=8)
 ```
 
+Notice how the strain does not really impact correlation, compared to developmental differences.
 
 
 ### Differential Gene Expression analysis
@@ -212,6 +231,9 @@ Y & = \beta_0 + \beta_1 I_{strain}\\
 Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
 \end{align}
 $$
+
+Note that we're not interested in whether genes are up or down-regulated, but only in the detection of an effect.
+
 
 ### {.tabset}
 DGE code :
@@ -235,7 +257,7 @@ GoF <- function(Fit, X){
 ```
 
 ```{r sc1_dge_main_func, eval = gen_figs}
-DGE <- function(X, strain, age, df = 2, name = NULL){
+DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   require(splines)
   if(! length(strain) == ncol(X) | ! length(age) == ncol(X))
     stop("strain and age must be of length ncol(X).")
@@ -294,6 +316,8 @@ DGE <- function(X, strain, age, df = 2, name = NULL){
               tmut = Tmut,
               tage = Tage,
               name = name)
+  if(return.model)
+    res$model = m.0
   
   rm(m.0, m.m, m.a, Tmut, Tage, d, X, pdat, gof)
   gc(verbose = F)
@@ -301,14 +325,36 @@ DGE <- function(X, strain, age, df = 2, name = NULL){
 }
 ```
 
+```{r sc1_getvarexp, eval=gen_figs}
+get_ssq <- function(dsgn, X){
+  # Get the SSQ explained by the model terms (eg, R anova results)
+  ps <- lapply(list(1:2,1:4,1:6), function(s){
+    m <- limma::lmFit(X, design = dsgn[, s])
+    return(tcrossprod(m$coefficients, m$design))
+  })
+  
+  ssq <- function(x) sum((x - sum(x)/length(x))^2)
+  
+  vs <- lapply(ps, function(p) apply(p, 1, ssq))
+  vs <- do.call(cbind, vs)
+  
+  vex <- data.frame(strain=vs[,1], age=vs[,2]-vs[,1], age.strain = vs[,3]-vs[,2], 
+                    ssqExp = vs[,3], ssqTot = apply(X, 1, ssq))
+  vex$ssqRes <- vex$ssqTot - vex$ssqExp
+  return(vex)
+}
+```
+
 ### {}
 
-```{r do_dge, eval = gen_figs}
+We want to perform *the same DGE analysis* using the chronological age, and our estimates, to see if there is an improvement in detecting strain and age effect.
+
+```{r do_dge, eval = gen_figs, results='hide'}
 # format gdata
 X <- log2(exp(dslehrbach2012$g))
 
-dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, name = "dge.ca")
-dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], name = "dge.ae")
+dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, name = "dge.ca", return.model = T)
+dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], name = "dge.ae", return.model = T)
 ```
 
 ```{r plot_dge_func, echo = F}
@@ -348,28 +394,126 @@ cols <- plot_DGE_pval_vs(dge.ca$tage$adj.P.Val, dge.ae$tage$adj.P.Val, main = "D
 }, fig.height=5, fig.width=10)
 ```
 
+```{r dge_increase, eval = gen_figs, results='markup'}
+mut_dif.ca <- sum(dge.ca$tmut$adj.P.Val < 0.05)
+mut_dif.ae <- sum(dge.ae$tmut$adj.P.Val < 0.05)
 
-### Compare with random noise on chron. age
+age_dif.ca <- sum(dge.ca$tage$adj.P.Val < 0.05)
+age_dif.ae <- sum(dge.ae$tage$adj.P.Val < 0.05)
 
-Let's compare the DGE results we have on the estimate ages with random perturbations of similar distribution.
-If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using estimates in the model.
+100 * (mut_dif.ae - mut_dif.ca) / (mut_dif.ca) # mut pct increase 
+#> [1] 91.8583
+
+100 * (age_dif.ae - age_dif.ca) / (age_dif.ca) # age pct increase
+#> [1] 9.081006
+
+```
+
+We detect nearly *twice* as many DE genes for strain using our estimates compared to using the chronological age, and around $10 \%$ more genes with development.
+This shows how crucial it can be to take developmental dynamics into account correctly in DGE analyses.
+
+
+```{r dge_write, echo = F, eval = F, include = F}
+write.csv(data.frame(" " = rownames(dge.ca$tmut)),
+          file = "../inst/extdata/full_gl.txt", 
+          row.names = F, quote = F)
+
+
+write.csv(data.frame(" " = rownames(dge.ca$tmut)[dge.ca$tmut$adj.P.Val<0.05]),
+          file = "../inst/extdata/ca_mut_gl.txt", 
+          row.names = F, quote = F)
+
+write.csv(data.frame(" " = rownames(dge.ae$tmut)[dge.ae$tmut$adj.P.Val<0.05]),
+          file = "../inst/extdata/ae_mut_gl.txt",
+          row.names = F, quote = F)
+```
+
+
+We can also see this increase in the model's fit itself, by looking at the Sum of Squares fraction attributed to model terms (a variance decomposition of sorts).
+
+```{r sc1_ssqapply, eval = gen_figs}
+ssq.ca <- get_ssq(dge.ca$model$design, X = dslehrbach2012$g)
+ssq.ae <- get_ssq(dge.ae$model$design, X = dslehrbach2012$g)
+
+# scale to ssqTot for fraction of ssq
+ssq.ca <- as.data.frame(apply(ssq.ca, 2, `/`, ssq.ca$ssqTot))
+ssq.ae <- as.data.frame(apply(ssq.ae, 2, `/`, ssq.ae$ssqTot))
+```
+
+```{r sc1_ssqplot, echo = F, fig.height=5, fig.width=12}
+show_fig(expr = {
+    
+  par(mfrow = c(1,2))
+  with(ssq.ca , vioplot(
+    strain, age, age.strain, ssqExp, ssqRes, 
+    names = c("strain", "age", "strain:age", "ssqExp", "ssqRes"),
+    col = transp(c("royalblue", "firebrick", "purple", "white", "grey80")),
+    main = "Fraction of SSq explained by model terms with chron. age", ylab = "Fraction of SSq"
+  ))
+  abline(v = 3.5, lty = 2)
+  grid(NULL, lty = 6, col = "grey", nx=0)
+  
+  with(ssq.ae , vioplot(
+    strain, age, age.strain, ssqExp, ssqRes, 
+    names = c("strain", "age", "strain:age", "ssqExp", "ssqRes"),
+    col = transp(c("royalblue", "firebrick", "purple", "white", "grey80")),
+    main = "Fraction of SSq explained by model terms with ae", ylab = "Fraction of SSq"
+  ))
+  abline(v = 3.5, lty = 2)
+  grid(NULL, lty = 3, col = "grey", nx=0) 
+}, fig.height=5, fig.width=12)
+```
+
+
+```{r sc1_ssq_sum, eval=gen_figs, results='markup'}
+round(colSums(ssq.ca) / nrow(X), 3)
+#>    strain        age age.strain     ssqExp     ssqTot     ssqRes 
+#>     0.072      0.395      0.075      0.542      1.000      0.458
+
+round(colSums(ssq.ae) / nrow(X), 3)
+#>    strain        age age.strain     ssqExp     ssqTot     ssqRes 
+#>     0.072      0.427      0.080      0.579      1.000      0.421 
+```
+
+
+### Compare model fit between chronological age, estimated age, and random noise on chronological age
+
+
+If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using our estimates in the model.
+To test this, we can simulate age sets with random noise of similar distribution to the age differences observed between chronological and estimated age.
+
+To compare the results, we use the model's Goodness of Fit (GoF) per gene. The GoF computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$.
 
 ```{r sc1_comp_dge1, eval = gen_figs}
 age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_dslb$age.estimates[,1]
-# Note : + 50 to shift tpastL4 to age and avoid negative ages,
-#        this has no impact on the DGE.
+# Note : + 50 to shift tpastL4 to age, avoiding generation of negative tpastl4 values,
+#        this has no impact on the DGE (it just shifts the age window).
 
-# estimate density function of age_diff
+# estimate density function of age_diffs
 d_ad <- density(age_diffs)
 
-# generate age sets of with random age_diff-like noise 
-set.seed(1)
+# generate age sets of with random age_diffs-like noise 
+set.seed(10)
 
 n <- 100
 rd_ages <- lapply(seq_len(n), function(i){
-  dslehrbach2012$p$tpastL4 + sample(x = d_ad$x, size = nrow(dslehrbach2012$p), prob = d_ad$y, replace = T) 
+  (dslehrbach2012$p$tpastL4 + 50) + sample(x = d_ad$x, size = nrow(dslehrbach2012$p), prob = d_ad$y, replace = T) 
 })
 
+```
+
+
+```{r sc1_comp_dge1bis, eval = F, include = F}
+# plot(density(unlist(lapply(rd_ages, function(a) a - 50- dslehrbach2012$p$tpastL4))))
+hist(unlist(lapply(rd_ages, function(a) a - 50 - dslehrbach2012$p$tpastL4)),
+     border = transp(1, 0.4), breaks = 50, freq = F, 
+     main = "Simulated age differences", xlab = "Age difference")
+points(d_ad, type = 'l', lwd = 3)
+legend("topright", legend = "Density of age_diffs", lwd = 3, bty = "n")
+# hist(age_diffs, col = transp(4), freq = F, add = T,
+#      breaks = 20)
+# plot(dslehrbach2012$p$tpastL4, ae_dslb$age.estimates[,1], type = "n", ylim = range(rd_ages))
+# points(dslehrbach2012$p$tpastL4, ae_dslb$age.estimates[,1], col = 4, lwd = 2)
 ```
 
 
@@ -415,7 +559,7 @@ diffgens <- lapply(seq_len(n), function(i){
 
 diffgens <- do.call(rbind, diffgens)
 
-hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain")
+hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain", xlim = c(0,1700))
 abline(v = sum(dge.ca$tmut$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tmut$adj.P.Val < 0.05), lwd = 3, col = 4)
 
@@ -425,7 +569,12 @@ abline(v = sum(dge.ae$tage$adj.P.Val < 0.05), lwd = 3, col = 4)
 }, fig.height=6, fig.width=9)
 ```
 
-We can also look at the GoF distributions ordered by chronological age quantiles
+In the plots above, we can see that using the estimated age leads to better model fits and an increased number of differentially expressed genes.
+
+We can also look at the GoF distributions ordered by chronological age quantiles.
+The gene GoF are binned along the quantile scale, and shown as boxplots instead of scatterplot for a clearer view. 
+
+The Chronological age GoF QQ line is the same as for the previous plot (since the GoF values are ordered according to it).
 
 ```{r sc1_plot_resdge2, echo = F, eval = gen_figs}
 ord <- order(dge.ca$gof)
@@ -460,16 +609,21 @@ plot_QQGoFbox <- function(gof, bins = 10, at = seq(0,1,l = bins), boxwex = .5/bi
 ```{r sc1_plot_resdge4, echo = F, fig.height=8, fig.width=16}
 show_fig(expr = {
   
-par(mfrow = c(1,2))
-plot(0:1, 0:1, type = "n", ylab = "GoF", xlab = "quantile", main = "Goodness of Fit distribution in chron. age quantile order")
+par(mfrow = c(1,2), mar = c(4,4,4,1))
+plot(0:1, 0:1, type = "n", ylab = "GoF", xlab = "quantile", main = "Goodness of Fit distribution in chron. age quantile order\n(estimated age)")
 points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
-plot_QQGoFbox(dge.ae$gof[ord], bins = 50, add = T, cex = .2, lwd = 2, boxcol=4, medcol = 4, medlwd=6, boxwex = .8/50)
+plot_QQGoFbox(dge.ae$gof[ord], bins = 50, add = T, cex = .2, lwd = 1, boxcol=4, medcol = 4, medlwd=6, boxwex = .8/50)
+
+legend('bottomright', legend = c("Chronological age GoF quantiles"), 
+       col = c(2), lwd = c(4), bty = "n")
 
 
-plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "Goodness of Fit distribution")
+plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = paste0("Goodness of Fit distribution in chron. age quantile order\n(joined simulated age + noise sets, n = ",n, ")"))
 points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
 plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
 
 }, fig.height=8, fig.width=16)
 ```
 
+
+We can see that using our estimates overall outperforms the random noise sets *and* the chronological age.  
