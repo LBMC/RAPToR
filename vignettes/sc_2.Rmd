@@ -51,6 +51,13 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 ### The data
 
+### Workflow
+
+First, we know the drosophila time series has imprecise chronological ages, so we'll build a reference with the ds3 data (as in the second example of the reference-building vignette) and stage thhe drosophila series on it.
+
+We'll then filter the data to keep only the orthologs between C. elegans and drosophila (and convert FBgn IDs to WBGene IDs).
+Then, we'll build a reference with the C. elegans data.
+Finally, stage the drosophila samples on it.
 
 
 #### {.tabset}
@@ -94,6 +101,26 @@ colnames(dmel_cel_genes) <- c("fb_id", "wb_id")
 sc2_glist <- list(dmel_genes = dmel_genes, dmel_cel_genes = dmel_cel_genes)
 save(sc2_glist, file = "../inst/extdata/sc2_glist.RData", compress = "xz")
 rm(mart, dmel_genes, dmel_cel_genes)
+```
+
+```{r sc2_load_dmel_orthologs, eval = F}
+tmp_file <- "../inst/extdata/dmel_cel_orth.zip"
+tmp_fold <- "../inst/extdata/dmel_cel_orth/"
+f_url <- "https://genome.cshlp.org/content/suppl/2014/05/15/gr.170100.113.DC1/Supplemental_Files.zip"
+
+utils::download.file(url = f_url, destfile = tmp_file)
+utils::unzip(tmp_file, exdir = tmp_fold)
+
+glist <- read.table(paste0(tmp_fold, "Supplementary\ files/TableS1\ fly-worm\ ortholog\ pairs.txt"), 
+                    skip = 1, h=T, sep = "\t", as.is = T, quote = "\"")
+colnames(glist) <- c("fb_id", "dmel_name", "cel_id", "cel_name")
+glist$wb_id <- wormRef::Cel_genes[match(glist$cel_id, wormRef::Cel_genes$sequence_name), "wb_id"]
+
+save(glist, file = "../inst/extdata/sc2_glist2.RData", compress = "xz")
+
+file.remove(tmp_file)
+unlink(tmp_fold, recursive = T)
+rm(tmp_file, tmp_fold, f_url)
 ```
 
 
@@ -192,63 +219,139 @@ rm(geo_dslevin2016cel, g_url_dslevin2016cel, g_file_dslevin2016cel,
 ```
 
 ###  Normalization
-```{r sc2_qnorm}
+```{r sc2_load_ds, include = F, eval = gen_figs}
+load("../inst/extdata/dslevin2016cel.RData")
+load("../inst/extdata/dslevin2016dmel.RData")
+load("../inst/extdata/ds3.RData")
+
+load("../inst/extdata/sc2_glist.RData")
+load("../inst/extdata/sc2_glist2.RData")
+
+dsgraveley2011 <- ds3
+rm(ds3) ; gc()
+set.seed((1))
+```
+
+```{r sc2_qnorm, eval=gen_figs}
+dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
+dsgraveley2011$g <- log(dsgraveley2011$g + 1)
+
 dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
 dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
 
+dslevin2016cel$g <- dslevin2016cel$g[,-127] # remove extra outlier
+dslevin2016cel$p <- dslevin2016cel$p[-127,]
 dslevin2016cel$g <- limma::normalizeBetweenArrays(dslevin2016cel$g, method = "quantile")
 dslevin2016cel$g <- log(dslevin2016cel$g + 1)
-```
-
-
-```{r sc1_cel_gom, eval = gen_figs}
-Xdmel_cel_homologs <- dslevin2016dmel$g
-Xdmel_cel_homologs <- format_ids(Xdmel_cel_homologs, sc2_glist$dmel_cel_genes, from = "fb_id", to = "wb_id")
 
 ```
 
 
-```{r sc2_ae, eval = gen_figs}
-r_emb_cel <- prepare_refdata("Cel_embryo", "wormRef", n.inter = 400)
-
-
-ae_cel_onCel <- ae(dslevin2016cel$g, r_emb_cel$interpGE, r_emb_cel$time.series)
-ae_dmel_onCel <- ae(Xdmel_cel_homologs, r_emb_cel$interpGE, r_emb_cel$time.series)
-```
-
-
-```{r sc2_ae_plot, fig.height=8, fig.width=8}
-plot(ae_cel_onCel, show.boot_estimates = T, cex = .8)
+```{r sc2_filt, eval = gen_figs}
+dslevin2016cel$g_cel <- format_ids(dslevin2016cel$g, glist, from = "wb_id", to = "wb_id")
+dslevin2016dmel$g_cel <- format_ids(dslevin2016dmel$g, glist, from = "fb_id", to = "wb_id")
 ```
 
 
 
-```{r sc2_ae_plot2, fig.height=8, fig.width=8}
-plot(ae_dmel_onCel, show.boot_estimates = T, cex = .8)
-```
+#### Stage the drosophila time course
 
+See [refbuilding vignette 2nd example](RAPToR-refbuilding.html#ex-2) to see why this step is done.
 
-```{r ds3_shennanigans}
-load("../inst/extdata/ds3.RData")
-ds3$g <- limma::normalizeBetweenArrays(ds3$g, method = "quantile")
-ds3$g <- log(ds3$g + 1)
+```{r sc2_aedmel, eval=gen_figs}
+m_grav <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = 4)
 
-m_ds3 <- ge_im(X = ds3$g, p = ds3$p, formula = "X ~ s(age, bs = 'cr')", nc = 10)
-n.inter <- 100 # nb of new timepoints
+n.inter <- 200 
 newdat <- data.frame(
-  age = seq(min(ds3$p$age), max(ds3$p$age), l = n.inter)
+  age = seq(min(dsgraveley2011$p$age), max(dsgraveley2011$p$age), l = n.inter)
+)
+r_grav <- list(interpGE = predict(m_grav, newdata = newdat), time.series = newdat$age)
+ae_dmel <- ae(dslevin2016dmel$g, r_grav$interpGE, r_grav$time.series)
+
+dslevin2016dmel$p$ae <- ae_dmel$age.estimates[,1]
+```
+
+#### Build a C. elegans embryo reference
+
+
+```{r sc2_build_celref, eval=gen_figs}
+pca_cel <- stats::prcomp(dslevin2016cel$g_cel, rank = 20)
+nc <- 4#sum(summary(pca_cel)$importance[3,] < .9) +1
+nc
+#> [1] 9
+
+m_cel <- ge_im(X = dslevin2016cel$g_cel, p = dslevin2016cel$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
+
+n.inter <- 200 # nb of new timepoints
+newdat <- data.frame(
+  age = seq(min(dslevin2016cel$p$age), max(dslevin2016cel$p$age), l = n.inter)
 )
 
-r_ds3 <- list(interpGE = predict(m_ds3, newdata = newdat), time.series = newdat$age)
+pred_cel_comp <- predict(m_cel, newdata = newdat, as.c = T) # for plotting
 
-ae_dmel_onDmel <- ae(dslevin2016dmel$g, r_ds3$interpGE, r_ds3$time.series)
+r_cel <- list(interpGE = predict(m_cel, newdata = newdat), time.series = newdat$age)
 ```
 
-```{r}
-plot(ae_dmel_onDmel, show.boot_estimates = T)
+```{r sc2_plot_cel_comps, echo = F, fig.width=12, fig.height=6}
+show_fig(expr = {
+
+  par(mfrow = c(2,4))
+  invisible(sapply(seq_len(8), function(i){
+    plot(dslevin2016cel$p$age, m_cel$pca$rotation[,i], lwd = 2,
+         xlab = "age", ylab = "PC", main = paste0("PC", i))
+  
+    # points(dslevin2016cel$p$age, pca_cel$rotation[,i], type = 'l', lty = 2)
+    points(newdat$age, pred_cel_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    if(i == 1)
+      legend("topleft", bty = 'n', legend = c("dslevin2016cel", "pred"),
+             pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
+  }))
+}, fig.width=12, fig.height=6)
+
 ```
 
-```{r, fig.height=6, fig.width=6}
-plot(ae_dmel_onDmel$age.estimates[,1], ae_dmel_onCel$age.estimates[,1])
+
+```{r sc2_ae_cel, eval=gen_figs}
+ae_cel_on_cel <- ae(dslevin2016cel$g_cel, r_cel$interpGE, r_cel$time.series)
 ```
+
+```{r sc2_ae_cel_plot, echo = F, fig.height=8, fig.width=8}
+plot(dslevin2016cel$p$age, ae_cel_on_cel$age.estimates[,1], cex = .8)
+```
+
+
+```{r sc2_ae_cel, eval=gen_figs}
+ae_dmel_on_cel <- ae(dslevin2016dmel$g_cel, r_cel$interpGE, r_cel$time.series)
+```
+
+```{r sc2_ae_plot2, echo = F, fig.height=8, fig.width=8}
+plot(dslevin2016dmel$p$age, ae_dmel_on_cel$age.estimates[,1], cex = .8)
+```
+
+
+```{r sc2_cel_dmel}
+dslevin2016cel$g_dmel <- format_ids(dslevin2016cel$g, glist, from = "wb_id", to = "fb_id")
+ae_cel_on_dmel <- ae(dslevin2016cel$g_dmel, r_grav$interpGE, r_grav$time.series)
+```
+
+
+
+```{r sc2_plot_ae_cel_dmel, echo = F fig.height=6, fig.width=6}
+par(mar = c(4,4,4,2))
+plot(ae_cel_on_cel$age.estimates[,1], ae_cel_on_dmel$age.estimates[,1], 
+     xlab = "C. elegans age", ylab = "Drosophila age estimate", main = "C. elegans sample age estimates\non a Drosophila reference", cex = .8)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
