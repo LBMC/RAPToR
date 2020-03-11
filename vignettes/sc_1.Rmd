@@ -48,9 +48,10 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
-### The data
+## The data
 
 The dataset used in this example corresponds to a *C. elegans* profiling experiment by @lehrbach2012, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
+Profiling was done using microarray (Affymetrix). 
 
 
 The experimental setup is the following. 
@@ -130,7 +131,7 @@ rm(g, g_url, g_dir, g_file, p, p_url, probe_ids)
 load("../inst/extdata/dslerhbach2012.RData")
 ```
 
-### Normalization
+## Normalization
 
 ```{r sc1_qnormlog, eval = gen_figs}
 dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, method = "quantile")
@@ -138,7 +139,7 @@ dslehrbach2012$g <- log(dslehrbach2012$g + 1)
 ```
 
 
-### Staging the samples
+## Staging the samples
 
 The samples' (chronological) ages range from after L4 to 24h past L4.
 The `Cel_YA_2` reference from `wormRef` covers this range, so we'll select it to stage the samples.
@@ -175,7 +176,7 @@ Notice how, in the first two replicates, the `mut` samples are consistantly olde
 We can maybe speculate about a potential effect of their sampling order.
 
 
-### Correlation is stronger with development than strain
+## Correlation is stronger with development than strain
 
 ```{r sc1_cor_dev, eval = gen_figs}
 cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
@@ -213,7 +214,7 @@ legend('bottomleft', lty = 0, pch=1, lwd=3,
 Notice how the strain does not really impact correlation, compared to developmental differences.
 
 
-### Differential Gene Expression analysis
+## Differential Gene Expression analysis
 
 Let's perform a simple DGE analysis using limma, with the following model : 
 
@@ -235,11 +236,11 @@ $$
 Note that we're not interested in whether genes are up or down-regulated, but only in the detection of an effect.
 
 
-### {.tabset}
+#### {.tabset}
 DGE code :
 
-#### Hide
-#### Show
+##### Hide
+##### Show
 ```{r sc1_dge_setup_funcs, eval = gen_figs}
 pred_lmFit <- function(Fit){
   tcrossprod(Fit$coefficients, Fit$design)
@@ -345,7 +346,7 @@ get_ssq <- function(dsgn, X){
 }
 ```
 
-### {}
+#### {}
 
 We want to perform *the same DGE analysis* using the chronological age, and our estimates, to see if there is an improvement in detecting strain and age effect.
 
@@ -451,7 +452,7 @@ show_fig(expr = {
     main = "Fraction of SSq explained by model terms with chron. age", ylab = "Fraction of SSq"
   ))
   abline(v = 3.5, lty = 2)
-  grid(NULL, lty = 6, col = "grey", nx=0)
+  grid(NULL, lty = 3, col = "grey", nx=0)
   
   with(ssq.ae , vioplot(
     strain, age, age.strain, ssqExp, ssqRes, 
@@ -476,7 +477,7 @@ round(colSums(ssq.ae) / nrow(X), 3)
 ```
 
 
-### Compare model fit between chronological age, estimated age, and random noise on chronological age
+## Compare model fit between chronological age, estimated age, and random noise on chronological age
 
 
 If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using our estimates in the model.
@@ -559,7 +560,7 @@ diffgens <- lapply(seq_len(n), function(i){
 
 diffgens <- do.call(rbind, diffgens)
 
-hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain", xlim = c(0,1700))
+hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain", xlim = c(0,3500))
 abline(v = sum(dge.ca$tmut$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tmut$adj.P.Val < 0.05), lwd = 3, col = 4)
 
