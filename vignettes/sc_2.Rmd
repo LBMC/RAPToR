@@ -65,7 +65,7 @@ and the <span style="color:darkblue"> ***C. elegans*** **samples will always be 
 
 ### Workflow
 
-First, we know the drosophila time series (`dslevin2016dmel`) has imprecise chronological ages, so we'll build a reference with the `dsgraveley2011` data (as in the second example of the reference-building vignette) and stage the drosophila series on it to get accurate developmental timings.
+First, we know the drosophila time series (`dslevin2016dmel`) has imprecise chronological ages, so we'll build a reference with the `dsgraveley2011` data (as in [the second example of the reference-building vignette](RAPToR-refbuilding.html#ex-2)) and stage the drosophila series on it to get accurate developmental timings.
 
 
 #### *D. melanogaster* on *C. elegans*
@@ -83,7 +83,7 @@ Then we'll use the reference built with the `dsgraveley2011` to stage the `dslev
 
 #### {.tabset}
 
-Code to generate `dslevin2016dmel`, `dslevin2016cel`, `dsgraveley2011` and `glist`.
+Code to generate `glist`, `dslevin2016dmel`, `dslevin2016cel` and `dsgraveley2011` :
 
 ##### Hide
 ##### Show
@@ -116,7 +116,10 @@ colnames(dmel_genes)[1:3] <- c("fb_id", "transcript_id", "gene_name")
 rm(mart)
 ```
 
-###### `glist`
+<br>
+
+`glist`
+
 Get list of ortholog genes between *C. elegans* and *D. melanogaster* from @li2014comparison supplementary table 1.
 ```{r sc2_load_dmel_orthologs, eval = F}
 tmp_file <- "../inst/extdata/dmel_cel_orth.zip"
@@ -138,7 +141,9 @@ unlink(tmp_fold, recursive = T)
 rm(tmp_file, tmp_fold, f_url)
 ```
 
-###### `dslevin2016dmel`
+<br>
+
+`dslevin2016dmel`
 
 ```{r sc2_load_dslevin2016dmel, eval = F}
 geo_dslevin2016dmel <- "GSE60471"
@@ -185,7 +190,10 @@ rm(geo_dslevin2016dmel, g_url_dslevin2016dmel, g_file_dslevin2016dmel,
    f_dslevin2016dmel, cm_dslevin2016dmel, X_dslevin2016dmel, P_dslevin2016dmel)
 ```
 
-####### `dslevin2016cel`
+<br>
+
+`dslevin2016cel`
+
 ```{r sc2_load_dslevin2016cel, eval = F}
 geo_dslevin2016cel <- "GSE60755"
 
@@ -236,7 +244,7 @@ rm(geo_dslevin2016cel, g_url_dslevin2016cel, g_file_dslevin2016cel,
    f_dslevin2016cel, cm_dslevin2016cel, X_dslevin2016cel, P_dslevin2016cel)
 ```
 
-
+`dsgraveley2011`
 
 ```{r load_dsgraveley2011_c, eval = F}
 g_url_dsgraveley2011 <- "ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz"
