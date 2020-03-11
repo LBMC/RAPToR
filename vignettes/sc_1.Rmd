@@ -50,7 +50,7 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 ## The data
 
-The dataset used in this example corresponds to a *C. elegans* profiling experiment by @lehrbach2012, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
+The dataset used in this example corresponds to a *C. elegans* profiling experiment by @lehrbach2012post, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
 Profiling was done using microarray (Affymetrix). 
 
 

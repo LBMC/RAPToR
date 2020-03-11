@@ -1,0 +1,41 @@
+---
+title: "`RAPToR` - Showcase"
+output: 
+  rmarkdown::html_document :
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{RAPToR-showcase}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: ../inst/REFERENCES.bib
+author: Romain Bulteau
+date: "`r format(Sys.Date(), '%B %Y')`"
+---
+
+In this vignette, you will find a showcase of a few useful ways RAPToR can be used.
+
+
+<br>
+<br>
+
+# Improving a Differential Gene Expression analysis with correct age
+```{r sc_1, child = "sc_1.Rmd"}
+
+```
+
+<br>
+<br>
+<a name="ex-2"></a>
+
+# Staging samples cross-species 
+```{r sc_2, child = "sc_2.Rmd"}
+
+```
+
+
+<a href="#top">Back to top</a>
+
+<hr>
+
+# References
