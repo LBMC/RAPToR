@@ -59,6 +59,10 @@ We'll be woring with 3 datasets here.
 
 Furthermore, we'll use a set of orthologs between *D. melanogaster* and  *C. elegans*, from the supplementary data of @li2014comparison. This list will be stored in the `glist` object.
 
+Since it can get a little confusing between the plots below, the 
+<span style="color:firebrick"> ***D.melanogaster*** **samples will always be in red** </span>
+and the <span style="color:darkblue"> ***C. elegans*** **samples will always be in blue** </span>
+
 ### Workflow
 
 First, we know the drosophila time series (`dslevin2016dmel`) has imprecise chronological ages, so we'll build a reference with the `dsgraveley2011` data (as in the second example of the reference-building vignette) and stage the drosophila series on it to get accurate developmental timings.
@@ -75,7 +79,6 @@ Finally, stage the Drosophila samples on it.
 We'll filter the data to only the orthologs between *D. melanogaster* and  *C. elegans* (and convert WBGene IDs to FBgn IDs).
 
 Then we'll use the reference built with the `dsgraveley2011` to stage the `dslevin2016cel` samples on it.
-
 
 
 #### {.tabset}
@@ -220,6 +223,8 @@ X_dslevin2016cel <- X_dslevin2016cel[, P_dslevin2016cel$title]
 P_dslevin2016cel$title <- gsub('Metazome_CE_timecourse_', '', P_dslevin2016cel$title)
 colnames(X_dslevin2016cel) <- P_dslevin2016cel$title
 
+X_dslevin2016cel <- X_dslevin2016cel[,-127] # remove extra outlier
+P_dslevin2016cel <- P_dslevin2016cel[-127,]
 
 
 dslevin2016cel <- list(g = X_dslevin2016cel, p = P_dslevin2016cel)
@@ -276,8 +281,6 @@ dsgraveley2011$g <- log(dsgraveley2011$g + 1)
 dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
 dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
 
-dslevin2016cel$g <- dslevin2016cel$g[,-127] # remove extra outlier
-dslevin2016cel$p <- dslevin2016cel$p[-127,]
 dslevin2016cel$g <- limma::normalizeBetweenArrays(dslevin2016cel$g, method = "quantile")
 dslevin2016cel$g <- log(dslevin2016cel$g + 1)
 
@@ -336,7 +339,7 @@ show_fig(expr = {
 
   par(mfrow = c(2,3))
   invisible(sapply(seq_len(6), function(i){
-    plot(dslevin2016cel$p$age, pca_cel$rotation[,i], lwd = 2,
+    plot(dslevin2016cel$p$age, pca_cel$rotation[,i], lwd = 2, col = "darkblue",
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
     # points(dslevin2016cel$p$age, pca_cel$rotation[,i], type = 'l', lty = 2)
@@ -352,22 +355,28 @@ show_fig(expr = {
 
 ```
 
+Check the reference by staging its samples on it :
 
 ```{r sc2_ae_cel, eval=gen_figs}
 ae_cel_on_cel <- ae(dslevin2016cel$g_cel, r_cel$interpGE, r_cel$time.series)
 ```
 
-```{r sc2_ae_cel_plot, echo = F, fig.height=8, fig.width=8, out.width = "50%"}
+```{r sc2_ae_cel_plot, echo = F, fig.height=8, fig.width=8, out.width = "60%"}
 show_fig(expr = {
 plot(dslevin2016cel$p$age, ae_cel_on_cel$age.estimates[,1],
-     ylab = "Age estimates on C. elegans reference",
-     xlab = "Chronological age", 
+     ylab = "Age estimates on C. elegans reference (h past 4C stage)",
+     xlab = "Chronological age (h past 4C stage)", 
      main = "Chronological vs estimates (dslevin2016cel on r_cel)",
+     lwd = 2, col = "darkblue",
      cex = .8)
 }, fig.height=8, fig.width=8)
 ```
 
-#### Build a Stage *D. melanogaster* embryos on *C. elegans* reference
+
+<br>
+
+
+#### Stage *D. melanogaster* embryos on *C. elegans* reference
 
 
 ```{r sc2_ae_dmel, eval=gen_figs}
@@ -378,9 +387,10 @@ ae_dmel_on_cel <- ae(dslevin2016dmel$g_cel, r_cel$interpGE, r_cel$time.series)
 show_fig(expr = {
 par(mar = c(4,4,4,2))
 plot(dslevin2016dmel$p$ae, ae_dmel_on_cel$age.estimates[,1], 
-     ylab = "Age estimates on C. elegans reference",
-     xlab = "D. melanogaster developmental age", 
+     ylab = "Age estimates on C. elegans reference (h past 4C stage)",
+     xlab = "D. melanogaster developmental age (h past 4C stage)", 
      main = "Staging D. melanogaster samples on a C. elegans reference\n(dslevin2016dmel on r_cel)",
+     lwd = 2, col = "firebrick",
      cex = .8)
 }, fig.height=8, fig.width=8)
 ```
@@ -396,12 +406,16 @@ ae_cel_on_dmel <- ae(dslevin2016cel$g_dmel, r_grav$interpGE, r_grav$time.series)
 
 
 
-```{r sc2_plot_ae_cel_dmel, echo = F, fig.height=5, fig.width=5, out.width="80%"}
+```{r sc2_plot_ae_cel_dmel, echo = F, fig.height=8, fig.width=8, out.width="80%"}
 show_fig(expr = {
 par(mar = c(4,4,4,2))
 plot(ae_cel_on_cel$age.estimates[,1], ae_cel_on_dmel$age.estimates[,1], 
-     xlab = "C. elegans age", ylab = "Drosophila age estimate", main = "C. elegans sample age estimates\non a Drosophila reference", cex = .8)
-}, fig.height=6, fig.width=6)
+     xlab = "C. elegans age (h past 4C stage)", 
+     ylab = "Age estimates on D. melanogaster reference (h past 4C stage)", 
+     main = "Staging C. elegans samples on a D. melanogaster reference\n(dslevin2016cel on r_grav)", 
+     lwd = 2, col = "darkblue",
+     cex = .8)
+}, fig.height=8, fig.width=8)
 ```
 
 
