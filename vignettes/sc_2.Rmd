@@ -48,7 +48,7 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
-Let's stage samples cross-species using orthologs
+Let's stage samples cross-species using orthologs genes.
 
 ### The data
 

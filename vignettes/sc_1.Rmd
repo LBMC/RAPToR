@@ -218,7 +218,7 @@ Notice how the strain does not really impact correlation, compared to developmen
 
 Let's perform a simple DGE analysis using limma, with the following model : 
 
-$$X \sim \texttt{ns(age, df = 2)} \times strain $$
+$$X \sim strain \times \texttt{ns(age, df = 2)} $$
 
 We'll compare the number of genes differentially expressed due to development or strains, which translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
 
