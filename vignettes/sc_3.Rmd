@@ -1,0 +1,189 @@
+```{r, include = FALSE, eval = T}
+knitr::opts_knit$set(out.format = "html", header = "")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+
+gen_figs <- F
+figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
+
+
+library(RAPToR)
+library(RColorBrewer)
+library(beeswarm)
+library(parallel)
+# library(vioplot)
+
+library(limma)
+requireNamespace("wormRef")
+library(stats)
+
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 150, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
+}
+```
+
+```{r load_dsperez2017_c, eval = F}
+geo_dsperez2017 <- "GSE98747"
+
+geo_dsperez2017 <- GEOquery::getGEO(geo_dsperez2017)[[1]]
+X_dsperez2017 <- Biobase::exprs(geo_dsperez2017)
+
+
+
+gpl_23457 <- GEOquery::getGEO("GPL23457")
+probe_ids <- GEOquery::Table(gpl_23457)
+
+X_dsperez2017 <- format_ids(X_dsperez2017, probe_ids, from = "ID", to = "WbID")[-(1:2),]
+
+P_dsperez2017 <- Biobase::pData(geo_dsperez2017)
+P_dsperez2017 <- P_dsperez2017[, c("title", "geo_accession", "batch:ch1", "protocol:ch1")]
+colnames(P_dsperez2017)[3:4] <- c("batch", "protocol")
+
+P_dsperez2017$batch <- as.factor(P_dsperez2017$batch)
+P_dsperez2017$title <- as.character(P_dsperez2017$title)
+X_dsperez2017 <- X_dsperez2017[, P_dsperez2017$geo_accession]
+
+dsperez2017 <- list(g = X_dsperez2017, p = P_dsperez2017)
+
+save(dsperez2017, file = "../inst/extdata/dsperez2017.RData")
+
+rm(P_dsperez2017, X_dsperez2017, geo_dsperez2017, gpl_23457, probe_ids)
+```
+
+
+```{r sc3_load_genesets_c, eval = F}
+library(readxl)
+germline_url <- "https://static-content.springer.com/esm/art%3A10.1038%2Fnature25012/MediaObjects/41586_2017_BFnature25012_MOESM3_ESM.xlsx"
+germline_file <- "../inst/extdata/germline_gset.xlsx"
+utils::download.file(url = germline_url, destfile = germline_file)
+
+germline_set <- read_xlsx(germline_file, sheet = 3, na = "NA")[,c(1, 44:46)]
+germline_set <- cbind(wb_id = germline_set[,1], 
+                      germline = apply(germline_set[, 2:4], 1, function(r) any(r)))
+germline_set$germline[is.na(germline_set$germline)] <- FALSE
+germline_set <- germline_set[germline_set$germline,1]
+
+soma_url <- "https://ars.els-cdn.com/content/image/1-s2.0-S1097276513009039-mmc2.xlsx"
+soma_file <- "../inst/extdata/soma_gset.xlsx"
+utils::download.file(url = soma_url, destfile = soma_file)
+
+soma_set <- read_xlsx(soma_file, skip = 3, na = "NA")[,c(1, 4)]
+soma_set$class <- factor(soma_set$class)
+
+soma_set$soma <- soma_set$class == "osc"
+soma_set <- soma_set[soma_set$soma, 1]
+
+gsubset <- list(germline = germline_set, soma = soma_set)
+
+save(gsubset, file = "../inst/extdata/sc3_gsubset.RData", compress = "xz")
+
+file.remove(germline_file)
+file.remove(soma_file)
+rm(germline_url, germline_file, germline_set, soma_url, soma_file, soma_set)
+```
+
+
+```{r sc_3_load_ds, include = F, eval = gen_figs}
+load("../inst/extdata/dsperez2017.RData")
+load("../inst/extdata/sc3_gsubset.RData")
+```
+
+
+```{r sc3_qnorm, eval=gen_figs}
+dsperez2017$g <- 2^dsperez2017$g # data is given as log2
+dsperez2017$g <- limma::normalizeBetweenArrays(dsperez2017$g, method = "quantile")
+dsperez2017$g <- log(dsperez2017$g + 1)
+```
+
+```{r sc3_ae, eval = gen_figs}
+r_ya <- prepare_refdata("Cel_YA_2", "wormRef", n.inter = 400)
+
+ae_dsperez <- ae(dsperez2017$g, r_ya$interpGE, r_ya$time.series)
+```
+
+```{r sc3_plot_ae, echo = F}
+plot(ae_dsperez, show.boot_estimates = T, group = dsperez2017$p$batch)
+```
+
+
+```{r sc3_ql, eval = gen_figs, fig.height=12, fig.width=15}
+ica_ds <- ica::icafast(dsperez2017$g, nc = 20)
+
+par(mfrow = c(4,5))
+invisible(sapply(seq_len(20), function(i){
+  plot(ae_dsperez$age.estimates[,1], ica_ds$M[,i], main = paste("IC", i), 
+       ylab = "IC", xlab = "age", col = dsperez2017$p$batch)
+}))
+```
+
+
+
+```{r ae_soma_germline}
+ae_soma <- RAPToR::ae(dsperez2017$g[rownames(dsperez2017$g)%in%gsubset$soma$`Gene WB ID`,], 
+                      r_ya$interpGE, r_ya$time.series, prior = ae_dsperez$age.estimates[,1])
+ae_germline <- ae(dsperez2017$g[rownames(dsperez2017$g)%in%gsubset$germline,], 
+                  r_ya$interpGE, r_ya$time.series)
+
+```
+
+```{r}
+plot(ae_soma, show.boot_estimates = T, group = dsperez2017$p$batch)
+plot(ae_germline, show.boot_estimates = T, group = dsperez2017$p$batch)
+
+```
+
+
+```{r fig.height=12, fig.width=15}
+par(mfrow = c(4,5))
+  invisible(sapply(seq_len(20), function(i){
+    plot(ae_germline$age.estimates[,1], ica_ds$M[,i], lwd = 2, col = dsperez2017$p$batch,
+         xlab = "ae", ylab = "IC", main = paste0("IC", i))
+  
+    # points(dslevin2016cel$p$age, pca_cel$rotation[,i], type = 'l', lty = 2)
+    if(i == 1)
+      legend("bottomleft", bty = 'n', title = "batch", legend = paste0("b", 1:3),
+             pch = c(1), lty = c(NA), col = c(1:3), lwd = c(3))
+  }))
+```
+
+
+```{r, fig.height=12, fig.width=15}
+par(mfrow = c(4,5))
+  invisible(sapply(seq_len(20), function(i){
+    plot(ae_soma$age.estimates[,1], ica_ds$M[,i], lwd = 2, col = dsperez2017$p$batch,
+         xlab = "ae", ylab = "IC", main = paste0("IC", i))
+  
+    # points(dslevin2016cel$p$age, pca_cel$rotation[,i], type = 'l', lty = 2)
+    if(i == 1)
+      legend("bottomleft", bty = 'n', title = "batch", legend = paste0("b", 1:3),
+             pch = c(1), lty = c(NA), col = c(1:3), lwd = c(3))
+  }))
+
+```
+
