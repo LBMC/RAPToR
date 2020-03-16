@@ -1,2 +1,5 @@
 ..Rcheck*
 inst/extdata/*
+ 
+.RData
+.Rhistory
