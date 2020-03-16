@@ -388,12 +388,12 @@ summary(ae_soma$age.estimates[-80, 1] - ae_soma_prior$age.estimates[-80, 1])
 Now, we can look once more at the components of our data using our tissue-specific estimates.
 We'll use the prior version of the soma estimates for the plots below.
 
-```{r sc3_ae_sg_ica, echo = F, fig.height=6, fig.width=15}
+```{r sc3_ae_sg_ica, echo = F, fig.height=9, fig.width=15}
 show_fig(expr = {
 
 par(mfcol = c(3,5))
   invisible(sapply(seq_len(5), function(i){
-    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
+    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black",
      xlab = "age", ylab = "IC", main = paste0("(global) IC", i))
     
     plot(ae_soma_prior$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
@@ -404,7 +404,7 @@ par(mfcol = c(3,5))
          xlab = "age", ylab = "IC", main = paste0("(germline) IC ", i))
     box(lwd = 2, col = "royalblue")
 }))
-}, fig.height=6, fig.width=15)
+}, fig.height=9, fig.width=15)
 ```
 
 
