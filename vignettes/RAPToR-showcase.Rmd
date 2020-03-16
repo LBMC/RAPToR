@@ -26,14 +26,23 @@ In this vignette, you will find a showcase of a few useful ways RAPToR can be us
 
 <br>
 <br>
-<a name="ex-2"></a>
 
 # Staging samples cross-species 
 ```{r sc_2, child = "sc_2.Rmd"}
 
 ```
 
+<br>
+<br>
 
+# Capturing tissue-specific development
+
+```{r sc_3, child = "sc_3.Rmd"}
+
+```
+
+<br>
+<br>
 <a href="#top">Back to top</a>
 
 <hr>
