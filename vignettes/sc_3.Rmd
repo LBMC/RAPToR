@@ -65,7 +65,7 @@ This essentially makes this dataset a very high-resolution timecourse of late-la
 ### Workflow
 
 In *C. elegans*, there is a known heterochrony of soma and germline development.  
-Using RAPToR, we can capture tissue-specific age by restricting the geneset used for staging the tissue of interest.
+Using RAPToR, we can capture tissue-specific age by restricting the geneset used for staging to the tissue of interest.
 
 #### Gene subsets
 
@@ -250,7 +250,7 @@ show_fig(expr = {
 
 ### Dynamics of the dataset
 
-We can use PCA or ICA components to look at the ynamics of the dataset on a global scale.
+We can use PCA or ICA components to look at the dynamics of the dataset on a global scale.
 
 ```{r sc3_ql_pca, eval = gen_figs}
 pca_rock <- stats::prcomp(dsrockman2010$g, rank = 5)
@@ -385,12 +385,17 @@ summary(ae_soma$age.estimates[-80, 1] - ae_soma_prior$age.estimates[-80, 1])
 ```
 
 
+Now, we can look once more at the components of our data using our tissue-specific estimates.
+We'll use the prior version of the soma estimates for the plots below.
 
 ```{r sc3_ae_sg_ica, echo = F, fig.height=6, fig.width=15}
 show_fig(expr = {
 
-par(mfcol = c(2,5))
+par(mfcol = c(3,5))
   invisible(sapply(seq_len(5), function(i){
+    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
+     xlab = "age", ylab = "IC", main = paste0("(global) IC", i))
+    
     plot(ae_soma_prior$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
          xlab = "age", ylab = "IC", main = paste0("(soma w/ prior) IC", i))
     box(lwd = 2, col = "firebrick")
@@ -403,7 +408,10 @@ par(mfcol = c(2,5))
 ```
 
 
+Notice how components IC3 and IC5, oscillatory dynamics, are much cleaner when plotting with the soma age. 
+Also, see that the IC1 and IC2 components appear quite noisy.
 
+With the germline estimates, we get much cleaner dynamics on the first two components, at the cost of clarity on the oscillatory dynamics.
 
 
 <!-- ```{r fig.height=9, fig.width=15} -->
