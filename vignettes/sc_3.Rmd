@@ -62,10 +62,29 @@ This essentially makes this dataset a very high-resolution timecourse of late-la
 
 <br>
 
-
-
+### Workflow
 
 In *C. elegans*, there is a known heterochrony of soma and germline development.  
+Using RAPToR, we can capture tissue-specific age by restricting the geneset used for staging the tissue of interest.
+
+#### Gene subsets
+
+We define a `germline` geneset of 2554 genes from joining the `germline_intrinsic`, `germline_oogenesis_enriched` and `germline_sperm_enriched` categories defined in @perez2017maternal.
+
+We define a `soma` geneset of 2718 genes from the `osc` gene category defined in @hendriks2014extensive.
+
+
+#### Staging
+
+A first staging is done with all available genes : this corresponds to the "**Global age**".
+
+Then, tissue-specific staging is simply done by limiting the genes to the previously mentioned sets.
+The estimates from the soma and germline gene subsets are called "**<span style="color:firebrick">Soma age</span>**" and "**<span style="color:royalblue">Germline age</span>**" respectively.
+
+#### Validation
+
+We can look at PCA or ICA components against the different ages to evaluate the results.
+We can *e.g.* expect components corresponding to molting (oscillatory) processes to be "cleaner" with the soma estimates, consequently introducing noise on the germline components and vice-versa.
 
 <!-- dsperez2017 -->
 
@@ -98,66 +117,73 @@ In *C. elegans*, there is a known heterochrony of soma and germline development.
 <!-- ``` -->
 
 
+#### {.tabset}
+
+Code to generate `dsrockman2010` and `gsubset`.
+
+##### Hide
+
+##### Show
 
 ```{r sc3_load_rockman_c, eval = F}
-geo_dsrockman <- "GSE23857"
-geo_dsrockman <- GEOquery::getGEO(geo_dsrockman, GSEMatrix = F)
+geo_dsrockman2010 <- "GSE23857"
+geo_dsrockman2010 <- GEOquery::getGEO(geo_dsrockman2010, GSEMatrix = F)
 
 # get pdata
-P_dsrockman <- do.call(rbind, lapply(GEOquery::GSMList(geo_dsrockman), function(go){
+P_dsrockman2010 <- do.call(rbind, lapply(GEOquery::GSMList(geo_dsrockman2010), function(go){
   unlist(GEOquery::Meta(go)[
     c("geo_accession", "characteristics_ch1", "characteristics_ch2",
       "label_ch1", "label_ch2")]
   )
 }))
 
-P_dsrockman <- as.data.frame(P_dsrockman, stringsAsFactors = F)
+P_dsrockman2010 <- as.data.frame(P_dsrockman2010, stringsAsFactors = F)
 
 # get RG data from microarray
-RG_dsrockman <- list(
-  R = do.call(cbind, lapply(GEOquery::GSMList(geo_dsrockman), function(go){
+RG_dsrockman2010 <- list(
+  R = do.call(cbind, lapply(GEOquery::GSMList(geo_dsrockman2010), function(go){
       GEOquery::Table(go)[, "R_MEAN_SIGNAL"]
     })),
-  G = do.call(cbind, lapply(GEOquery::GSMList(geo_dsrockman), function(go){
+  G = do.call(cbind, lapply(GEOquery::GSMList(geo_dsrockman2010), function(go){
     GEOquery::Table(go)[, "G_MEAN_SIGNAL"]
   }))
 )
 
 # normalize within channels
-RG_dsrockman <- limma::normalizeWithinArrays(RG_dsrockman, method = "loess")
-RG_dsrockman <- limma::RG.MA(RG_dsrockman) # convert back from MA to RG
+RG_dsrockman2010 <- limma::normalizeWithinArrays(RG_dsrockman2010, method = "loess")
+RG_dsrockman2010 <- limma::RG.MA(RG_dsrockman2010) # convert back from MA to RG
 
 # get only the RIALs (not the mixed stage controls)
-X_dsrockman <- RG_dsrockman$R
-X_dsrockman[, P_dsrockman$label_ch1 == "Cy5"] <- RG_dsrockman$G[, P_dsrockman$label_ch1 == "Cy5"]
+X_dsrockman2010 <- RG_dsrockman2010$R
+X_dsrockman2010[, P_dsrockman2010$label_ch1 == "Cy5"] <- RG_dsrockman2010$G[, P_dsrockman2010$label_ch1 == "Cy5"]
 
 # format probe/gene ids
-gpl <- GEOquery::getGEO(GEOquery::Meta(GEOquery::GSMList(geo_dsrockman)[[1]])$platform_id)
+gpl <- GEOquery::getGEO(GEOquery::Meta(GEOquery::GSMList(geo_dsrockman2010)[[1]])$platform_id)
 gpl <- GEOquery::Table(gpl)
-gpl <- gpl[as.character(gpl$ID) %in% as.character(GEOquery::Table(GEOquery::GSMList(geo_dsrockman)[[1]])$ID_REF), ]
+gpl <- gpl[as.character(gpl$ID) %in% as.character(GEOquery::Table(GEOquery::GSMList(geo_dsrockman2010)[[1]])$ID_REF), ]
 
 sel <- gpl$ORF%in%wormRef::Cel_genes$sequence_name
 gpl <- gpl[sel,]
-X_dsrockman <- X_dsrockman[sel,]
+X_dsrockman2010 <- X_dsrockman2010[sel,]
 
 
 # filter bad quality samples
-cm_dsrockman <- cor(log1p(X_dsrockman), method = 'spearman')
-f_dsrockman <- which(0.95 > apply(cm_dsrockman, 1, quantile, probs = .95))
+cm_dsrockman2010 <- cor(log1p(X_dsrockman2010), method = 'spearman')
+f_dsrockman2010 <- which(0.95 > apply(cm_dsrockman2010, 1, quantile, probs = .95))
 
-X_dsrockman <- X_dsrockman[,-f_dsrockman]
-P_dsrockman <- P_dsrockman[-f_dsrockman,]
+X_dsrockman2010 <- X_dsrockman2010[,-f_dsrockman2010]
+P_dsrockman2010 <- P_dsrockman2010[-f_dsrockman2010,]
 
-rownames(X_dsrockman) <- gpl$ORF
-X_dsrockman <- RAPToR::format_ids(X_dsrockman, wormRef::Cel_genes, 
+rownames(X_dsrockman2010) <- gpl$ORF
+X_dsrockman2010 <- RAPToR::format_ids(X_dsrockman2010, wormRef::Cel_genes, 
                                   from = "sequence_name", to = "wb_id")
 
 
-dsrockman <- list(g = X_dsrockman, p = P_dsrockman)
+dsrockman2010 <- list(g = X_dsrockman2010, p = P_dsrockman2010)
 
-save(dsrockman, file = "../inst/extdata/dsrockman.RData", compress = "xz")
-rm(geo_dsrockman, gpl, sel, RG_dsrockman, X_dsrockman, P_dsrockman, 
-   cm_dsrockman, f_dsrockman)
+save(dsrockman2010, file = "../inst/extdata/dsrockman2010.RData", compress = "xz")
+rm(geo_dsrockman2010, gpl, sel, RG_dsrockman2010, X_dsrockman2010, P_dsrockman2010, 
+   cm_dsrockman2010, f_dsrockman2010)
 ```
 
 
@@ -192,78 +218,100 @@ file.remove(soma_file)
 rm(germline_url, germline_file, germline_set, soma_url, soma_file, soma_set)
 ```
 
+#### {}
 
+### Normalization 
 ```{r sc_3_load_ds, include = F, eval = gen_figs}
-load("../inst/extdata/dsperez2017.RData")
-load("../inst/extdata/dsrockman.RData")
+load("../inst/extdata/dsrockman2010.RData")
 load("../inst/extdata/sc3_gsubset.RData")
 ```
 
 
 ```{r sc3_qnorm, eval=gen_figs}
-dsperez2017$g <- 2^dsperez2017$g # data is given as log2
-dsperez2017$g <- limma::normalizeBetweenArrays(dsperez2017$g, method = "quantile")
-dsperez2017$g <- log(dsperez2017$g + 1)
-
-dsrockman$g <- limma::normalizeBetweenArrays(dsrockman$g, method = "quantile")
-dsrockman$g <- log(dsrockman$g + 1)
+dsrockman2010$g <- limma::normalizeBetweenArrays(dsrockman2010$g, method = "quantile")
+dsrockman2010$g <- log(dsrockman2010$g + 1)
 ```
+
+### Staging the samples (global)
+
+We can use one of the young-adult references for *C. elegans* to stage the samples
 
 ```{r sc3_ae, eval = gen_figs}
 r_ya <- prepare_refdata("Cel_YA_1", "wormRef", n.inter = 400)
 
-# ae_dsperez <- ae(dsperez2017$g, r_ya$interpGE, r_ya$time.series)
-ae_dsrockman <- ae(dsrockman$g, r_ya$interpGE, r_ya$time.series, bootstrap.n = 10)
+ae_dsrockman2010 <- ae(dsrockman2010$g, r_ya$interpGE, r_ya$time.series)
 ```
 
-```{r sc3_plot_ae, echo = F}
-# plot(ae_dsperez, show.boot_estimates = T, group = dsperez2017$p$batch)
-plot(ae_dsrockman)
+```{r sc3_plot_ae, echo = F, fig.height=8, fig.width=5, out.width="60%"}
+show_fig(expr = {
+  plot(ae_dsrockman2010, show.boot_estimates = T, cex = .8)
+}, fig.height = 8, fig.width = 5)
 ```
 
+### Dynamics of the dataset
 
-```{r sc3_ql, eval = gen_figs, fig.height=3, fig.width=15}
-pca_rock <- stats::prcomp(dsrockman$g, rank = 5)
+We can use PCA or ICA components to look at the ynamics of the dataset on a global scale.
 
-par(mfrow = c(1,5))
-invisible(sapply(seq_len(5), function(i){
-  plot(ae_dsrockman$age.estimates[,1], pca_rock$rotation[,i], main = paste("PC", i), 
-       ylab = "PC", xlab = "age")
-}))
+```{r sc3_ql_pca, eval = gen_figs}
+pca_rock <- stats::prcomp(dsrockman2010$g, rank = 5)
 ```
 
-```{r sc3_ql2, fig.height=3, fig.width=15}
-ica_rock <- ica::icafast(dsrockman$g, nc = 5)
-
-par(mfrow = c(1,5))
-invisible(sapply(seq_len(5), function(i){
-  plot(ae_dsrockman$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
-       ylab = "IC", xlab = "age")
-}))
+```{r sc3_ql_pcaplot, echo = F, fig.height=3, fig.width=15}
+show_fig(expr = {
+  par(mfrow = c(1,5))
+  invisible(sapply(seq_len(5), function(i){
+    plot(ae_dsrockman2010$age.estimates[,1], pca_rock$rotation[,i], main = paste("PC", i), 
+         ylab = "PC", xlab = "age")
+  }))
+}, fig.height=3, fig.width=15)
 ```
 
 
+```{r sc3_ql_ica, eval = gen_figs}
+ica_rock <- ica::icafast(dsrockman2010$g, nc = 5)
+```
 
-```{r ae_soma_germline}
-ae_soma <- ae(dsrockman$g[rownames(dsrockman$g)%in%gsubset$soma,], 
-                      r_ya$interpGE, r_ya$time.series)
+```{r sc3_ql_icaplot, echo = F, fig.height=3, fig.width=15}
+show_fig(expr = {
+  par(mfrow = c(1,5))
+  invisible(sapply(seq_len(5), function(i){
+    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
+         ylab = "IC", xlab = "age")
+  }))
+}, fig.height=3, fig.width=15)
+```
 
-ae_germline <- ae(dsrockman$g[rownames(dsrockman$g)%in%gsubset$germline,], 
-                  r_ya$interpGE, r_ya$time.series)
+
+### Staging the samples (soma & germline)
+
+Now, we stage the samples using only germline or soma gene subsets.
+
+```{r ae_soma_germline, eval = gen_figs}
+ae_soma <- ae(
+  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
+  r_ya$interpGE, r_ya$time.series
+  )
+
+ae_germline <- ae(
+  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$germline,], # select germline gene subset
+  r_ya$interpGE, r_ya$time.series
+  )
 
 ```
 
-```{r sc3_plot_aevs, fig.height=4, fig.width=12}
+```{r sc3_plot_aevs, echo = F, fig.height=4, fig.width=12}
+show_fig(expr = {
 par(mfrow = c(1,3))
 rg <- c(40,70)
+pch <- (seq_len(ncol(dsrockman2010$g)) == 80) + 1
 
-plot(ae_dsrockman$age.estimates[,1], ae_soma$age.estimates[,1], lwd = 2, col = "firebrick",
-     xlab = "Global age", ylab = "Soma age", main = "Global vs. Soma age",
+plot(ae_dsrockman2010$age.estimates[,1], ae_soma$age.estimates[,1], lwd = 2, col = "firebrick",
+     xlab = "Global age", ylab = "Soma age", main = "Global vs. Soma age", pch = pch,
      xlim = rg, ylim = rg)
 box(lwd = 2, col = "firebrick")
 abline(a = 0, b = 1, lty = 2, col = "firebrick")
 
-plot(ae_dsrockman$age.estimates[,1], ae_germline$age.estimates[,1], lwd = 2, col = "royalblue",
+plot(ae_dsrockman2010$age.estimates[,1], ae_germline$age.estimates[,1], lwd = 2, col = "royalblue",
      xlab = "Global age", ylab = "Germline age", main = "Global vs. Germline age",
      xlim = rg, ylim = rg)
 box(lwd = 2, col = "royalblue")
@@ -271,26 +319,108 @@ abline(a = 0, b = 1, lty = 2, col = "royalblue")
 
 
 plot(ae_soma$age.estimates[,1], ae_germline$age.estimates[,1], lwd = 2, 
-     xlim = rg, ylim = rg,
+     xlim = rg, ylim = rg, pch = pch,
      xlab = "Soma age", ylab = "Germline age", main = "Soma vs. Germline age")
 abline(a = 0, b = 1, lty = 2, col = "black")
 
+}, fig.height = 4, fig.width = 12)
+```
+
+We can notice on the soma estimates that a sample appears quite off from its global or germline age (it's marked with a $\triangle$).
+This sort of artefact can happen when using small genesets for estimates, as similar expression profiles can occur at different times (which is especially true for oscillatory profiles).
+
+If we look at the correlation profile of this sample on the 3 estimates, we can see 2 peaks for the soma:
+
+```{r sc3_plot_cor_sg, echo = F, fig.height=3, fig.width=12}
+show_fig(expr = {
+par(mfrow = c(1,3))
+plot_cor.ae(ae_soma, subset = 80)
+mtext("Soma", side = 3, line = -2, col = "firebrick", font = 2)
+box(lwd = 2, col = "firebrick")
+
+
+
+plot_cor.ae(ae_germline, subset = 80, )
+mtext("Germline", side = 3, line = -2, col = "royalblue", font = 2)
+box(lwd = 2, col = "royalblue")
+
+
+plot_cor.ae(ae_dsrockman2010, subset = 80)
+mtext("Global", side = 3, line = -2, col = "black", font = 2)
+}, fig.height=3, fig.width=12)
+```
+
+This scenario is a prime example of when it is appropriate to use a prior. 
+We can input the global age as a prior to favor the first peak of the soma correlation profile.
+
+```{r sc3_ae_prior, eval = gen_figs}
+ae_soma_prior <- ae(
+  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
+  r_ya$interpGE, r_ya$time.series,
+  prior = ae_dsrockman2010$age.estimates[,1], # gaussian prior values (mean) 
+  prior.params = 10                           # gaussian prior sd
+  )
+```
+
+This now shifts our estimates to the first peak (note that the correlation profile itself is not changed).
+
+```{r sc3_cor_ae_prior, echo = F, fig.height=3, fig.width=12}
+show_fig(expr = {
+  par(mfrow = c(1,3))
+  plot.new()
+  plot_cor.ae(ae_soma_prior, subset = 80, show.prior = T)
+  mtext("Soma (w/ prior)", side = 3, line = -2, col = "firebrick", font = 2)
+  box(lwd = 2, col = "firebrick")
+  plot.new()
+}, fig.height=3, fig.width=12)
 
 ```
 
+At the same time, all of our other estimates essentially stay the same.
+```{r sc3_testeq, eval=gen_figs}
+# 80 is the index of the GSM588171 sample
+summary(ae_soma$age.estimates[-80, 1] - ae_soma_prior$age.estimates[-80, 1])
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#> -1.06496  0.00000  0.00000 -0.03407  0.00000  1.06496 
+```
 
-```{r fig.height=6, fig.width=15}
+
+
+```{r sc3_ae_sg_ica, echo = F, fig.height=6, fig.width=15}
+show_fig(expr = {
+
 par(mfcol = c(2,5))
   invisible(sapply(seq_len(5), function(i){
-    plot(ae_soma$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
-         xlab = "ae", ylab = "IC", main = paste0("(soma) IC", i))
+    plot(ae_soma_prior$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
+         xlab = "age", ylab = "IC", main = paste0("(soma w/ prior) IC", i))
     box(lwd = 2, col = "firebrick")
     
     plot(ae_germline$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "royalblue",
-         xlab = "ae", ylab = "IC", main = paste0("(germline) IC", i))
+         xlab = "age", ylab = "IC", main = paste0("(germline) IC ", i))
     box(lwd = 2, col = "royalblue")
 }))
+}, fig.height=6, fig.width=15)
 ```
 
+
+
+
+
+<!-- ```{r fig.height=9, fig.width=15} -->
+<!-- par(mfcol = c(3,5)) -->
+<!--   invisible(sapply(seq_len(5), function(i){ -->
+<!--     plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black", -->
+<!--          xlab = "ae", ylab = "IC", main = paste0("(global) IC", i)) -->
+<!--     # box(lwd = 2, col = "firebrick") -->
+
+<!--     plot(ae_soma$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick", -->
+<!--          xlab = "ae", ylab = "IC", main = paste0("(soma) IC", i)) -->
+<!--     box(lwd = 2, col = "firebrick") -->
+
+<!--     plot(ae_germline$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "royalblue", -->
+<!--          xlab = "ae", ylab = "IC", main = paste0("(germline) IC", i)) -->
+<!--     box(lwd = 2, col = "royalblue") -->
+<!-- })) -->
+<!-- ``` -->
 
 
