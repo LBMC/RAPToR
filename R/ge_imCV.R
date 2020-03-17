@@ -52,6 +52,7 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
     } else if("ica" == dim_red){
       Xr <- ica::icafast(X, nc = nc)
     }
+    X <- scale(X)
   } else {
     Xr <- X
   }
