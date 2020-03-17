@@ -588,7 +588,7 @@ flist
 #> [[4]]
 #> [1] "X ~ s(age, bs = 'ps') + strain"
 
-cv_ds1 <- ge_imCV(X = scale(ds1$g), p = ds1$p, formula_list = flist,
+cv_ds1 <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flist,
                   cv.n = 20, nc = nc, nb.cores = 3)
 #> CV on 4 models. cv.n = 20 | cv.s = 0.8
 #> 
