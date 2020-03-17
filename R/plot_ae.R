@@ -2,7 +2,7 @@
 #' 
 #' Plots the age estimates along with bootstrap error bars using a dotchart.
 #' 
-#' @param x an `ae` object, as returned by \code{\link{estimate.worm_age}}.
+#' @param x an `ae` object, as returned by \code{\link{ae}}.
 #' @param errbar.width the width of the error bars.
 #' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
 #' @param col.p the color of the prior estimate marker.
@@ -112,7 +112,7 @@ plot.ae <- function(x, errbar.width=0.1,
 #' 
 #' Plots the correlation score curves from samples against the reference series.
 #' 
-#' @param age.est an \code{ae} object, as returned by \code{\link{estimate.worm_age}} 
+#' @param age.est an \code{ae} object, as returned by \code{\link{ae}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
 #' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
 #' @param c.lwd line width for the correlation score curve

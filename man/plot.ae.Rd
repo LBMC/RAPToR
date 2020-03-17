@@ -23,7 +23,7 @@
 )
 }
 \arguments{
-\item{x}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
+\item{x}{an \code{ae} object, as returned by \code{\link{ae}}.}
 
 \item{errbar.width}{the width of the error bars.}
 

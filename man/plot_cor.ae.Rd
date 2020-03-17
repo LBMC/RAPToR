@@ -17,7 +17,7 @@ plot_cor.ae(
 )
 }
 \arguments{
-\item{age.est}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}}
+\item{age.est}{an \code{ae} object, as returned by \code{\link{ae}}}
 
 \item{subset}{an index vector of the samples to plot (defaults to all)}
 

@@ -127,7 +127,7 @@ ae <- function(samp, refdata, ref.time_series,
       return(cbind(time = cor.max.time, cor.score = cor.max))
     }
   }
-
+  
   # build clusters for parallel comp. (detecting OS for cluster type)
   cl <- parallel::makeCluster(nb.cores, 
                               type = ifelse(.Platform$OS.type=="windows", 
@@ -304,7 +304,7 @@ summary.ae <- function(object, digits=3, ...){
   ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits)
                    # ,w=sapply(object$age.estimates[ord,'IC.imbalance'],
                    #          function(im){ifelse(im>5, '*','')})
-                   )
+  )
   # colnames(ae_tab)[4] <- ' '
   
   bar <- paste0(rep('-', 50+digits*3), collapse = '')
@@ -328,20 +328,3 @@ summary.ae <- function(object, digits=3, ...){
   invisible(list(age.estimates=object$age.estimates[ord,1:3], span=c(mn,mx), range=mx-mn))
 }
 
-
-#' Age Estimate - **DEPRECATED**
-#' 
-#' **DEPRECATED**. Please use \code{\link{ae}} instead.
-#' 
-#' @param samp passed on to ae
-#' @param refdata passed on to ae
-#' @param ref.time_series passed on to ae
-#' @param ... passed on to ae
-#' 
-#' @export
-#'
-estimate.worm_age <- function(samp, refdata, ref.time_series, ...)
-{
-  warning("DEPRECATED. Please use ae() instead.")
-  return(ae(samp, refdata, ref.time_series, ...))
-}
