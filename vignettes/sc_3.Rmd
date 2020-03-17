@@ -111,7 +111,7 @@ We can *e.g.* expect components corresponding to molting (oscillatory) processes
 
 <!-- dsperez2017 <- list(g = X_dsperez2017, p = P_dsperez2017) -->
 
-<!-- save(dsperez2017, file = "../inst/extdata/dsperez2017.RData") -->
+<!-- save(dsperez2017, file = paste0(data_folder, "dsperez2017.RData")) -->
 
 <!-- rm(P_dsperez2017, X_dsperez2017, geo_dsperez2017, gpl_23457, probe_ids) -->
 <!-- ``` -->
@@ -124,6 +124,17 @@ Code to generate `dsrockman2010` and `gsubset`.
 ##### Hide
 
 ##### Show
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+
+```{r sc3_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
+requireNamespace("Biobase", quietly = T)
+requireNamespace("limma", quietly = T)
+```
 
 ```{r sc3_load_rockman_c, eval = F}
 geo_dsrockman2010 <- "GSE23857"
@@ -181,7 +192,7 @@ X_dsrockman2010 <- RAPToR::format_ids(X_dsrockman2010, wormRef::Cel_genes,
 
 dsrockman2010 <- list(g = X_dsrockman2010, p = P_dsrockman2010)
 
-save(dsrockman2010, file = "../inst/extdata/dsrockman2010.RData", compress = "xz")
+save(dsrockman2010, file = paste0(data_folder, "dsrockman2010.RData"), compress = "xz")
 rm(geo_dsrockman2010, gpl, sel, RG_dsrockman2010, X_dsrockman2010, P_dsrockman2010, 
    cm_dsrockman2010, f_dsrockman2010)
 ```
@@ -190,7 +201,7 @@ rm(geo_dsrockman2010, gpl, sel, RG_dsrockman2010, X_dsrockman2010, P_dsrockman20
 ```{r sc3_load_genesets_c, eval = F}
 library(readxl)
 germline_url <- "https://static-content.springer.com/esm/art%3A10.1038%2Fnature25012/MediaObjects/41586_2017_BFnature25012_MOESM3_ESM.xlsx"
-germline_file <- "../inst/extdata/germline_gset.xlsx"
+germline_file <- paste0(data_folder, "germline_gset.xlsx")
 utils::download.file(url = germline_url, destfile = germline_file)
 
 germline_set <- read_xlsx(germline_file, sheet = 3, na = "NA")[,c(1, 44:46)]
@@ -200,7 +211,7 @@ germline_set$germline[is.na(germline_set$germline)] <- FALSE
 germline_set <- germline_set[germline_set$germline,1]
 
 soma_url <- "https://ars.els-cdn.com/content/image/1-s2.0-S1097276513009039-mmc2.xlsx"
-soma_file <- "../inst/extdata/soma_gset.xlsx"
+soma_file <- paste0(data_folder, "soma_gset.xlsx")
 utils::download.file(url = soma_url, destfile = soma_file)
 
 soma_set <- read_xlsx(soma_file, skip = 3, na = "NA")[,c(1, 4)]
@@ -211,7 +222,7 @@ soma_set <- soma_set[soma_set$soma, 1]
 
 gsubset <- list(germline = germline_set, soma = soma_set$`Gene WB ID`)
 
-save(gsubset, file = "../inst/extdata/sc3_gsubset.RData", compress = "xz")
+save(gsubset, file = paste0(data_folder, "sc3_gsubset.RData"), compress = "xz")
 
 file.remove(germline_file)
 file.remove(soma_file)

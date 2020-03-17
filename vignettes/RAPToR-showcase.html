@@ -416,14 +416,19 @@ summary {
 </div>
 <div id="show" class="section level5">
 <h5>Show</h5>
+<p><strong>Note : set the <code>data_folder</code> variable to an existing path on your system where you want to store the objects.</strong></p>
+<pre class="r"><code>data_folder &lt;- &quot;../inst/extdata/&quot;
+
+library(&quot;biomaRt&quot;) # May need to be installed with bioconductor
+library(&quot;limma&quot;)   # ..
+library(&quot;affy&quot;)    # ..
+library(&quot;gcrma&quot;)   # ..
+
+requireNamespace(&quot;wormRef&quot;, quietly = T)
+requireNamespace(&quot;utils&quot;, quietly = T)</code></pre>
 <div id="dslehrbach202" class="section level6">
 <h6><code>dslehrbach202</code></h6>
-<pre class="r"><code>library(&quot;biomaRt&quot;)
-library(&quot;limma&quot;)
-library(&quot;affy&quot;)
-library(&quot;gcrma&quot;)
-
-# get probe ids from the arrayexpress
+<pre class="r"><code># get probe ids from the arrayexpress
 probe_ids &lt;- read.table(&quot;https://www.ebi.ac.uk/arrayexpress/files/A-AFFY-60/A-AFFY-60.adf.txt&quot;, h=T,
                         comment.char = &quot;&quot;, sep = &quot;\t&quot;, skip = 17, as.is = T)
 
@@ -434,7 +439,7 @@ p &lt;- read.table(p_url, h = T, sep = &quot;\t&quot;, comment.char = &quot;&quo
 
 # geno data
 g_url &lt;- unique(p$Comment..ArrayExpress.FTP.file.)
-g_dir &lt;- &quot;../inst/extdata/dslehrbach2012_raw/&quot;
+g_dir &lt;- paste0(data_folder, &quot;dslehrbach2012_raw/&quot;)
 g_file &lt;- paste0(g_dir, &quot;raw.zip&quot;)
 
 if(!file.exists(g_file)){
@@ -450,8 +455,8 @@ g &lt;- 2^exprs(g) # expresso log2s the data
 colnames(g) &lt;- p$Source.Name
 
 # format ids
-g &lt;- format_ids(g, probe_ids, from = 1, to = 7)
-g &lt;- format_ids(g, wormRef::Cel_genes, from = 3, to = 1)
+g &lt;- RAPToR::format_ids(g, probe_ids, from = 1, to = 7)
+g &lt;- RAPToR::format_ids(g, wormRef::Cel_genes, from = 3, to = 1)
 
 
 # filter relevant fields
@@ -461,7 +466,7 @@ p$strain &lt;- factor(p$strain, levels = c('wild type', 'pash-1(mj100)'), labels
 p$rep &lt;- factor(gsub(&quot;\\w+_h\\d+\\.(\\d)&quot;,&quot;\\1&quot;, p$title))
 
 dslehrbach2012 &lt;- list(g = g, p = p)
-save(dslehrbach2012, file = &quot;../inst/extdata/dslerhbach2012.RData&quot;, compress = &quot;xz&quot;)
+save(dslehrbach2012, file = paste0(data_folder, &quot;dslerhbach2012.RData&quot;), compress = &quot;xz&quot;)
 
 # cleanup
 file.remove(g_file)
@@ -730,6 +735,13 @@ gc()</code></pre>
 </div>
 <div id="show-2" class="section level5">
 <h5>Show</h5>
+<p><strong>Note : set the <code>data_folder</code> variable to an existing path on your system where you want to store the objects.</strong></p>
+<pre class="r"><code>data_folder &lt;- &quot;../inst/extdata/&quot;
+
+requireNamespace(&quot;wormRef&quot;, quietly = T)
+requireNamespace(&quot;utils&quot;, quietly = T)
+requireNamespace(&quot;GEOquery&quot;, quietly = T) # May need to be installed with bioconductor
+requireNamespace(&quot;Biobase&quot;, quietly = T)</code></pre>
 <pre class="r"><code>raw2rpkm &lt;- function(X, gene.length, id.col = 1, l.col='length'){
   # Compute RPKM from raw counts
   if(!all(rownames(X)%in%gene.length[, id.col])){
@@ -755,8 +767,8 @@ rm(mart)</code></pre>
 <p><br></p>
 <p><code>glist</code></p>
 <p>Get list of ortholog genes between <em>C. elegans</em> and <em>D. melanogaster</em> from <span class="citation">Li et al. (2014)</span> supplementary table 1.</p>
-<pre class="r"><code>tmp_file &lt;- &quot;../inst/extdata/dmel_cel_orth.zip&quot;
-tmp_fold &lt;- &quot;../inst/extdata/dmel_cel_orth/&quot;
+<pre class="r"><code>tmp_file &lt;- paste0(data_folder, &quot;dmel_cel_orth.zip&quot;)
+tmp_fold &lt;- paste0(data_folder, &quot;dmel_cel_orth/&quot;)
 f_url &lt;- &quot;https://genome.cshlp.org/content/suppl/2014/05/15/gr.170100.113.DC1/Supplemental_Files.zip&quot;
 
 utils::download.file(url = f_url, destfile = tmp_file)
@@ -767,7 +779,7 @@ glist &lt;- read.table(paste0(tmp_fold, &quot;Supplementary\ files/TableS1\ fly-
 colnames(glist) &lt;- c(&quot;fb_id&quot;, &quot;dmel_name&quot;, &quot;cel_id&quot;, &quot;cel_name&quot;)
 glist$wb_id &lt;- wormRef::Cel_genes[match(glist$cel_id, wormRef::Cel_genes$sequence_name), &quot;wb_id&quot;]
 
-save(glist, file = &quot;../inst/extdata/sc2_glist.RData&quot;, compress = &quot;xz&quot;)
+save(glist, file = paste0(data_folder, &quot;sc2_glist.RData&quot;), compress = &quot;xz&quot;)
 
 file.remove(tmp_file)
 unlink(tmp_fold, recursive = T)
@@ -777,7 +789,7 @@ rm(tmp_file, tmp_fold, f_url)</code></pre>
 <pre class="r"><code>geo_dslevin2016dmel &lt;- &quot;GSE60471&quot;
 
 g_url_dslevin2016dmel &lt;- GEOquery::getGEOSuppFiles(geo_dslevin2016dmel, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_dslevin2016dmel &lt;- &quot;../inst/extdata/dslevin2016dmel.txt.gz&quot;
+g_file_dslevin2016dmel &lt;- paste0(data_folder, &quot;dslevin2016dmel.txt.gz&quot;)
 utils::download.file(url = as.character(g_url_dslevin2016dmel$url[3]), destfile = g_file_dslevin2016dmel)
 
 X_dslevin2016dmel &lt;- read.table(gzfile(g_file_dslevin2016dmel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = &quot;&quot;)
@@ -788,7 +800,7 @@ f_dslevin2016dmel &lt;- which(0.6 &gt; apply(cm_dslevin2016dmel, 1, quantile, pr
 X_dslevin2016dmel &lt;- X_dslevin2016dmel[, -f_dslevin2016dmel]
 
 # convert to rpkm &amp; FBgn
-X_dslevin2016dmel &lt;- format_ids(X_dslevin2016dmel, dmel_genes, from = &quot;fb_id&quot;, to = &quot;fb_id&quot;)
+X_dslevin2016dmel &lt;- RAPToR::format_ids(X_dslevin2016dmel, dmel_genes, from = &quot;fb_id&quot;, to = &quot;fb_id&quot;)
 X_dslevin2016dmel &lt;- raw2rpkm(X = X_dslevin2016dmel, gene.length = dmel_genes, id.col = &quot;fb_id&quot;, l.col = &quot;transcript_length&quot;)
 
 
@@ -810,7 +822,7 @@ colnames(X_dslevin2016dmel) &lt;- P_dslevin2016dmel$title
 P_dslevin2016dmel$age &lt;- as.numeric(P_dslevin2016dmel$time) / 60
 
 dslevin2016dmel &lt;- list(g = X_dslevin2016dmel, p = P_dslevin2016dmel)
-save(dslevin2016dmel, file = &quot;../inst/extdata/dslevin2016dmel.RData&quot;, compress = &quot;xz&quot;)
+save(dslevin2016dmel, file = paste0(data_folder, &quot;dslevin2016dmel.RData&quot;), compress = &quot;xz&quot;)
 
 # cleanup
 file.remove(g_file_dslevin2016dmel)
@@ -821,7 +833,7 @@ rm(geo_dslevin2016dmel, g_url_dslevin2016dmel, g_file_dslevin2016dmel,
 <pre class="r"><code>geo_dslevin2016cel &lt;- &quot;GSE60755&quot;
 
 g_url_dslevin2016cel &lt;- GEOquery::getGEOSuppFiles(geo_dslevin2016cel, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_dslevin2016cel &lt;- &quot;../inst/extdata/dslevin2016cel.txt.gz&quot;
+g_file_dslevin2016cel &lt;- paste0(data_folder, &quot;dslevin2016cel.txt.gz&quot;)
 utils::download.file(url = as.character(g_url_dslevin2016cel$url[1]), destfile = g_file_dslevin2016cel)
 
 X_dslevin2016cel &lt;- read.table(gzfile(g_file_dslevin2016cel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = &quot;&quot;)
@@ -832,7 +844,7 @@ f_dslevin2016cel &lt;- which(0.67 &gt; apply(cm_dslevin2016cel, 1, quantile, pro
 X_dslevin2016cel &lt;- X_dslevin2016cel[, -f_dslevin2016cel]
 
 # convert to rpkm &amp; FBgn
-X_dslevin2016cel &lt;- format_ids(X_dslevin2016cel, wormRef::Cel_genes, from = &quot;sequence_name&quot;, to = &quot;wb_id&quot;)
+X_dslevin2016cel &lt;- RAPToR::format_ids(X_dslevin2016cel, wormRef::Cel_genes, from = &quot;sequence_name&quot;, to = &quot;wb_id&quot;)
 X_dslevin2016cel &lt;- raw2rpkm(X = X_dslevin2016cel, gene.length = wormRef::Cel_genes, id.col = &quot;wb_id&quot;, l.col = &quot;transcript_length&quot;)
 
 
@@ -859,7 +871,7 @@ P_dslevin2016cel &lt;- P_dslevin2016cel[-127,]
 
 
 dslevin2016cel &lt;- list(g = X_dslevin2016cel, p = P_dslevin2016cel)
-save(dslevin2016cel, file = &quot;../inst/extdata/dslevin2016cel.RData&quot;, compress = &quot;xz&quot;)
+save(dslevin2016cel, file = paste0(data_folder, &quot;dslevin2016cel.RData&quot;), compress = &quot;xz&quot;)
 
 # cleanup
 file.remove(g_file_dslevin2016cel)
@@ -867,14 +879,14 @@ rm(geo_dslevin2016cel, g_url_dslevin2016cel, g_file_dslevin2016cel,
    f_dslevin2016cel, cm_dslevin2016cel, X_dslevin2016cel, P_dslevin2016cel)</code></pre>
 <p><code>dsgraveley2011</code></p>
 <pre class="r"><code>g_url_dsgraveley2011 &lt;- &quot;ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz&quot;
-g_file_dsgraveley2011 &lt;- &quot;../inst/extdata/dsgraveley2011.csv.gz&quot;
+g_file_dsgraveley2011 &lt;- paste0(data_folder, &quot;dsgraveley2011.csv.gz&quot;)
 utils::download.file(g_url_dsgraveley2011, destfile = g_file_dsgraveley2011)
 
 
 X_dsgraveley2011 &lt;- read.table(gzfile(g_file_dsgraveley2011), sep = ',', row.names = 1, h = T)
 
 # convert gene ids to FBgn
-X_dsgraveley2011 &lt;- format_ids(X_dsgraveley2011, dmel_genes, from = &quot;gene_name&quot;, to = &quot;fb_id&quot;)
+X_dsgraveley2011 &lt;- RAPToR::format_ids(X_dsgraveley2011, dmel_genes, from = &quot;gene_name&quot;, to = &quot;fb_id&quot;)
 
 # select embryo time series samples
 X_dsgraveley2011 &lt;- X_dsgraveley2011[,1:12]
@@ -885,7 +897,7 @@ P_dsgraveley2011 &lt;- data.frame(sname = colnames(X_dsgraveley2011),
 
 dsgraveley2011 &lt;- list(g = X_dsgraveley2011, p = P_dsgraveley2011)
 
-save(dsgraveley2011, file = &quot;../inst/extdata/dsgraveley2011.RData&quot;, compress = &quot;xz&quot;)
+save(dsgraveley2011, file = paste0(data_folder, &quot;dsgraveley2011.RData&quot;), compress = &quot;xz&quot;)
 
 # cleanup
 file.remove(g_file_dsgraveley2011)
@@ -1002,7 +1014,7 @@ Using RAPToR, we can capture tissue-specific age by restricting the geneset used
 <!-- P_dsperez2017$title <- as.character(P_dsperez2017$title) -->
 <!-- X_dsperez2017 <- X_dsperez2017[, P_dsperez2017$geo_accession] -->
 <!-- dsperez2017 <- list(g = X_dsperez2017, p = P_dsperez2017) -->
-<!-- save(dsperez2017, file = "../inst/extdata/dsperez2017.RData") -->
+<!-- save(dsperez2017, file = paste0(data_folder, "dsperez2017.RData")) -->
 <!-- rm(P_dsperez2017, X_dsperez2017, geo_dsperez2017, gpl_23457, probe_ids) -->
 <!-- ``` -->
 </div>
@@ -1014,6 +1026,14 @@ Using RAPToR, we can capture tissue-specific age by restricting the geneset used
 </div>
 <div id="show-3" class="section level5">
 <h5>Show</h5>
+<p><strong>Note : set the <code>data_folder</code> variable to an existing path on your system where you want to store the objects.</strong></p>
+<pre class="r"><code>data_folder &lt;- &quot;../inst/extdata/&quot;
+
+requireNamespace(&quot;wormRef&quot;, quietly = T)
+requireNamespace(&quot;utils&quot;, quietly = T)
+requireNamespace(&quot;GEOquery&quot;, quietly = T) # May need to be installed with bioconductor
+requireNamespace(&quot;Biobase&quot;, quietly = T)
+requireNamespace(&quot;limma&quot;, quietly = T)</code></pre>
 <pre class="r"><code>geo_dsrockman2010 &lt;- &quot;GSE23857&quot;
 geo_dsrockman2010 &lt;- GEOquery::getGEO(geo_dsrockman2010, GSEMatrix = F)
 
@@ -1069,12 +1089,12 @@ X_dsrockman2010 &lt;- RAPToR::format_ids(X_dsrockman2010, wormRef::Cel_genes,
 
 dsrockman2010 &lt;- list(g = X_dsrockman2010, p = P_dsrockman2010)
 
-save(dsrockman2010, file = &quot;../inst/extdata/dsrockman2010.RData&quot;, compress = &quot;xz&quot;)
+save(dsrockman2010, file = paste0(data_folder, &quot;dsrockman2010.RData&quot;), compress = &quot;xz&quot;)
 rm(geo_dsrockman2010, gpl, sel, RG_dsrockman2010, X_dsrockman2010, P_dsrockman2010, 
    cm_dsrockman2010, f_dsrockman2010)</code></pre>
 <pre class="r"><code>library(readxl)
 germline_url &lt;- &quot;https://static-content.springer.com/esm/art%3A10.1038%2Fnature25012/MediaObjects/41586_2017_BFnature25012_MOESM3_ESM.xlsx&quot;
-germline_file &lt;- &quot;../inst/extdata/germline_gset.xlsx&quot;
+germline_file &lt;- paste0(data_folder, &quot;germline_gset.xlsx&quot;)
 utils::download.file(url = germline_url, destfile = germline_file)
 
 germline_set &lt;- read_xlsx(germline_file, sheet = 3, na = &quot;NA&quot;)[,c(1, 44:46)]
@@ -1084,7 +1104,7 @@ germline_set$germline[is.na(germline_set$germline)] &lt;- FALSE
 germline_set &lt;- germline_set[germline_set$germline,1]
 
 soma_url &lt;- &quot;https://ars.els-cdn.com/content/image/1-s2.0-S1097276513009039-mmc2.xlsx&quot;
-soma_file &lt;- &quot;../inst/extdata/soma_gset.xlsx&quot;
+soma_file &lt;- paste0(data_folder, &quot;soma_gset.xlsx&quot;)
 utils::download.file(url = soma_url, destfile = soma_file)
 
 soma_set &lt;- read_xlsx(soma_file, skip = 3, na = &quot;NA&quot;)[,c(1, 4)]
@@ -1095,7 +1115,7 @@ soma_set &lt;- soma_set[soma_set$soma, 1]
 
 gsubset &lt;- list(germline = germline_set, soma = soma_set$`Gene WB ID`)
 
-save(gsubset, file = &quot;../inst/extdata/sc3_gsubset.RData&quot;, compress = &quot;xz&quot;)
+save(gsubset, file = paste0(data_folder, &quot;sc3_gsubset.RData&quot;), compress = &quot;xz&quot;)
 
 file.remove(germline_file)
 file.remove(soma_file)

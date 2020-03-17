@@ -88,6 +88,18 @@ Code to generate `glist`, `dslevin2016dmel`, `dslevin2016cel` and `dsgraveley201
 ##### Hide
 ##### Show
 
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+
+```{r sc2_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
+requireNamespace("Biobase", quietly = T)
+```
+
+
 ```{r sc2_raw2rpkm_func, eval = FALSE}
 raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
   # Compute RPKM from raw counts
@@ -122,8 +134,8 @@ rm(mart)
 
 Get list of ortholog genes between *C. elegans* and *D. melanogaster* from @li2014comparison supplementary table 1.
 ```{r sc2_load_dmel_orthologs, eval = F}
-tmp_file <- "../inst/extdata/dmel_cel_orth.zip"
-tmp_fold <- "../inst/extdata/dmel_cel_orth/"
+tmp_file <- paste0(data_folder, "dmel_cel_orth.zip")
+tmp_fold <- paste0(data_folder, "dmel_cel_orth/")
 f_url <- "https://genome.cshlp.org/content/suppl/2014/05/15/gr.170100.113.DC1/Supplemental_Files.zip"
 
 utils::download.file(url = f_url, destfile = tmp_file)
@@ -134,7 +146,7 @@ glist <- read.table(paste0(tmp_fold, "Supplementary\ files/TableS1\ fly-worm\ or
 colnames(glist) <- c("fb_id", "dmel_name", "cel_id", "cel_name")
 glist$wb_id <- wormRef::Cel_genes[match(glist$cel_id, wormRef::Cel_genes$sequence_name), "wb_id"]
 
-save(glist, file = "../inst/extdata/sc2_glist.RData", compress = "xz")
+save(glist, file = paste0(data_folder, "sc2_glist.RData"), compress = "xz")
 
 file.remove(tmp_file)
 unlink(tmp_fold, recursive = T)
@@ -149,7 +161,7 @@ rm(tmp_file, tmp_fold, f_url)
 geo_dslevin2016dmel <- "GSE60471"
 
 g_url_dslevin2016dmel <- GEOquery::getGEOSuppFiles(geo_dslevin2016dmel, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_dslevin2016dmel <- "../inst/extdata/dslevin2016dmel.txt.gz"
+g_file_dslevin2016dmel <- paste0(data_folder, "dslevin2016dmel.txt.gz")
 utils::download.file(url = as.character(g_url_dslevin2016dmel$url[3]), destfile = g_file_dslevin2016dmel)
 
 X_dslevin2016dmel <- read.table(gzfile(g_file_dslevin2016dmel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
@@ -160,7 +172,7 @@ f_dslevin2016dmel <- which(0.6 > apply(cm_dslevin2016dmel, 1, quantile, probs = 
 X_dslevin2016dmel <- X_dslevin2016dmel[, -f_dslevin2016dmel]
 
 # convert to rpkm & FBgn
-X_dslevin2016dmel <- format_ids(X_dslevin2016dmel, dmel_genes, from = "fb_id", to = "fb_id")
+X_dslevin2016dmel <- RAPToR::format_ids(X_dslevin2016dmel, dmel_genes, from = "fb_id", to = "fb_id")
 X_dslevin2016dmel <- raw2rpkm(X = X_dslevin2016dmel, gene.length = dmel_genes, id.col = "fb_id", l.col = "transcript_length")
 
 
@@ -182,7 +194,7 @@ colnames(X_dslevin2016dmel) <- P_dslevin2016dmel$title
 P_dslevin2016dmel$age <- as.numeric(P_dslevin2016dmel$time) / 60
 
 dslevin2016dmel <- list(g = X_dslevin2016dmel, p = P_dslevin2016dmel)
-save(dslevin2016dmel, file = "../inst/extdata/dslevin2016dmel.RData", compress = "xz")
+save(dslevin2016dmel, file = paste0(data_folder, "dslevin2016dmel.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_dslevin2016dmel)
@@ -198,7 +210,7 @@ rm(geo_dslevin2016dmel, g_url_dslevin2016dmel, g_file_dslevin2016dmel,
 geo_dslevin2016cel <- "GSE60755"
 
 g_url_dslevin2016cel <- GEOquery::getGEOSuppFiles(geo_dslevin2016cel, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_dslevin2016cel <- "../inst/extdata/dslevin2016cel.txt.gz"
+g_file_dslevin2016cel <- paste0(data_folder, "dslevin2016cel.txt.gz")
 utils::download.file(url = as.character(g_url_dslevin2016cel$url[1]), destfile = g_file_dslevin2016cel)
 
 X_dslevin2016cel <- read.table(gzfile(g_file_dslevin2016cel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
@@ -209,7 +221,7 @@ f_dslevin2016cel <- which(0.67 > apply(cm_dslevin2016cel, 1, quantile, probs = .
 X_dslevin2016cel <- X_dslevin2016cel[, -f_dslevin2016cel]
 
 # convert to rpkm & FBgn
-X_dslevin2016cel <- format_ids(X_dslevin2016cel, wormRef::Cel_genes, from = "sequence_name", to = "wb_id")
+X_dslevin2016cel <- RAPToR::format_ids(X_dslevin2016cel, wormRef::Cel_genes, from = "sequence_name", to = "wb_id")
 X_dslevin2016cel <- raw2rpkm(X = X_dslevin2016cel, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
 
 
@@ -236,7 +248,7 @@ P_dslevin2016cel <- P_dslevin2016cel[-127,]
 
 
 dslevin2016cel <- list(g = X_dslevin2016cel, p = P_dslevin2016cel)
-save(dslevin2016cel, file = "../inst/extdata/dslevin2016cel.RData", compress = "xz")
+save(dslevin2016cel, file = paste0(data_folder, "dslevin2016cel.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_dslevin2016cel)
@@ -248,14 +260,14 @@ rm(geo_dslevin2016cel, g_url_dslevin2016cel, g_file_dslevin2016cel,
 
 ```{r load_dsgraveley2011_c, eval = F}
 g_url_dsgraveley2011 <- "ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz"
-g_file_dsgraveley2011 <- "../inst/extdata/dsgraveley2011.csv.gz"
+g_file_dsgraveley2011 <- paste0(data_folder, "dsgraveley2011.csv.gz")
 utils::download.file(g_url_dsgraveley2011, destfile = g_file_dsgraveley2011)
 
 
 X_dsgraveley2011 <- read.table(gzfile(g_file_dsgraveley2011), sep = ',', row.names = 1, h = T)
 
 # convert gene ids to FBgn
-X_dsgraveley2011 <- format_ids(X_dsgraveley2011, dmel_genes, from = "gene_name", to = "fb_id")
+X_dsgraveley2011 <- RAPToR::format_ids(X_dsgraveley2011, dmel_genes, from = "gene_name", to = "fb_id")
 
 # select embryo time series samples
 X_dsgraveley2011 <- X_dsgraveley2011[,1:12]
@@ -266,7 +278,7 @@ P_dsgraveley2011 <- data.frame(sname = colnames(X_dsgraveley2011),
 
 dsgraveley2011 <- list(g = X_dsgraveley2011, p = P_dsgraveley2011)
 
-save(dsgraveley2011, file = "../inst/extdata/dsgraveley2011.RData", compress = "xz")
+save(dsgraveley2011, file = paste0(data_folder, "dsgraveley2011.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_dsgraveley2011)
