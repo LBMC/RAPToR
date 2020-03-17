@@ -128,14 +128,14 @@ To give an example, `wormRef` holds the *C. elegans* references.
 
 You can see the available references of a data-package with the `list_refs()` function. 
 **Note that you must have the data-package installed for this**. 
-[`wormRef` can be installed from this link.](https://github.com/LBMC/wormRef). 
+[`wormRef` can be installed from this link.](https://github.com/LBMC/wormRef)
 
 ```{r list_refs}
 list_refs("wormRef")
 ```
 
 The data-packages currently available are listed on the [README of the github repo](https://github.com/LBMC/RAPToR).
-You can build your own reference data packages following a few rules given in the [vignette on reference building](RAPToR-refbuilding.html).
+You can also build your own reference data-packages following a few rules given in the [vignette on this topic](RAPToR-datapkgs.html).
 
 
 # Usage example
@@ -496,7 +496,7 @@ Note that [there is a vignette entirely dedicated to this process](RAPToR-refbui
 
 Interpolating on time series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
-
+,
 To build your reference, you will require a time series of gene expression data on your favourite organism.
 The `ds1` example dataset we loaded earlier will be used to illustrate the process.
 
@@ -507,7 +507,7 @@ This function takes as input 3 key arguments :
 
  - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
  - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
- - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`**.
+ - `formula` : the model formula. This should be a standard R formula using terms found in `p`, which may include elements (such as splines) from chosen model type (see below). **It should start with `X ~`**.
 
 For example, using the `ds1` dataset we could build the following model.
 ```{r model_ds1, eval = gen_figs}
@@ -535,6 +535,7 @@ We've implemented 2 model types : Generalized Additive Models (GAMs, the default
 GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
 The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
+**If you are not familiar with the `mgcv` package or GLMs in R, I recommend you look at the documentation of their functions (especially of `s()` for GAMs) to understand what can be included in the formulas to tackle non-linear dynamics.**
 
 Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on the components.
 
@@ -554,9 +555,12 @@ For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
 pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
 nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
 nc
-#> [1] 24v
+#> [1] 24
 ```
 
+Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+
+<br>
 
 Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 
 The function inputs the `X`, `p` and a `formula_list` to test. 
@@ -807,6 +811,7 @@ plot(ae_ds2_prior, main="Age estimates with priors on ds2", show.boot_estimates 
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
 
 all(ae_ds2_prior$age.estimates[,1]==ae_ds2$age.estimates[,1])
+#> [1] TRUE
 ```
 ```{r plot_ae_prior, echo = F, fig.height=5, fig.width=9, fig.align='center'}
 show_fig(expr = {
@@ -827,12 +832,15 @@ As you can see, here the estimates are the same as without the prior.
 
 # Loading `ds1` and `ds2`
 
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
 
-```{r load_namespaces, include = F, eval = F}
+```{r load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
 requireNamespace("Biobase", quietly = T)
-requireNamespace("GEOquery", quietly = T)
 ```
 
 ```{r raw2rpkm_func, eval = F}
@@ -854,7 +862,7 @@ raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
 geo_ds1 <- "GSE80157"
 
 g_url_ds1 <- GEOquery::getGEOSuppFiles(geo_ds1, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds1 <- "../inst/extdata/ds1.txt.gz"
+g_file_ds1 <- paste0(data_folder, "ds1.txt.gz")
 utils::download.file(url = as.character(g_url_ds1$url[2]), destfile = g_file_ds1)
 
 X_ds1 <- read.table(gzfile(g_file_ds1), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
@@ -886,7 +894,7 @@ P_ds1$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds1$`time in development:
 X_ds1 <- X_ds1[, P_ds1$title]
 
 ds1 <- list(g = X_ds1, p = P_ds1)
-save(ds1, file = "../inst/extdata/ds1.RData", compress = "xz")
+save(ds1, file = paste0(data_folder, "ds1.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_ds1)
@@ -897,7 +905,7 @@ rm(geo_ds1, g_url_ds1, g_file_ds1, X_ds1, P_ds1)
 geo_ds2 <- "GSE52861"
 
 g_url_ds2 <- GEOquery::getGEOSuppFiles(geo_ds2, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds2 <- "../inst/extdata/ds2.txt.gz"
+g_file_ds2 <- paste0(data_folder, "ds2.txt.gz")
 utils::download.file(url = as.character(g_url_ds2$url[2]), destfile = g_file_ds2)
 
 X_ds2 <- read.table(gzfile(g_file_ds2), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
@@ -926,7 +934,7 @@ colnames(X_ds2) <- gsub('RNASeq_polyA_','', colnames(X_ds2))
 X_ds2 <- X_ds2[, P_ds2$title]
 
 ds2 <- list(g = X_ds2, p = P_ds2)
-save(ds2, file = "../inst/extdata/ds2.RData", compress = "xz")
+save(ds2, file = paste0(data_folder, "ds2.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_ds2)
