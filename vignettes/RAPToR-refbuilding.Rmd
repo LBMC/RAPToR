@@ -203,6 +203,8 @@ With our time series data, we can look at correlation heatmaps or boxplots of th
 cor_ds1 <- cor(ds1$g, method = "spearman")
 ```
 
+##### {.tabset}
+###### Plots
 <div style = "display:block">
 <div style="width:40%; float:left">
 ```{r hm_cor, echo = F, fig.height=5, fig.width=5}
@@ -231,6 +233,27 @@ legend(23,.86, fill = transp(1:4), legend = c("let-7", "lin-41", "let-7/lin-41",
 </div>
 <div style="clear: both;"></div>
 
+###### Code
+```{r hm_bxp_code_print, eval = F}
+# Heatmap
+ord <- order(ds1$p$age)
+heatmap(cor_ds1[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
+        RowSideColors = as.numeric(ds1$p$strain[ord]), labRow = "", labCol = "")
+
+par(xpd = T) # text may have to be tweaked to plot size
+mtext(text = unique(ds1$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11)) 
+
+# Boxplot
+boxplot(cor_ds1 ~ interaction(ds1$p$strain, ds1$p$age), col = 1:4, xaxt = "n", 
+        ylab = "Spearman correlation", xlab = "age", at = seq(1,44, l = 55)[c(T,T,T,T,F)])
+axis(side = 1, at = seq(2,42, l = 11), labels = unique(ds1$p$age))
+
+legend(23,.86, fill = 1:4, legend = c("let-7", "lin-41", "let-7/lin-41", "N2"), bty = "n")
+```
+
+##### {}
+
+
 ### Plotting components
 You can also plot components (PCA or ICA) with respect to time, to get an idea of the dynamics.
 
@@ -238,6 +261,8 @@ You can also plot components (PCA or ICA) with respect to time, to get an idea o
 pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
 ```
 
+##### {.tabset}
+###### Plot
 ```{r plot_pcads1, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
@@ -257,6 +282,29 @@ show_fig(expr = {
 }, fig.height=6, fig.width=12)
 ```
 
+###### Code
+```{r plot_pcads1_print, eval = F}
+par(mfrow = c(2,4))
+invisible(
+sapply(seq_len(8), function(i){
+  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+  
+  # connect the dots
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+           type = 'l', lty = 2)
+  })
+
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+})
+)
+```
+##### {}
+
 In this data, we see that between different strains, we get very consistent dynamics. 
 Also, PC3 and PC4 capture an oscillatory dynamic characteristic of the molting processes of *C. elegans* larval development.
 
@@ -264,6 +312,8 @@ Also, PC3 and PC4 capture an oscillatory dynamic characteristic of the molting p
 ### Plotting random genes
 Another approach can be to look at a few random genes. You get a first hand look at the noise in your data.
 
+##### {.tabset}
+###### Plots
 ```{r plot_rdgn, echo = F, fig.height=3, fig.width=12}
 show_fig(expr = {
   set.seed(3)
@@ -285,6 +335,33 @@ show_fig(expr = {
 }, fig.height=3, fig.width=12)
 ```
 
+###### Code
+```{r plot_rdgn_print, eval = F}
+set.seed(3)
+gtp <- sample(nrow(ds1$g), size = 4)
+
+par(mfrow = c(1,4))
+invisible(
+sapply(gtp, function(i){
+  plot(ds1$p$age, ds1$g[i,], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "GExpr", main = rownames(ds1$g)[i])
+  
+  # connect the dots
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], ds1$g[i,s], col = l, 
+           type = 'l', lty = 2)
+  })
+
+  if(i == gtp[1])
+    legend("topright", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+})
+)
+
+```
+
+##### {}
 
 <br>
 <br>
@@ -428,6 +505,9 @@ ng_mp <- mperf(scale(ds1$g), predict(m_ds1), is.t = T, global = F)
 ```
 
 It's possible to check the model performance by looking at the index distributions over all genes, *e.g. :*
+
+##### {.tabset}
+###### Plots
 ```{r bxp_mperf_ds1, echo = F, fig.height=5, fig.width=8}
 show_fig(expr = {  
   par(mfrow = c(2,2))
@@ -446,8 +526,36 @@ show_fig(expr = {
 }, fig.height=5, fig.width=8)
 ```
 
+###### Code
+```{r bxp_mperf_ds1_print, eval = F}
+par(mfrow = c(2,2))
+invisible(
+sapply(names(ng_mp), function(idx){
+  rg <- range(na.omit(ng_mp[[idx]]))
+  
+  # label position
+  if(idx == "aCC"){
+    pos <- 2
+  } else {
+    pos <- 4
+  }
+  # estimate density curve
+  d <- density(na.omit(ng_mp[[idx]]), from = rg[1], to = rg[2])
+  
+  plot(d, main = paste0(gsub("a", "", idx, fixed = T), " density (", length(ng_mp[[idx]]), " genes)"), 
+       xlab = idx, lwd = 2)
+  # display global value
+  abline(v = g_mp[[idx]], lty = 2, lwd = 2, col = "firebrick")
+  text(g_mp[[idx]], .9*max(d$y), pos = pos, labels = idx, font = 2, col = "firebrick")
+})
+)
+```
+
+##### {}
+
 
 ### Number of components 
+
 The number of components to use for the interpolation is by default set to the number of samples.
 However, we recommend to set a cutoff on explained variance of PCA components to select it. 
 You can do this (on PCA explained variance) even if you choose to use ICA for interpolation.
@@ -463,6 +571,9 @@ nc
 Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
 
 You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
+
+In very noisy dataset, you may have to keep very few components ($<5$) for the interpolation.
+
 
 ### Comparing formulas
 
@@ -642,6 +753,8 @@ They also sometimes actually get rid of some unwanted variation.
  
 On the `ds1` dataset, the predictions of the first few components are plotted below.
 
+##### {.tabset}
+###### Plots
 ```{r plot_pca_ds1, echo = F, fig.width=12, fig.height=6}
 show_fig(expr = {
   par(mfrow = c(2,4))
@@ -661,9 +774,37 @@ show_fig(expr = {
 }, fig.width=12, fig.height=6)
 ```
 
+###### Code
+```{r plot_pca_ds1_print, eval=F}
+par(mfrow = c(2,4))
+invisible(
+sapply(seq_len(8), function(i){
+  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "PC", main = paste0("PC", i))
+  
+  # connect the dots
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+           type = 'l', lty = 2)
+  })
+  
+  # add model prediction
+  points(newdat$age, pred_m_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+  
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
+           pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
+})
+)
+```
+##### {}
+
  
 The interpolation should translates well back on the (*scaled*) full expression matrix :
 
+##### {.tabset}
+###### Plots
 ```{r plot_rd_genes_pred, echo = F, fig.height = 3, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,4))
@@ -683,6 +824,34 @@ show_fig(expr = {
   }))
 }, fig.height = 3, fig.width=12)
 ```
+
+###### Code
+```{r plot_rd_genes_pred_print, eval = F}
+par(mfrow = c(1,4))
+sX <- scale(ds1$g) # scale X
+invisible(
+sapply(gtp, function(i){ # gtp is from the earlier gene plots
+  plot(ds1$p$age, sX[i,], lwd = 2, col = ds1$p$strain,
+       xlab = "age", ylab = "Scaled GExpr", main = rownames(ds1$g)[i])
+  
+  # connect the dots
+  sapply(seq_along(levels(ds1$p$strain)), function(l){
+    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
+    points(ds1$p$age[s], sX[i,s], col = l, 
+           type = 'l', lty = 2)
+  })
+  
+  # add model prediction
+  points(newdat$age, pred_m_ds1[i, ], col = "royalblue", type = 'l', lwd = 3)
+  
+  if(i == 1)
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+           pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
+})
+)
+```
+##### {}
+
 
 ### Staging samples
 
@@ -711,7 +880,9 @@ ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
 ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
 ```
 
-```{r echo=F, fig.height=6, fig.width=12}
+##### {.tabset}
+###### Plots
+```{r ae_vs_est_plot, echo=F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,2))
   rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
@@ -741,6 +912,42 @@ show_fig(expr = {
 }, fig.height=6, fig.width=12)
 ```
 
+###### Code
+```{r ae_vs_est_plot_print, eval=F}
+par(mfrow = c(1,2))
+rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
+
+# Plot 1
+plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, 
+     col = factor(ds1$p$strain))
+# connect the dots
+invisible(sapply(levels(factor(ds1$p$strain)), function(l){
+  s <- ds1$p$strain == l
+  points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
+         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+}))
+abline(a = 0, b = 1, lty = 3, lwd = 2) # x = y
+
+legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
+       lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
+
+
+# Plot 2
+rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
+plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
+# connect the dots
+points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2) # x = y
+
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+```
+##### {}
 <br>
 
 # Reference-Building examples
