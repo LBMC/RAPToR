@@ -460,6 +460,10 @@ nc
 #> [1] 24
 ```
 
+Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+
+You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
+
 ### Comparing formulas
 
 Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 

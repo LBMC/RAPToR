@@ -64,6 +64,17 @@ Code to generate `ds5` and `ds6` :
 ##### Hide
 
 ##### Show
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+
+```{r ex3_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
+requireNamespace("Biobase", quietly = T)
+```
+
+
 ```{r ex3_raw2rpkm_func}
 raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
   # Compute RPKM from raw counts
@@ -95,7 +106,7 @@ rm(mart)
 p_url_ds5 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp1.tsv"
 
 g_url_ds5 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp2.tsv"
-g_file_ds5 <- "../inst/extdata/ds5.tsv"
+g_file_ds5 <- paste0(data_folder, "ds5.tsv")
 utils::download.file(g_url_ds5, destfile = g_file_ds5)
 
 X_ds5 <- read.table(g_file_ds5, h = T, sep  ="\t", as.is = T, quote = "\"")
@@ -104,7 +115,7 @@ X_ds5 <- X_ds5[,-(1:8)]
 
 
 # convert to rpkm & ensembl_id
-X_ds5 <- format_ids(X_ds5, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
+X_ds5 <- RAPToR::format_ids(X_ds5, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
 X_ds5 <- raw2rpkm(X = X_ds5, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
 
 
@@ -124,7 +135,7 @@ P_ds5$batch <- factor(gsub(".*-(\\d)$", "\\1", P_ds5$sampleName))
 X_ds5 <- X_ds5[, P_ds5$sample]
 
 ds5 <- list(g = X_ds5, p = P_ds5)
-save(ds5, file = "../inst/extdata/ds5.RData", compress = "xz")
+save(ds5, file = paste0(data_folder, "ds5.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_ds5)
@@ -138,13 +149,13 @@ rm(p_url_ds5, g_url_ds5, g_file_ds5, X_ds5, P_ds5, timepoints)
 geo_ds6 <- "GSE60619"
 
 g_url_ds6 <- GEOquery::getGEOSuppFiles(geo_ds6, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds6 <- "../inst/extdata/ds6.txt.gz"
+g_file_ds6 <- paste0(data_folder, "ds6.txt.gz")
 utils::download.file(url = as.character(g_url_ds6$url[2]), destfile = g_file_ds6)
 
 X_ds6 <- read.table(gzfile(g_file_ds6), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
 
 # convert to rpkm & ensembl id
-X_ds6 <- format_ids(X_ds6, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
+X_ds6 <- RAPToR::format_ids(X_ds6, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
 X_ds6 <- raw2rpkm(X = X_ds6, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
 
 
@@ -166,7 +177,7 @@ colnames(X_ds6) <- P_ds6$title
 P_ds6$age <- as.numeric(P_ds6$time) / 60
 
 ds6 <- list(g = X_ds6, p = P_ds6)
-save(ds6, file = "../inst/extdata/ds6.RData", compress = "xz")
+save(ds6, file = paste0(data_folder, "ds6.RData"), compress = "xz")
 
 # cleanup
 file.remove(g_file_ds6)
