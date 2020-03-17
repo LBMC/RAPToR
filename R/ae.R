@@ -266,7 +266,7 @@ ae <- function(samp, refdata, ref.time_series,
 #' 
 #' Prints the \code{age.estimates} dataframe of an \code{ae} object
 #' 
-#' @param x an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param x an \code{ae} object, as returned by \code{\link{ae}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... arguments passed on to \code{\link{print}}
 #' 
@@ -288,7 +288,7 @@ print.ae <- function(x, digits=3, ...){
 #' 
 #' Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
 #' 
-#' @param object an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.
+#' @param object an \code{ae} object, as returned by \code{\link{ae}}.
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 

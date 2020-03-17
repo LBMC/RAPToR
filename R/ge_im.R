@@ -95,3 +95,30 @@ predict.geim <- function(object, newdata, as.c = FALSE, ...){
     return(.predict_limma(m = object, newdata = newdata))
   }
 }
+
+
+
+
+#' Print a geim object
+#' 
+#' Prints a \code{geim} object
+#' 
+#' @param x a \code{geim} object, as returned by \code{\link{ge_im}}.
+#' @param ... arguments passed on to \code{\link{print}}
+#' 
+#' @export
+#' 
+#' 
+print.geim <- function(x, ...){
+  ats <- list(f = attr(x, "formula"), m = attr(x, "method"), 
+              dr = attr(x, "dim_red"), nc = attr(x, "nc"))
+  cat("gene expression interpolation model \n---")
+  cat("\nformula:  ", ats$f)
+  cat("\nmethod:   ", ats$m)
+  if(ats$m != "limma"){
+    
+    cat("\ndim_red:  ", ats$dr)
+    cat("\nnc:       ", ats$nc)
+  }
+  cat("\n---\n")
+}

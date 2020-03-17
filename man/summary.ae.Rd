@@ -7,7 +7,7 @@
 \method{summary}{ae}(object, digits = 3, ...)
 }
 \arguments{
-\item{object}{an \code{ae} object, as returned by \code{\link{estimate.worm_age}}.}
+\item{object}{an \code{ae} object, as returned by \code{\link{ae}}.}
 
 \item{digits}{the number of digits passed on to \code{\link{round}}}
 
