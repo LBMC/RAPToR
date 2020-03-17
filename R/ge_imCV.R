@@ -198,3 +198,47 @@ plot.geimCV <- function(x, join.plots = TRUE,
   names(blist) <- c("cve", "mpf")
   return(invisible(blist))
 }
+
+
+#' Print a geimCV object
+#' 
+#' Prints a \code{geimCV} object
+#' 
+#' @param x a \code{geimCV} object, as returned by \code{\link{ge_imCV}}.
+#' @param ... arguments passed on to \code{\link{print}}
+#' 
+#' @export
+#' 
+print.geimCV <- function(x, ...){
+  
+  nf <- length(x$formula_list)
+  
+  
+  cat("geimCV object\n---")
+  cat("\nNb. compared models: ", nf)
+  cat("\nNb. CV steps:        ", x$cv.n)
+  cat("\nTraining set ratio:  ", x$cv.s)
+  
+  
+  cat("\nmethod:   ", x$method)
+  if(x$method != "limma"){
+    
+    cat("\ndim_red:  ", x$dim_red)
+    cat("\nnc:       ", x$nc)
+  }
+  cat("\n---\n")
+  
+  cat("Median CV errors:\n")
+  cve <- do.call(rbind, lapply(seq_len(nf), function(i){
+    apply(x$cve[[i]], 2, median)
+  }))
+  rownames(cve) <- paste0(as.character(x$formula_list), "  ")
+  print(cve, ...)
+  cat("---\n")
+  cat("Median model performance:\n")
+  cve <- do.call(rbind, lapply(seq_len(nf), function(i){
+    apply(x$mpf[[i]], 2, median)
+  }))
+  rownames(cve) <- paste0(as.character(x$formula_list), "  ")
+  print(cve, ...)
+}
