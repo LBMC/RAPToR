@@ -47,6 +47,7 @@ df_CV <- function(X, time.series,
                   ica.use = TRUE, ica.nc = min(ncol(X), 16),
                   nb.cores = 2){
 
+  warning("DEPRECATED : it is recommended to use ge_im functions to interpolate on gene expression data")
   y <- time.series
   n <- length(y)
   if (isTRUE(ica.use)) {

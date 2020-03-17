@@ -31,6 +31,7 @@ plsr_interpol <- function(X, time.series, df,
                           scale = T, knots = NULL, plsr.nc = NULL,
                           return.model = FALSE)
 {
+  warning("DEPRECATED : it is recommended to use ge_im functions to interpolate on gene expression data")
   if (length(time.series) != ncol(X)) {
     stop("time series must be of length ncol(X)")
   }
