@@ -65,6 +65,19 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.2
+ - Created a "showcase" vignette with 3 different uses of `RAPToR` `vignette("RAPToR-showcase")`
+ - Updated vignettes with a `data_folder` variable to build the example objects more easily
+ - Added code to generate diagnostics plots in the refuilding vignette
+ - Cleared up some points of the overall vignette based on user feedback
+ - Added print methods for `geim` and `geimCV` objects
+ - Added the `scale(X)` within `ge_imCV()` function when using `dim_red`
+ - Fixed bug when specifying `prior` but not `prior.params` in `ae()`
+ - Cleaned up deprecated elements :
+   - Fully deprecated (deleted) `interpol_refdata()` and `estimate.worm_age()`
+   - Removed links to deprecated functions in doc
+   - Added warnings for deprecation in plsr-linked functions
+ 
 #### v1.1.1
  - Created a detailed vignette on reference building, with examples `vignette("RAPToR-refbuilding")`
  - Created a vignette on data-package building `vignette("RAPToR-datapkgs")`
