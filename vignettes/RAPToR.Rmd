@@ -126,13 +126,15 @@ since our method requires a reference to stage samples against, we've built seve
 For R package standards, these are large datasets so the references are stored in separate "data-packages". 
 To give an example, `wormRef` holds the *C. elegans* references.
 
-You can see the available references of a data-package with the `list_refs()` function.
+You can see the available references of a data-package with the `list_refs()` function. 
+**Note that you must have the data-package installed for this**. 
+[`wormRef` can be installed from this link.](https://github.com/LBMC/wormRef). 
 
 ```{r list_refs}
 list_refs("wormRef")
 ```
 
-The data-packages currently available are listed on the [README of the github repo](https://github.com/LBCM/RAPToR).
+The data-packages currently available are listed on the [README of the github repo](https://github.com/LBMC/RAPToR).
 You can build your own reference data packages following a few rules given in the [vignette on reference building](RAPToR-refbuilding.html).
 
 
