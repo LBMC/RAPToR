@@ -82,9 +82,9 @@ ae <- function(samp, refdata, ref.time_series,
   }
   
   
-  if(!is.null(prior.params)){
-    if(is.null(prior)){
-      stop("prior value must be specified if prior.params are defined")
+  if(!is.null(prior)){
+    if(is.null(prior.params)){
+      stop("prior.params value must be specified if prior is defined")
     }
     if(length(prior)!=ncs){
       prior <- rep(prior, ncs)
