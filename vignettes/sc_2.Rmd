@@ -317,7 +317,7 @@ dslevin2016dmel$g_cel <- format_ids(dslevin2016dmel$g, glist, from = "fb_id", to
 ### Staging the Drosophila embryo time course
 
 We know from previous use of the `dslevin2016dmel` dataset that its samples have rather imprecise chronological-developmental synchronicity (see the [refbuilding vignette's 2nd example](RAPToR-refbuilding.html#ex-2) for more information). 
-We'll first estimate the age of the samples and use that as a basis for the comparison when staging on *C. elegans data*.
+We'll first estimate the age of the samples and use that as a basis for the comparison when staging on *C. elegans* data.
 
 ```{r sc2_aedmel, eval=gen_figs}
 m_grav <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = 4)
@@ -333,7 +333,7 @@ dslevin2016dmel$p$ae <- ae_dmel$age.estimates[,1]
 ```
 
 
-### *D. melanogaster* on *C. elegans*
+### *D. melanogaster* staging on *C. elegans*
 
 #### Build a C. elegans embryo reference
 
@@ -415,7 +415,7 @@ plot(dslevin2016dmel$p$ae, ae_dmel_on_cel$age.estimates[,1],
 }, fig.height=8, fig.width=8)
 ```
 
-### *C. elegans* on *D. melanogaster*
+### *C. elegans* staging on *D. melanogaster*
 
 We have already built a *D. melanogaster* with `dsgraveley2011`, which we can use directly here.
 
