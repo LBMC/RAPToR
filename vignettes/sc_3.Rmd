@@ -48,7 +48,9 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
-Let's perform tissue-specific staging.
+It is known that within some species, tissues can develop at different rates, which can vary between individuals.
+In *C. elegans*, this developmental heterochrony has been shown between soma and germline (@perez2017maternal).
+By restricting the gene subset on which RAPToR stages the samples to specific tissues, it is possible to get estimates for development specific to these tissues.
 
 ### The data
 
@@ -64,7 +66,7 @@ This essentially makes this dataset a very high-resolution timecourse of late-la
 
 ### Workflow
 
-In *C. elegans*, there is a known heterochrony of soma and germline development.  
+We want to observe the *C. elegans* heterochrony of soma and germline development.  
 Using RAPToR, we can capture tissue-specific age by restricting the geneset used for staging to the tissue of interest.
 
 #### Gene subsets
