@@ -52,7 +52,7 @@ Let's stage samples cross-species using orthologs genes.
 
 ### The data
 
-We'll be woring with 3 datasets here.
+We'll be working with 3 datasets here.
 
  - 2 embryonic timecourse datasets published by @levin2016mid, for *D. melanogaster* and  *C. elegans*, hereafter called `dslevin2016dmel` and `dslevin2016cel` respectively. (Accessions : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471) and [GSE60755](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60755))
  - A Drosophila embryonic development time series, part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
