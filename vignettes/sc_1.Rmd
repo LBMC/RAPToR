@@ -192,7 +192,7 @@ cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
 ```
 
 Let's look at the correlation between the samples and compare it to their estimated age difference.
-In the grapĥic below, we plot the correlation score between all sample pairs against their estimated age difference. 
+In the graphic below, we plot the correlation score between all sample pairs against their estimated age difference. 
 Each point corresponds to a pair of samples and the color-coding corresponds to whether both samples are of the same strain or not.
 
 ```{r sc1_cor_dev_plot, fig.height=5, fig.width=5, echo = F, out.width="60%"}
@@ -237,7 +237,9 @@ legend("bottomleft", legend = c("same strain", "different strain"),
 ```
 
 Notice how the strain does not really impact correlation between samples, compared to developmental differences.
-We can also observe this through correlation heatmaps ordered by strain or estimated age
+We can also observe this through correlation heatmaps ordered by strain & chronological age or estimated age.
+
+<br>
 
 <div style = "display:block">
 <div style="width:49%; float:left">
@@ -298,6 +300,7 @@ mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06,
 </div>
 </div>
 <div style="clear: both;"></div>
+
 
 
 
@@ -446,7 +449,7 @@ dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tp
 dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], name = "dge.ae", return.model = T)
 ```
 
-```{r plot_dge_func, echo = F}
+```{r sc1_plot_dge_func, echo = F}
 plot_DGE_pval_vs <- function(pv.x, pv.y, 
                              xlab = "-log10(pv.x)", ylab = "-log10(pv.y)", 
                              main = "DE genes with pv.x vs pv.y", ...)
@@ -467,7 +470,7 @@ plot_DGE_pval_vs <- function(pv.x, pv.y,
 
 ```
 
-```{r plot_dge, echo = F, fig.height=5, fig.width=10}
+```{r sc1_plot_dge, echo = F, fig.height=5, fig.width=10}
 show_fig(expr = { 
 
 par(mfrow = c(1,2))
