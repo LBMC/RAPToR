@@ -320,8 +320,8 @@ Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
 \end{align}
 $$
 
-Note that we're not interested in whether genes are up or down-regulated, but only in the detection of an effect.
-
+Note that we're not interested in whether genes are up or down-regulated, but only in the detection of an effect. 
+Genes will be considered differentially expressed with Bonferoni-Holm adjusted p.values of coefficients below 0.05.
 
 #### {.tabset}
 DGE code :
@@ -354,14 +354,15 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   pdat <- data.frame(strain = factor(strain), age = as.numeric(age), row.names = colnames(X))
   
   # build design matrix
-  d <- model.matrix(~ 0 + strain * ns(age, df = df), data = pdat) 
+  d <- model.matrix(~ 1 + ns(age, df = df) * strain, data = pdat) 
   
   # fix colnames
-  colnames(d)[3:(2+2*df)] <- paste0(c(rep("a", df), rep("strainmut.a", df)), 1:df)
+  # colnames(d)[3:(2+2*df)] <- paste0(c(rep("a", df), rep("strainmut.a", df)), 1:df)
+  colnames(d) <- c("b0", paste0(rep("a", df), 1L:df), "strainmut", paste0(rep("strainmut.a", df), 1L:df))
   
   # build contrast matrices for mut and age tests
   if(df == 2){
-    cm.mut <- makeContrasts(mut = strainwt - strainmut,
+    cm.mut <- makeContrasts(mut = strainmut, #strainwt - strainmut,
                             mut.i1 = strainmut.a1,
                             mut.i2 = strainmut.a2,
                             levels = d)
@@ -372,7 +373,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   }
   
   if(df == 3){
-    cm.mut <- makeContrasts(mut = strainwt - strainmut,
+    cm.mut <- makeContrasts(mut = strainmut, #strainwt - strainmut,
                             mut.i1 = strainmut.a1,
                             mut.i2 = strainmut.a2,
                             mut.i3 = strainmut.a3,
@@ -413,10 +414,10 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 }
 ```
 
-```{r sc1_getvarexp, eval=gen_figs}
+```{r sc1_getvarexp, eval = F, echo = F}
 get_ssq <- function(dsgn, X){
   # Get the SSQ explained by the model terms (eg, R anova results)
-  ps <- lapply(list(1:2,1:4,1:6), function(s){
+  ps <- lapply(list(1:3,1:4,1:6), function(s){
     m <- limma::lmFit(X, design = dsgn[, s])
     return(tcrossprod(m$coefficients, m$design))
   })
@@ -426,7 +427,7 @@ get_ssq <- function(dsgn, X){
   vs <- lapply(ps, function(p) apply(p, 1, ssq))
   vs <- do.call(cbind, vs)
   
-  vex <- data.frame(strain=vs[,1], age=vs[,2]-vs[,1], age.strain = vs[,3]-vs[,2], 
+  vex <- data.frame(age=vs[,1], strain=vs[,2]-vs[,1], age.strain = vs[,3]-vs[,2], 
                     ssqExp = vs[,3], ssqTot = apply(X, 1, ssq))
   vex$ssqRes <- vex$ssqTot - vex$ssqExp
   return(vex)
@@ -517,50 +518,21 @@ write.csv(data.frame(" " = rownames(dge.ae$tmut)[dge.ae$tmut$adj.P.Val<0.05]),
 ```
 
 
-We can also see this increase in the model's fit itself, by looking at the Sum of Squares fraction attributed to model terms (a variance decomposition of sorts).
+We can also see this increase in the model's fit itself, by looking at the Goodness of Fit distribution accross genes.
+The GoF computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
 
-```{r sc1_ssqapply, eval = gen_figs}
-ssq.ca <- get_ssq(dge.ca$model$design, X = dslehrbach2012$g)
-ssq.ae <- get_ssq(dge.ae$model$design, X = dslehrbach2012$g)
-
-# scale to ssqTot for fraction of ssq
-ssq.ca <- as.data.frame(apply(ssq.ca, 2, `/`, ssq.ca$ssqTot))
-ssq.ae <- as.data.frame(apply(ssq.ae, 2, `/`, ssq.ae$ssqTot))
-```
-
-```{r sc1_ssqplot, echo = F, fig.height=5, fig.width=12}
+```{r sc1_gof_dist, echo = F, fig.height=4, fig.width=6, out.width="60%"}
 show_fig(expr = {
-    
-  par(mfrow = c(1,2))
-  with(ssq.ca , vioplot(
-    strain, age, age.strain, ssqExp, ssqRes, 
-    names = c("strain", "age", "strain:age", "ssqExp", "ssqRes"),
-    col = transp(c("royalblue", "firebrick", "purple", "white", "grey80")),
-    main = "Fraction of SSq explained by model terms with chron. age", ylab = "Fraction of SSq"
-  ))
-  abline(v = 3.5, lty = 2)
-  grid(NULL, lty = 3, col = "grey", nx=0)
+  d.ca <- density(dge.ca$gof, from = 0, to = 1)
+  d.ae <- density(dge.ae$gof, from = 0, to = 1)
   
-  with(ssq.ae , vioplot(
-    strain, age, age.strain, ssqExp, ssqRes, 
-    names = c("strain", "age", "strain:age", "ssqExp", "ssqRes"),
-    col = transp(c("royalblue", "firebrick", "purple", "white", "grey80")),
-    main = "Fraction of SSq explained by model terms with ae", ylab = "Fraction of SSq"
-  ))
-  abline(v = 3.5, lty = 2)
-  grid(NULL, lty = 3, col = "grey", nx=0) 
-}, fig.height=5, fig.width=12)
-```
-
-
-```{r sc1_ssq_sum, eval=gen_figs, results='markup'}
-round(colSums(ssq.ca) / nrow(X), 3)
-#>    strain        age age.strain     ssqExp     ssqTot     ssqRes 
-#>     0.072      0.395      0.075      0.542      1.000      0.458
-
-round(colSums(ssq.ae) / nrow(X), 3)
-#>    strain        age age.strain     ssqExp     ssqTot     ssqRes 
-#>     0.072      0.427      0.080      0.579      1.000      0.421 
+  plot(d.ca$x, d.ca$y, type = "l", lwd = 3, ylim = range(c(d.ca$y, d.ae$y)), 
+       xlab = "GoF", col = "red", ylab = "Density", main = paste("Model Goodness of Fit distribution across",nrow(X),"genes"))
+  points(d.ae$x, d.ae$y, type = 'l', col = "blue", lwd = 3) 
+  legend("bottom", lwd = 4, col = c("red", "blue"), 
+         legend = c("Model with chron. age", "Model with est. age"),
+         text.font = 2, text.col = c("red", "blue"), bty = 'n')
+}, fig.height = 4, fig.width = 6)
 ```
 
 
@@ -570,12 +542,14 @@ round(colSums(ssq.ae) / nrow(X), 3)
 If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using our estimates in the model.
 To test this, we can simulate age sets with random noise of similar distribution to the age differences observed between chronological and estimated age.
 
-To compare the results, we use the model's Goodness of Fit (GoF) per gene. The GoF computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$.
+To compare the results, we use the model's Goodness of Fit (GoF) per gene. As done above, the GoF computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$.
+
+We also look at the number of differentially expressed genes found for strain and development (BH-adjusted p.value below 0.05).
 
 ```{r sc1_comp_dge1, eval = gen_figs}
 age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_dslb$age.estimates[,1]
 # Note : + 50 to shift tpastL4 to age, avoiding generation of negative tpastl4 values,
-#        this has no impact on the DGE (it just shifts the age window).
+#        this has no impact on the DGE analysis (it just shifts the age window).
 
 # estimate density function of age_diffs
 d_ad <- density(age_diffs)
@@ -606,9 +580,10 @@ legend("topright", legend = "Density of age_diffs", lwd = 3, bty = "n")
 
 
 ```{r sc1_comp_dge2, eval = gen_figs, results='hide'}
-# do DGE on all age sets
+# setup cluster for parallelization
 cl <- makeCluster(3, "FORK")
 
+# do DGE on all age sets
 rd_dges <- parLapply(cl, seq_len(n), function(i){
   cat("\r", i,"/",n)
   DGE(X, dslehrbach2012$p$strain, rd_ages[[i]], name = paste0("rd.",i))
@@ -627,10 +602,10 @@ quants <- lapply(seq_len(n), function(i){
 quants <- do.call(rbind, quants)
 ```
 
-```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=9}
+```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=10}
 show_fig(expr = {
 
-layout(mat = matrix(c(1,1,2,3), ncol = 2), widths = c(.7,.3))
+layout(mat = matrix(c(2,3,1,1), ncol = 2), widths = c(.45,.55))
 
 plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "QQ-plot of Goodness of Fit distribution")
 invisible(apply(quants, 1, function(ro) points(qts, ro, type = 'l', col = transp("black", a = .4))))
@@ -647,14 +622,14 @@ diffgens <- lapply(seq_len(n), function(i){
 
 diffgens <- do.call(rbind, diffgens)
 
-hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain", xlim = c(0,3500))
+hist(diffgens$mut, breaks = 50, main = "Nb of DE genes for strain", xlim = c(0,3500), xlab = "Nb. genes")
 abline(v = sum(dge.ca$tmut$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tmut$adj.P.Val < 0.05), lwd = 3, col = 4)
 
-hist(diffgens$age, breaks = 30, xlim = c(3000, 12000), main = "Nb of DE genes for devpt.")
+hist(diffgens$age, breaks = 50, xlim = c(min(diffgens$age), 12000), main = "Nb of DE genes for devpt.", xlab = "Nb. genes")
 abline(v = sum(dge.ca$tage$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tage$adj.P.Val < 0.05), lwd = 3, col = 4)
-}, fig.height=6, fig.width=9)
+}, fig.height=6, fig.width=10)
 ```
 
 In the plots above, we can see that using the estimated age leads to better model fits and an increased number of differentially expressed genes.
