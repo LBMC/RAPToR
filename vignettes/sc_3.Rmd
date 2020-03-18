@@ -119,7 +119,7 @@ We can *e.g.* expect components corresponding to molting (oscillatory) processes
 
 #### {.tabset}
 
-Code to generate `dsrockman2010` and `gsubset`.
+Code to generate `dsrockman2010`, `francesconi_time` and `gsubset`.
 
 ##### Hide
 
@@ -205,10 +205,16 @@ germline_file <- paste0(data_folder, "germline_gset.xlsx")
 utils::download.file(url = germline_url, destfile = germline_file)
 
 germline_set <- read_xlsx(germline_file, sheet = 3, na = "NA")[,c(1, 44:46)]
+germline_set[is.na(germline_set)] <- FALSE
 germline_set <- cbind(wb_id = germline_set[,1], 
-                      germline = apply(germline_set[, 2:4], 1, function(r) any(r)))
-germline_set$germline[is.na(germline_set$germline)] <- FALSE
-germline_set <- germline_set[germline_set$germline,1]
+                      germline = apply(germline_set[, 2:4], 1, function(r) any(r)),
+                      germline_set[, 2:4])
+# germline_set$germline[is.na(germline_set$germline)] <- FALSE
+germline <- germline_set[germline_set$germline,1]
+germline_intrinsic <- germline_set[germline_set$germline_intrinsic,1]
+germline_oogenesis <- germline_set[germline_set$germline_oogenesis_enriched,1]
+germline_sperm <- germline_set[germline_set$germline_sperm_enriched,1]
+
 
 soma_url <- "https://ars.els-cdn.com/content/image/1-s2.0-S1097276513009039-mmc2.xlsx"
 soma_file <- paste0(data_folder, "soma_gset.xlsx")
@@ -220,13 +226,74 @@ soma_set$class <- factor(soma_set$class)
 soma_set$soma <- soma_set$class == "osc"
 soma_set <- soma_set[soma_set$soma, 1]
 
-gsubset <- list(germline = germline_set, soma = soma_set$`Gene WB ID`)
+gsubset <- list(germline = germline, soma = soma_set$`Gene WB ID`, 
+                germline_intrinsic = germline_intrinsic,
+                germline_oogenesis = germline_oogenesis,
+                germline_sperm = germline_sperm)
 
 save(gsubset, file = paste0(data_folder, "sc3_gsubset.RData"), compress = "xz")
 
 file.remove(germline_file)
 file.remove(soma_file)
 rm(germline_url, germline_file, germline_set, soma_url, soma_file, soma_set)
+```
+
+```{r sc3_load_francesc_age, eval = gen_figs}
+# Copied from supp data of Francesconi & Lehner (2014)
+
+francesconi_time <- data.frame(time = 
+  c(4.862660944, 4.957081545, 5.051502146, 5.145922747, 5.240343348, 5.334763948, 5.429184549, 5.52360515,
+    5.618025751, 5.712446352, 5.806866953, 5.901287554, 5.995708155, 6.090128755, 6.184549356, 6.278969957,
+    6.373390558, 6.467811159, 6.56223176, 6.656652361, 6.751072961, 6.845493562, 6.939914163, 7.034334764,
+    7.128755365, 7.223175966, 7.317596567, 7.412017167, 7.506437768, 7.600858369, 7.69527897, 7.789699571,
+    7.884120172, 7.978540773, 8.072961373, 8.167381974, 8.261802575, 8.356223176, 8.450643777, 8.545064378, 
+    8.639484979, 8.733905579, 8.82832618, 8.82832618, 8.82832618, 8.875536481, 8.875536481, 8.875536481,
+    8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.969957082, 9.017167382,
+    9.017167382, 9.064377682, 9.064377682, 9.111587983, 9.206008584, 9.206008584, 9.206008584, 9.300429185, 
+    9.394849785, 9.489270386, 9.489270386, 9.489270386, 9.489270386, 9.489270386, 9.583690987, 9.583690987, 
+    9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.630901288, 9.725321888, 
+    9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.91416309, 
+    10.00858369, 10.05579399, 10.05579399, 10.05579399, 10.05579399, 10.10300429, 10.19742489, 10.19742489, 
+    10.29184549, 10.29184549, 10.29184549, 10.38626609, 10.38626609, 10.38626609, 10.43347639, 10.43347639, 
+    10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 
+    10.43347639, 10.43347639, 10.527897, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 
+    10.6223176, 10.6695279, 10.6695279, 10.6695279, 10.7639485, 10.7639485, 10.7639485, 10.8583691, 10.8583691, 
+    10.9527897, 10.9527897, 10.9527897, 11.0472103, 11.1416309, 11.2360515, 11.2360515, 11.3304721, 11.3304721, 
+    11.3776824, 11.472103, 11.56652361, 11.66094421, 11.75536481, 11.84978541, 11.94420601, 12.03862661, 12.13304721, 
+    12.22746781, 12.32188841, 12.41630901, 12.51072961, 12.60515021, 12.69957082, 12.79399142, 12.88841202, 12.98283262, 
+    13.07725322, 13.17167382, 13.26609442, 13.36051502, 13.45493562, 13.54935622, 13.54935622, 13.54935622, 13.54935622, 
+    13.54935622, 13.59656652, 13.69098712, 13.78540773, 13.78540773, 13.78540773, 13.87982833, 13.97424893, 14.06866953, 
+    14.06866953, 14.06866953, 14.16309013, 14.25751073, 14.35193133, 14.44635193, 14.54077253, 14.63519313, 14.72961373, 
+    14.82403433, 14.82403433, 14.82403433, 14.91845494, 14.96566524, 15.01287554, 15.10729614, 15.20171674, 15.29613734, 
+    15.39055794, 15.48497854, 15.57939914, 15.67381974, 15.76824034, 15.86266094, 15.95708155, 16.05150215, 16.14592275, 
+    16.24034335, 16.33476395, 16.42918455, 16.52360515),
+  geo_accession = 
+    c("GSM588291", "GSM588174", "GSM588110", "GSM588097", "GSM588271", "GSM588203", "GSM588105", "GSM588200", "GSM588123",
+      "GSM588122", "GSM588115", "GSM588100", "GSM588171", "GSM588190", "GSM588229", "GSM588206", "GSM588277", "GSM588129",
+      "GSM588175", "GSM588151", "GSM588273", "GSM588216", "GSM588099", "GSM588117", "GSM588179", "GSM588164", "GSM588184",
+      "GSM588092", "GSM588285", "GSM588272", "GSM588228", "GSM588121", "GSM588170", "GSM588194", "GSM588143", "GSM588149",
+      "GSM588156", "GSM588220", "GSM588212", "GSM588089", "GSM588209", "GSM588253", "GSM588091", "GSM588113", "GSM588130",
+      "GSM588202", "GSM588191", "GSM588244", "GSM588227", "GSM588197", "GSM588233", "GSM588292", "GSM588163", "GSM588196",
+      "GSM588224", "GSM588283", "GSM588267", "GSM588257", "GSM588221", "GSM588274", "GSM588090", "GSM588114", "GSM588195",
+      "GSM588265", "GSM588182", "GSM588093", "GSM588157", "GSM588251", "GSM588177", "GSM588188", "GSM588269", "GSM588145",
+      "GSM588205", "GSM588162", "GSM588210", "GSM588166", "GSM588125", "GSM588252", "GSM588207", "GSM588173", "GSM588102",
+      "GSM588286", "GSM588107", "GSM588238", "GSM588189", "GSM588106", "GSM588295", "GSM588192", "GSM588134", "GSM588183",
+      "GSM588103", "GSM588198", "GSM588293", "GSM588218", "GSM588259", "GSM588234", "GSM588137", "GSM588152", "GSM588133",
+      "GSM588250", "GSM588168", "GSM588235", "GSM588148", "GSM588279", "GSM588140", "GSM588241", "GSM588111", "GSM588231",
+      "GSM588128", "GSM588131", "GSM588101", "GSM588088", "GSM588281", "GSM588159", "GSM588249", "GSM588290", "GSM588118",
+      "GSM588154", "GSM588136", "GSM588268", "GSM588204", "GSM588160", "GSM588135", "GSM588098", "GSM588294", "GSM588225",
+      "GSM588181", "GSM588248", "GSM588096", "GSM588217", "GSM588147", "GSM588176", "GSM588116", "GSM588146", "GSM588127",
+      "GSM588104", "GSM588108", "GSM588262", "GSM588223", "GSM588161", "GSM588237", "GSM588172", "GSM588284", "GSM588256",
+      "GSM588165", "GSM588211", "GSM588242", "GSM588169", "GSM588240", "GSM588264", "GSM588219", "GSM588287", "GSM588124",
+      "GSM588178", "GSM588167", "GSM588258", "GSM588232", "GSM588141", "GSM588112", "GSM588208", "GSM588215", "GSM588132",
+      "GSM588278", "GSM588275", "GSM588155", "GSM588153", "GSM588109", "GSM588185", "GSM588138", "GSM588094", "GSM588226",
+      "GSM588236", "GSM588266", "GSM588119", "GSM588222", "GSM588246", "GSM588150", "GSM588261", "GSM588201", "GSM588247",
+      "GSM588186", "GSM588280", "GSM588255", "GSM588288", "GSM588260", "GSM588139", "GSM588245", "GSM588270", "GSM588276",
+      "GSM588199", "GSM588254", "GSM588120", "GSM588144", "GSM588243", "GSM588214", "GSM588180", "GSM588126", "GSM588282",
+      "GSM588187", "GSM588158", "GSM588193", "GSM588213", "GSM588230", "GSM588263", "GSM588142", "GSM588095"),
+  stringsAsFactors = F
+)
+rownames(francesconi_time) <- francesconi_time$geo_accession
 ```
 
 #### {}
@@ -258,6 +325,18 @@ show_fig(expr = {
   plot(ae_dsrockman2010, show.boot_estimates = T, cex = .8)
 }, fig.height = 8, fig.width = 5)
 ```
+
+We can check the estimates against the previously estimated ages on this data from @francesconi2014effects.
+These are in the supplementary data of the paper.
+
+```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=6, fig.width=6, out.width="60%"}
+show_fig(expr = {
+  plot(francesconi_time[dsrockman2010$p$geo_accession,"time"], ae_dsrockman2010$age.estimates[,1],
+     lwd = 2, col = "black", main = "RAPToR vs. Francesconi & Lehner (2014) age estimates",
+     xlab = "Francesconi & Lehner 2014 estimates", ylab = "RAPToR estimates")
+}, fig.height=6, fig.width=6)
+```
+
 
 ### Dynamics of the dataset
 
