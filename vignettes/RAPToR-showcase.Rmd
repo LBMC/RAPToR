@@ -19,7 +19,7 @@ In this vignette, you will find a showcase of a few useful ways RAPToR can be us
 <br>
 <br>
 
-# Improving a Differential Gene Expression analysis with correct age
+# Improving a Differential Gene Expression analysis with age estimates
 ```{r sc_1, child = "sc_1.Rmd"}
 
 ```

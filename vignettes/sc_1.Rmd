@@ -163,8 +163,8 @@ ae_dslb <- ae(dslehrbach2012$g, r_ya$interpGE, r_ya$time.series)
 
 ```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F}
 show_fig(expr = { 
-plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
-     main = "ae of samples grouped by timepoint",
+  plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
+     main = "age estimates of samples grouped by timepoint",
      show.boot_estimates = T)
 }, fig.width=8, fig.height=6)
 ```
@@ -175,7 +175,7 @@ Another interesting effect can be seen if we group the samples by replicate.
 ```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F}
 show_fig(expr = {
 plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24), 
-     main = "ae of samples grouped by replicate",
+     main = "age estimates of samples grouped by replicate",
      show.boot_estimates = T)
 }, fig.width=8, fig.height=6)
 ```
@@ -185,42 +185,120 @@ Notice how, in the first two replicates, the `mut` samples are consistantly olde
 We can maybe speculate about a potential effect of their sampling order.
 
 
-## Correlation is stronger with development than strain
+## The impact of development on gene expression
 
 ```{r sc1_cor_dev, eval = gen_figs}
 cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
 ```
 
 Let's look at the correlation between the samples and compare it to their estimated age difference.
-In the plot below, we chose the `wt_h06.3` sample and plotted the correlation and age difference of all samples with it.
+In the grapĥic below, we plot the correlation score between all sample pairs against their estimated age difference. 
+Each point corresponds to a pair of samples and the color-coding corresponds to whether both samples are of the same strain or not.
 
-```{r sc1_cor_dev_plot, fig.height=6, fig.width=8, echo = F}
+```{r sc1_cor_dev_plot, fig.height=5, fig.width=5, echo = F, out.width="60%"}
 show_fig(expr = {
-xa <- cc["wt_h06.3",]
-ya <- ae_dslb$age.estimates[,1]-ae_dslb$age.estimates["wt_h06.3",1]
-plot(xa, ya, xlab = "Spearman correlation with wt_h06.3",
-     ylab = "Estimated age difference with wt_h06.3",
-     cex=.5, xlim = rev(range(xa)),
-     lwd=2, col = dslehrbach2012$p$strain)
-abline(h=0, col='grey50', lty=2)
-poss <- c(1,3,1, 1,2,3, 
-          1,3,1, 1,3,1, 
-          3,1,4, 2,4,2, 
-          4,4,1, 4,4,2)
+# xa <- cc["wt_h06.3",]
+# ya <- ae_dslb$age.estimates[,1]-ae_dslb$age.estimates["wt_h06.3",1]
+# plot(xa, ya, xlab = "Spearman correlation with wt_h06.3",
+#      ylab = "Estimated age difference with wt_h06.3",
+#      cex=.5, xlim = rev(range(xa)),
+#      lwd=2, col = dslehrbach2012$p$strain)
+# abline(h=0, col='grey50', lty=2)
+# poss <- c(1,3,1, 1,2,3, 
+#           1,3,1, 1,3,1, 
+#           3,1,4, 2,4,2, 
+#           4,4,1, 4,4,2)
+# 
+# cols <- transp(c('black', 'red')[as.numeric(dslehrbach2012$p$strain)])
+# notransp <- c(7:12)
+# cols[notransp] <- c('black','red')[as.numeric(dslehrbach2012$p$strain)][notransp]
+# text(xa, ya, labels = dslehrbach2012$p$title, cex=.7, font=2,
+#      pos=poss, col=cols, offset = .4)
+# legend('bottomleft', lty = 0, pch=1, lwd=3,
+#        col=1:2, pt.cex = .6, adj = c(.2),
+#        legend = c('wt', 'mut'), bty='n',
+#        text.font = 2, text.col = c(1,2))
+  
+ut <- upper.tri(cc, diag = F)
+ya <- cc[ut]
+xa <- ae_dslb$age.estimates[col(cc)[ut],1] - ae_dslb$age.estimates[row(cc)[ut],1]
+cols <- (dslehrbach2012$p$strain[col(cc)[ut]] != dslehrbach2012$p$strain[row(cc)[ut]]) + 1
 
-cols <- transp(c('black', 'red')[as.numeric(dslehrbach2012$p$strain)])
-notransp <- c(7:12)
-cols[notransp] <- c('black','red')[as.numeric(dslehrbach2012$p$strain)][notransp]
-text(xa, ya, labels = dslehrbach2012$p$title, cex=.7, font=2,
-     pos=poss, col=cols, offset = .4)
-legend('bottomleft', lty = 0, pch=1, lwd=3,
-       col=1:2, pt.cex = .6, adj = c(.2),
-       legend = c('wild type', 'strainant'), bty='n',
-       text.font = 2, text.col = c(1,2))
-}, fig.height=6, fig.width=8)
+plot(xa, ya, ylab = "Spearman correlation",
+     xlab = "Estimated age difference",
+     cex=.5, xlim = range(xa),
+     lwd=2, col = cols)
+# abline(h=0, col='grey50', lty=2)
+legend("bottomleft", legend = c("same strain", "different strain"), 
+       title = "Sample pair of", bty = 'n', 
+       col = 1:2, pch = 1, lwd = 3, lty = NA, text.font = 2, text.col = 1:2)
+
+}, fig.height=5, fig.width=5)
 ```
 
-Notice how the strain does not really impact correlation, compared to developmental differences.
+Notice how the strain does not really impact correlation between samples, compared to developmental differences.
+We can also observe this through correlation heatmaps ordered by strain or estimated age
+
+<div style = "display:block">
+<div style="width:49%; float:left">
+```{r sc1_hm_strain, echo = F, fig.height=5, fig.width=6}
+show_fig(expr = {
+  # ord1 <- order(dslehrbach2012$p$strain)
+  
+  # heatmap(cc[ord1, ord1], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+  #         RowSideColors = transp(as.numeric(dslehrbach2012$p$strain[ord1])), labRow = "", labCol = "",
+  #         main = "Ordered by strain")
+  heatmap(cc, Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+          RowSideColors = transp(as.numeric(dslehrbach2012$p$strain)), labRow = "", labCol = "",
+          main = "Ordered by strain and chronological timepoint")
+  par(xpd = T)
+  mtext(c(unique(dslehrbach2012$p$tpastL4), ""), side = 1, line = 4, cex = .8, at = seq(0.1,.95, l = 5))
+  mtext("timepoint", side = 1, at = -.1, line = 4, cex = .8)
+  # 
+  # 
+  # # color key
+  # image(x = c(.9,.95), y = seq(0.6,1, l = 10), useRaster = T,
+  #       z = matrix(seq(min(cc), max(cc), l = 10), ncol = 10),
+  #       col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+  # text(.925, 1.01, pos = 3, labels = expression(rho), font = 2, cex = 1.25)
+  # text(.95, y = seq(0.6,1, l = 10), pos = 4, 
+  #      labels = round(seq(min(cc), max(cc), l = 10), 2), cex = .6)
+  # 
+  # # strain legend
+  # mtext("Strain", side = 4, line = -1.25, las = 2, at = .45, adj = .5)
+  # mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06, 
+  #       font = 2, col = transp(1:2, a = .8), las = 2, adj = .5, cex = 1.25)
+}, fig.height = 5, fig.width = 6)
+```
+
+</div>
+<div style="width:49%; float:right">
+```{r sc1_hm_age, echo = F, fig.height=5, fig.width=6}
+show_fig(expr = {
+  ord2 <- order(ae_dslb$age.estimates[,1])
+  heatmap(cc[ord2, ord2], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+          RowSideColors = transp(as.numeric(dslehrbach2012$p$strain[ord2])), labRow = "", labCol = "",
+          main = "Ordered by age estimates")
+par(xpd = T)
+
+# color key
+image(x = c(.9,.95), y = seq(0.6,1, l = 10), useRaster = T,
+      z = matrix(seq(min(cc), max(cc), l = 10), ncol = 10),
+      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+text(.925, 1.01, pos = 3, labels = expression(rho), font = 2, cex = 1.25)
+text(.95, y = seq(0.6,1, l = 10), pos = 4,
+     labels = round(seq(min(cc), max(cc), l = 10), 2), cex = .6)
+
+# strain legend
+mtext("Strain", side = 4, line = -1.25, las = 2, at = .45, adj = .5)
+mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06,
+      font = 2, col = transp(1:2, a = .8), las = 2, adj = .5, cex = 1.25)
+}, fig.height = 5, fig.width = 6)
+```
+</div>
+</div>
+<div style="clear: both;"></div>
+
 
 
 ## Differential Gene Expression analysis
