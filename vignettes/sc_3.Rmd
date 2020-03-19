@@ -346,8 +346,36 @@ We can use ICA components to look at the dynamics of the dataset on a global sca
 Some of the components can be associated to specific developmental processes.
 Looking at the gene loadings (or contributions) on the components allows us to establish enrichment in gene sets.
 
+First, we can decide how many components to extract by looking at how many PCA components are needed to explain $99\%$ of the variance.
+
+```{r sc3_pca_summary, eval = gen_figs}
+pca_rock <- summary(stats::prcomp(dsrockman2010$g, rank = 30))
+sum(pca_rock$importance["Cumulative Proportion",] < .99) + 1
+#> [1] 28
+```
+
+
 ```{r sc3_ql_ica, eval = gen_figs}
-ica_rock <- ica::icafast(dsrockman2010$g, nc = 5)
+ica_rock <- ica::icafast(dsrockman2010$g, nc = 28)
+```
+
+We can plot all components along the estimated age of the samples :
+
+```{r sc3_ica_allcomps, echo = F, fig.width=21, fig.height=12}
+show_fig(expr = {
+  par(mfrow = c(4,7), mar = c(4,4,3,1))
+  invisible(sapply(seq_len(28), function(i){
+    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
+         ylab = "IC", xlab = "age", cex = .8)
+  }))
+}, fig.width=21, fig.height=12)
+```
+<br>
+A lot of these components don't have a definite link to developmental processes.
+We can have a closer look at the components that clearly capture development, and look at their gene loadings' enrichment in gene sets of interest.
+
+```{r sc3_devcomps, eval = gen_figs}
+dev_comps <- c(1, 2, 5, 7, 8, 9)
 ```
 
 
@@ -364,14 +392,14 @@ gs <- factor(c(rep("All genes", nrow(dsrockman2010$g)),
 cols <- c(1, "royalblue", "royalblue", "firebrick")
 ```
 
-```{r sc3_ql_icaplot, echo = F, fig.height=6, fig.width=15}
+```{r sc3_ql_icaplot, echo = F, fig.height=6, fig.width=18}
 show_fig(expr = {
-  par(mfrow = c(2,5))
-  invisible(sapply(seq_len(5), function(i){
+  par(mfrow = c(2,6))
+  invisible(sapply(dev_comps, function(i){
     plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
          ylab = "IC", xlab = "age")
   }))
-  invisible(sapply(seq_len(5), function(i){
+  invisible(sapply(dev_comps, function(i){
     gl <- ica_rock$S[,i]
     dat <- data.frame(gs = gs, gl = c(gl, gl[oo_g], gl[sp_g], gl[so_g]))
     boxplot(gl~gs, data = dat, main = paste("Gene loadings on IC", i), at = c(1,.25+(2:4)),
@@ -382,16 +410,15 @@ show_fig(expr = {
          lwd = 2, frame.plot = F)
     abline(v = 1.625, lty = 2, col = "grey80")
   }))
-}, fig.height=6, fig.width=15)
+}, fig.height=6, fig.width=18)
 ```
 
 
 From the plots above, we can establish that 
 
+ - component IC1 and IC9 are linked to oogenesis
  - component IC2 is clearly associated with spermatogenesis processes
- - component IC1 is linked to oogenesis
- - components IC3 and IC5 have good contribution from the soma geneset.
- - component IC4's loadings suggest contribution from both the oogenesis gene set and the soma gene set.
+ - components IC5, IC7 and IC8 have good contribution from the soma geneset, and show oscillatory dynamics.
 
 ### Staging the samples (soma & germline)
 
@@ -437,7 +464,7 @@ abline(a = 0, b = 1, lty = 2, col = "black")
 }, fig.height = 4, fig.width = 12)
 ```
 
-We can notice on the soma estimates that a sample appears quite off from its global or germline age (it's marked with a $\triangle$).
+We can notice on the soma estimates that a sample appears quite off from its global or germline age (it's marked with a $\small{\triangle}$).
 This sort of artefact can happen when using small genesets for estimates, as similar expression profiles can occur at different times (which is especially true for oscillatory profiles).
 
 If we look at the correlation profile of this sample on the 3 estimates, we can see 2 peaks for the soma:
@@ -473,7 +500,7 @@ ae_soma_prior <- ae(
   )
 ```
 
-This now shifts our estimates to the first peak (note that the correlation profile itself is not changed).
+This now shifts our estimate to the first peak (note that the correlation profile itself is not changed).
 
 ```{r sc3_cor_ae_prior, echo = F, fig.height=3, fig.width=12}
 show_fig(expr = {
@@ -499,11 +526,11 @@ summary(ae_soma$age.estimates[-80, 1] - ae_soma_prior$age.estimates[-80, 1])
 Now, we can look once more at the components of our data using our tissue-specific estimates.
 We'll use the prior version of the soma estimates for the plots below.
 
-```{r sc3_ae_sg_ica, echo = F, fig.height=9, fig.width=15}
+```{r sc3_ae_sg_ica, echo = F, fig.height=9, fig.width=18}
 show_fig(expr = {
 
-par(mfcol = c(3,5))
-  invisible(sapply(seq_len(5), function(i){
+par(mfcol = c(3,6))
+  invisible(sapply(dev_comps, function(i){
     plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black",
      xlab = "age", ylab = "IC", main = paste0("(global) IC", i))
     
@@ -515,14 +542,14 @@ par(mfcol = c(3,5))
          xlab = "age", ylab = "IC", main = paste0("(germline) IC ", i))
     box(lwd = 2, col = "royalblue")
 }))
-}, fig.height=9, fig.width=15)
+}, fig.height=9, fig.width=18)
 ```
 
 
-Notice how components IC3 and IC5, previously associated with soma, are much cleaner when plotting with the soma age. 
-Also, see that the IC1 and IC2 germline-associated components appear quite noisy.
+Notice how components IC5, IC7 and IC8, previously associated with soma, are much cleaner when plotting with the soma age. 
+Also, see that the IC1, IC2 and IC9 germline-associated components appear quite noisy.
 
-With the germline estimates, we get much cleaner dynamics on the first two components, at the cost of clarity on the oscillatory dynamics.
+With the germline estimates, we get the opposite effect : much cleaner dynamics on the first two components and IC9, at the cost of clarity on the oscillatory dynamics.
 
 
 <!-- ```{r fig.height=9, fig.width=15} -->
