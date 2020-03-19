@@ -19,7 +19,7 @@ library(RAPToR)
 library(RColorBrewer)
 library(beeswarm)
 library(parallel)
-# library(vioplot)
+library(vioplot)
 
 library(limma)
 requireNamespace("wormRef")
@@ -342,37 +342,56 @@ show_fig(expr = {
 
 ### Dynamics of the dataset
 
-We can use PCA or ICA components to look at the dynamics of the dataset on a global scale.
-
-```{r sc3_ql_pca, eval = gen_figs}
-pca_rock <- stats::prcomp(dsrockman2010$g, rank = 5)
-```
-
-```{r sc3_ql_pcaplot, echo = F, fig.height=3, fig.width=15}
-show_fig(expr = {
-  par(mfrow = c(1,5))
-  invisible(sapply(seq_len(5), function(i){
-    plot(ae_dsrockman2010$age.estimates[,1], pca_rock$rotation[,i], main = paste("PC", i), 
-         ylab = "PC", xlab = "age")
-  }))
-}, fig.height=3, fig.width=15)
-```
-
+We can use ICA components to look at the dynamics of the dataset on a global scale.
+Some of the components can be associated to specific developmental processes.
+Looking at the gene loadings (or contributions) on the components allows us to establish enrichment in gene sets.
 
 ```{r sc3_ql_ica, eval = gen_figs}
 ica_rock <- ica::icafast(dsrockman2010$g, nc = 5)
 ```
 
-```{r sc3_ql_icaplot, echo = F, fig.height=3, fig.width=15}
+
+```{r sc3_ica_gl_prep, echo = F, eval = gen_figs}
+oo_g <- which(rownames(dsrockman2010$g) %in% gsubset$germline_oogenesis)
+sp_g <- which(rownames(dsrockman2010$g) %in% gsubset$germline_sperm)
+so_g <- which(rownames(dsrockman2010$g) %in% gsubset$soma)
+
+gs <- factor(c(rep("All genes", nrow(dsrockman2010$g)), 
+               rep("Oogen.", length(oo_g)),
+               rep("Sperm.", length(sp_g)),
+               rep("Soma", length(so_g))), 
+               levels = c("All genes", "Oogen.", "Sperm.", "Soma"))
+cols <- c(1, "royalblue", "royalblue", "firebrick")
+```
+
+```{r sc3_ql_icaplot, echo = F, fig.height=6, fig.width=15}
 show_fig(expr = {
-  par(mfrow = c(1,5))
+  par(mfrow = c(2,5))
   invisible(sapply(seq_len(5), function(i){
     plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
          ylab = "IC", xlab = "age")
   }))
-}, fig.height=3, fig.width=15)
+  invisible(sapply(seq_len(5), function(i){
+    gl <- ica_rock$S[,i]
+    dat <- data.frame(gs = gs, gl = c(gl, gl[oo_g], gl[sp_g], gl[so_g]))
+    boxplot(gl~gs, data = dat, main = paste("Gene loadings on IC", i), at = c(1,.25+(2:4)),
+         ylab = "Gene loadings", xlab = "", outline = F, boxwex = .4,
+         col = transp(cols, a = .4), border = cols, boxlwd = 2)
+    vioplot(gl~gs, data = dat, add = T, h = .3, at = c(1,.25+(2:4)),
+         col = transp(cols, a = .4), border = cols, rectCol = cols, lineCol = cols, 
+         lwd = 2, frame.plot = F)
+    abline(v = 1.625, lty = 2, col = "grey80")
+  }))
+}, fig.height=6, fig.width=15)
 ```
 
+
+From the plots above, we can establish that 
+
+ - component IC2 is clearly associated with spermatogenesis processes
+ - component IC1 is linked to oogenesis
+ - components IC3 and IC5 have good contribution from the soma geneset.
+ - component IC4's loadings suggest contribution from both the oogenesis gene set and the soma gene set.
 
 ### Staging the samples (soma & germline)
 
@@ -500,8 +519,8 @@ par(mfcol = c(3,5))
 ```
 
 
-Notice how components IC3 and IC5, oscillatory dynamics, are much cleaner when plotting with the soma age. 
-Also, see that the IC1 and IC2 components appear quite noisy.
+Notice how components IC3 and IC5, previously associated with soma, are much cleaner when plotting with the soma age. 
+Also, see that the IC1 and IC2 germline-associated components appear quite noisy.
 
 With the germline estimates, we get much cleaner dynamics on the first two components, at the cost of clarity on the oscillatory dynamics.
 
