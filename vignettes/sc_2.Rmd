@@ -48,6 +48,11 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
+
+Sometimes, profiled samples may not be from a well-studied organism, with an abundance of reference time series available.
+However, you can still refer to the closest model organisms as a reference.
+Though results will not be on par as estimates using a reference from the same species, you can stil get good results thanks to the conserved nature of developmental processes across species.
+
 Let's stage samples cross-species using orthologs genes.
 
 ### The data
