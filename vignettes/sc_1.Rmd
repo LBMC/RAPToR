@@ -197,42 +197,19 @@ Each point corresponds to a pair of samples and the color-coding corresponds to 
 
 ```{r sc1_cor_dev_plot, fig.height=5, fig.width=5, echo = F, out.width="60%"}
 show_fig(expr = {
-# xa <- cc["wt_h06.3",]
-# ya <- ae_dslb$age.estimates[,1]-ae_dslb$age.estimates["wt_h06.3",1]
-# plot(xa, ya, xlab = "Spearman correlation with wt_h06.3",
-#      ylab = "Estimated age difference with wt_h06.3",
-#      cex=.5, xlim = rev(range(xa)),
-#      lwd=2, col = dslehrbach2012$p$strain)
-# abline(h=0, col='grey50', lty=2)
-# poss <- c(1,3,1, 1,2,3, 
-#           1,3,1, 1,3,1, 
-#           3,1,4, 2,4,2, 
-#           4,4,1, 4,4,2)
-# 
-# cols <- transp(c('black', 'red')[as.numeric(dslehrbach2012$p$strain)])
-# notransp <- c(7:12)
-# cols[notransp] <- c('black','red')[as.numeric(dslehrbach2012$p$strain)][notransp]
-# text(xa, ya, labels = dslehrbach2012$p$title, cex=.7, font=2,
-#      pos=poss, col=cols, offset = .4)
-# legend('bottomleft', lty = 0, pch=1, lwd=3,
-#        col=1:2, pt.cex = .6, adj = c(.2),
-#        legend = c('wt', 'mut'), bty='n',
-#        text.font = 2, text.col = c(1,2))
+  ut <- upper.tri(cc, diag = F)
+  ya <- cc[ut]
+  xa <- ae_dslb$age.estimates[col(cc)[ut],1] - ae_dslb$age.estimates[row(cc)[ut],1]
+  cols <- (dslehrbach2012$p$strain[col(cc)[ut]] != dslehrbach2012$p$strain[row(cc)[ut]]) + 1
   
-ut <- upper.tri(cc, diag = F)
-ya <- cc[ut]
-xa <- ae_dslb$age.estimates[col(cc)[ut],1] - ae_dslb$age.estimates[row(cc)[ut],1]
-cols <- (dslehrbach2012$p$strain[col(cc)[ut]] != dslehrbach2012$p$strain[row(cc)[ut]]) + 1
-
-plot(xa, ya, ylab = "Spearman correlation",
-     xlab = "Estimated age difference",
-     cex=.5, xlim = range(xa),
-     lwd=2, col = cols)
-# abline(h=0, col='grey50', lty=2)
-legend("bottomleft", legend = c("same strain", "different strain"), 
-       title = "Sample pair of", bty = 'n', 
-       col = 1:2, pch = 1, lwd = 3, lty = NA, text.font = 2, text.col = 1:2)
-
+  plot(xa, ya, ylab = "Spearman correlation",
+       xlab = "Estimated age difference",
+       cex=.5, xlim = range(xa),
+       lwd=2, col = cols)
+  # abline(h=0, col='grey50', lty=2)
+  legend("bottomleft", legend = c("same strain", "different strain"), 
+         title = "Sample pair of", bty = 'n', 
+         col = 1:2, pch = 1, lwd = 3, lty = NA, text.font = 2, text.col = 1:2)
 }, fig.height=5, fig.width=5)
 ```
 
@@ -245,31 +222,12 @@ We can also observe this through correlation heatmaps ordered by strain & chrono
 <div style="width:49%; float:left">
 ```{r sc1_hm_strain, echo = F, fig.height=5, fig.width=6}
 show_fig(expr = {
-  # ord1 <- order(dslehrbach2012$p$strain)
-  
-  # heatmap(cc[ord1, ord1], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
-  #         RowSideColors = transp(as.numeric(dslehrbach2012$p$strain[ord1])), labRow = "", labCol = "",
-  #         main = "Ordered by strain")
   heatmap(cc, Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
           RowSideColors = transp(as.numeric(dslehrbach2012$p$strain)), labRow = "", labCol = "",
           main = "Ordered by strain and chronological timepoint")
   par(xpd = T)
   mtext(c(unique(dslehrbach2012$p$tpastL4), ""), side = 1, line = 4, cex = .8, at = seq(0.1,.95, l = 5))
   mtext("timepoint", side = 1, at = -.1, line = 4, cex = .8)
-  # 
-  # 
-  # # color key
-  # image(x = c(.9,.95), y = seq(0.6,1, l = 10), useRaster = T,
-  #       z = matrix(seq(min(cc), max(cc), l = 10), ncol = 10),
-  #       col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-  # text(.925, 1.01, pos = 3, labels = expression(rho), font = 2, cex = 1.25)
-  # text(.95, y = seq(0.6,1, l = 10), pos = 4, 
-  #      labels = round(seq(min(cc), max(cc), l = 10), 2), cex = .6)
-  # 
-  # # strain legend
-  # mtext("Strain", side = 4, line = -1.25, las = 2, at = .45, adj = .5)
-  # mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06, 
-  #       font = 2, col = transp(1:2, a = .8), las = 2, adj = .5, cex = 1.25)
 }, fig.height = 5, fig.width = 6)
 ```
 
@@ -302,7 +260,8 @@ mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06,
 <div style="clear: both;"></div>
 
 
-
+<br>
+<br>
 
 ## Differential Gene Expression analysis
 
@@ -310,7 +269,9 @@ Let's perform a simple DGE analysis using limma, with the following model :
 
 $$X \sim strain \times \texttt{ns(age, df = 2)} $$
 
-We'll compare the number of genes differentially expressed due to development or strains, which translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
+We're using a spline with $\texttt{ns()}$ to tackle non-linear dynamics in the data.
+
+We'll look at the number of genes differentially expressed due to development or strain, which translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
 
 $$
 \begin{align}
@@ -332,10 +293,12 @@ DGE code :
 ##### Hide
 ##### Show
 ```{r sc1_dge_setup_funcs, eval = gen_figs}
+# Predictions from limma model
 pred_lmFit <- function(Fit){
   tcrossprod(Fit$coefficients, Fit$design)
 }
 
+# Compute Goodness of Fit
 GoF <- function(Fit, X){
   pred <- pred_lmFit(Fit)
   res <- (X - pred)
@@ -360,7 +323,6 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   d <- model.matrix(~ 1 + ns(age, df = df) * strain, data = pdat) 
   
   # fix colnames
-  # colnames(d)[3:(2+2*df)] <- paste0(c(rep("a", df), rep("strainmut.a", df)), 1:df)
   colnames(d) <- c("b0", paste0(rep("a", df), 1L:df), "strainmut", paste0(rep("strainmut.a", df), 1L:df))
   
   # build contrast matrices for mut and age tests
@@ -417,25 +379,8 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 }
 ```
 
-```{r sc1_getvarexp, eval = F, echo = F}
-get_ssq <- function(dsgn, X){
-  # Get the SSQ explained by the model terms (eg, R anova results)
-  ps <- lapply(list(1:3,1:4,1:6), function(s){
-    m <- limma::lmFit(X, design = dsgn[, s])
-    return(tcrossprod(m$coefficients, m$design))
-  })
-  
-  ssq <- function(x) sum((x - sum(x)/length(x))^2)
-  
-  vs <- lapply(ps, function(p) apply(p, 1, ssq))
-  vs <- do.call(cbind, vs)
-  
-  vex <- data.frame(age=vs[,1], strain=vs[,2]-vs[,1], age.strain = vs[,3]-vs[,2], 
-                    ssqExp = vs[,3], ssqTot = apply(X, 1, ssq))
-  vex$ssqRes <- vex$ssqTot - vex$ssqExp
-  return(vex)
-}
-```
+<br>
+<br>
 
 #### {}
 
@@ -445,8 +390,10 @@ We want to perform *the same DGE analysis* using the chronological age, and our 
 # format gdata
 X <- log2(exp(dslehrbach2012$g))
 
-dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, name = "dge.ca", return.model = T)
-dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], name = "dge.ae", return.model = T)
+dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, 
+              name = "dge.ca", return.model = T)
+dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], 
+              name = "dge.ae", return.model = T)
 ```
 
 ```{r sc1_plot_dge_func, echo = F}
@@ -469,6 +416,8 @@ plot_DGE_pval_vs <- function(pv.x, pv.y,
 }
 
 ```
+
+In the plots below are shown the adjusted p.values for detection of an effect for each gene, when using chronological or estimate age in the model. The red bars correspond to the 0.05 threshold for significance.
 
 ```{r sc1_plot_dge, echo = F, fig.height=5, fig.width=10}
 show_fig(expr = { 
@@ -539,7 +488,7 @@ show_fig(expr = {
 ```
 
 
-## Compare model fit between chronological age, estimated age, and random noise on chronological age
+## Comparing model fit between chronological age, estimated age, and random noise on chronological age
 
 
 If the asynchronicity observed with age estimates is erroneous, then using random noise around the chronological values should yield similar results to using our estimates in the model.
