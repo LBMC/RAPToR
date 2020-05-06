@@ -104,6 +104,7 @@ plot.ae <- function(x, errbar.width=0.1,
   }
   
   if(glob.above){
+    color <- rep(color, n)[o]
     graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, col = color, ...)
   }
 }
