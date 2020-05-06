@@ -1,18 +1,22 @@
 
 #' @importFrom stats prcomp as.formula update
 #' @import mgcv
-.model_gam_pca <- function(X, p, formula, nc = ncol(X), scale = T, center = T, drX = F){
+.model_gam_pca <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     pca <- X
-    nc <- ncol(pca$rotation)
+    nc <- ncol(pca$x)
   }
-  else pca <- stats::prcomp(X, rank = nc, scale = scale, center = center)
+  else {
+    tXc <- scale(t(X), scale = FALSE, center = TRUE) 
+    pca <- stats::prcomp(tXc, rank = nc, scale = FALSE, center = FALSE)
+    pca$gcenters <- attr(tXc, "scaled:center")
+  }
   
   formula <- stats::as.formula(formula)
   
   formulas <- lapply(seq_len(nc), function(i) stats::update(formula, paste0("PC", i, " ~ .")))
-  colnames(pca$rotation) <- paste0("PC", seq_len(nc))
-  p <- cbind(p, pca$rotation)
+  colnames(pca$x) <- paste0("PC", seq_len(nc))
+  p <- cbind(p, pca$x)
   
   m <- list()
   m$model <- lapply(formulas, mgcv::gam, data = p)
@@ -26,7 +30,7 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.pc)
-    return(tcrossprod(m$pca$x, preds))
+    return(apply(tcrossprod(m$pca$rotation, preds), 2, function(co) co + m$pca$gcenters))
   else return(preds)
 }
 
@@ -35,12 +39,16 @@
 #' @importFrom stats as.formula update 
 #' @importFrom ica icafast
 #' @import mgcv
-.model_gam_ica <- function(X, p, formula, nc = ncol(X), center = T, drX = F){
+.model_gam_ica <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     ica <- X
     nc <- ncol(ica$M)
   }
-  else ica <- ica::icafast(X, nc = nc, center = center)
+  else {
+    Xc <- t(scale(t(X), scale = FALSE, center = TRUE))
+    ica <- ica::icafast(Xc, nc = nc, center = TRUE)
+    ica$gcenters <- attr(Xc, "scaled:center")
+  }
   
   formula <- stats::as.formula(formula)
   
@@ -60,25 +68,28 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.ic)
-    return(tcrossprod(m$ica$S, preds))
+    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters)
   else return(preds)
 }
 
 
 
 #' @importFrom stats prcomp as.formula update glm
-.model_glm_pca <- function(X, p, formula, nc = ncol(X), scale = T, center = T, drX = F){
+.model_glm_pca <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     pca <- X
-    nc <- ncol(pca$rotation)
+    nc <- ncol(pca$x)
   }
-  else pca <- stats::prcomp(X, rank = nc, scale = scale, center = center)
-  
+  else {
+    tXc <- scale(t(X), scale = FALSE, center = TRUE) 
+    pca <- stats::prcomp(tXc, rank = nc, scale = FALSE, center = FALSE)
+    pca$gcenters <- attr(tXc, "scaled:center")
+  }  
   formula <- stats::as.formula(formula)
   
   formulas <- lapply(seq_len(nc), function(i) stats::update(formula, paste0("PC", i, " ~ .")))
-  colnames(pca$rotation) <- paste0("PC", seq_len(nc))
-  p <- cbind(p, pca$rotation)
+  colnames(pca$x) <- paste0("PC", seq_len(nc))
+  p <- cbind(p, pca$x)
   
   m <- list()
   m$model <- lapply(formulas, stats::glm, data = p)
@@ -91,19 +102,23 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.pc)
-    return(tcrossprod(m$pca$x, preds))
+    return(apply(tcrossprod(m$pca$rotation, preds), 2, function(co) co + m$pca$gcenters))
   else return(preds)
 }
 
 
 #' @importFrom stats as.formula update glm
 #' @importFrom ica icafast
-.model_glm_ica <- function(X, p, formula, nc = ncol(X), center = T, drX = F){
+.model_glm_ica <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     ica <- X
     nc <- ncol(ica$M)
   }
-  else ica <- ica::icafast(X, nc = nc, center = center)
+  else {
+    Xc <- t(scale(t(X), scale = FALSE, center = TRUE))
+    ica <- ica::icafast(Xc, nc = nc, center = TRUE)
+    ica$gcenters <- attr(Xc, "scaled:center")
+  }
   
   formula <- stats::as.formula(formula)
   
@@ -122,7 +137,7 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.ic)
-    return(tcrossprod(m$ica$S, preds))
+    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters)
   else return(preds)
 }
 
