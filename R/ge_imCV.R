@@ -48,11 +48,16 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
   dim_red <- ifelse("limma" == method, NA, match.arg(dim_red))
   if("limma" != method){
     if("pca" == dim_red){
-      Xr <- stats::prcomp(X, rank = nc)
+      tXc <- scale(t(X), scale = FALSE, center = TRUE) 
+      Xr <- stats::prcomp(tXc, rank = nc, scale = FALSE, center = TRUE)
+      Xr$gcenters <- attr(tXc, "scaled:center")
+      
     } else if("ica" == dim_red){
-      Xr <- ica::icafast(X, nc = nc)
+      Xc <- t(scale(t(X), scale = FALSE, center = TRUE))
+      Xr <- ica::icafast(Xc, nc = nc, center = TRUE)
+      Xr$gcenters <- attr(Xc, "scaled:center")
     }
-    X <- scale(X)
+    # X <- scale(X)
   } else {
     Xr <- X
   }
@@ -91,7 +96,7 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
                 tset <- cv.tsets[[i]]
                 if("limma" != method){
                   if("pca" == dim_red){
-                    Xr$rotation <- Xr$rotation[tset, ]
+                    Xr$x <- Xr$x[tset, ]
                   }
                   if("ica" == dim_red){
                     Xr$M <- Xr$M[tset, ]
