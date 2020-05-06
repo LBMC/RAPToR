@@ -68,7 +68,7 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.ic)
-    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters)
+    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters))
   else return(preds)
 }
 
@@ -137,7 +137,7 @@
   preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
   
   if(!as.ic)
-    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters)
+    return(apply(tcrossprod(m$ica$S, preds)), 2, function(co) co + m$ica$gcenters))
   else return(preds)
 }
 
