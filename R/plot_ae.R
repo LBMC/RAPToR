@@ -10,6 +10,7 @@
 #' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
 #' @param subset an index vector of the samples to plot (defaults to all).
+#' @param color color parameter passed on to \code{\link{dotchart}}.
 #' @param glob.above logical ; if TRUE, the global estimate is plotted above all else.
 #' @param pch the pch parameter passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
@@ -30,6 +31,7 @@ plot.ae <- function(x, errbar.width=0.1,
                     show.boot_estimates=F, col.b=2,
                     groups=NULL, subset=NULL,
                     glob.above = F,
+                    color = par("fg"),
                     pch=16, cex=1, xlim=NULL,
                     xlab="Estimated ages", 
                     l.pos='bottomright', ...)
@@ -53,7 +55,7 @@ plot.ae <- function(x, errbar.width=0.1,
   
   dc <- graphics::dotchart(x$age.estimates[,1], labels = rownames(x$age.estimates),
                            xlab=xlab, groups = groups,
-                           xlim=xlim,
+                           xlim=xlim, color = color,
                            pch=pch, cex=cex,
                            ...)
   
@@ -72,7 +74,8 @@ plot.ae <- function(x, errbar.width=0.1,
   # plot error bars
   arrows(err.sup, y,
          err.inf, y,
-         angle=90, code=3, length=errbar.width)
+         angle=90, code=3, length=errbar.width, 
+         col = color)
   
   # adding individual bootstrap estimates as swarms
   if(show.boot_estimates){
@@ -101,7 +104,7 @@ plot.ae <- function(x, errbar.width=0.1,
   }
   
   if(glob.above){
-    graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, ...)
+    graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, col = color, ...)
   }
 }
 

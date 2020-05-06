@@ -14,6 +14,7 @@
   groups = NULL,
   subset = NULL,
   glob.above = F,
+  color = par("fg"),
   pch = 16,
   cex = 1,
   xlim = NULL,
@@ -40,6 +41,8 @@
 \item{subset}{an index vector of the samples to plot (defaults to all).}
 
 \item{glob.above}{logical ; if TRUE, the global estimate is plotted above all else.}
+
+\item{color}{color parameter passed on to \code{\link{dotchart}}.}
 
 \item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
 
