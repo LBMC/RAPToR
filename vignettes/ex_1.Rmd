@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
+gen_figs <- F
 figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
@@ -52,14 +52,14 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 We are using the two *C. elegans* time series datasets. 
 
- 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, called `ds1`. This is the dataset used to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
- 1. A high-resolution time series of late larval development published by @hendriks2014extensive, called `ds2`. This is the dataset used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
+ 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, called `dsaeschimann2017`. This is the dataset used to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
+ 1. A high-resolution time series of late larval development published by @hendriks2014extensive, called `dshendriks2014`. This is the dataset used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
 
 #### {.tabset}
 
-<a name="code-gen_ds1-ds2"></a>
+<a name="code-gen_dsaeschimann2017-dshendriks2014"></a>
 
-Code to generate `ds1` and `ds2` :
+Code to generate `dsaeschimann2017` and `dshendriks2014` :
 
 ##### Hide
 
@@ -76,136 +76,47 @@ requireNamespace("GEOquery", quietly = T) # May need to be installed with biocon
 requireNamespace("Biobase", quietly = T)
 ```
 
-```{r ex1_raw2rpkm_func, eval = gen_figs}
-raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
-  # Compute RPKM from raw counts
-  if(!all(rownames(X)%in%gene.length[, id.col])){
-    stop("Some genes are missing length info !")
-  }
-  res <- sapply(colnames(X), function(samp){
-    pm <- sum(X[,samp])/1e6
-    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
-  })
-  rownames(res) <- rownames(X)
-  return(res)
-}
+```{r ex_1_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
 ```
 
 <br>
 
-###### `ds1`
-```{r ex1_load_ds1_c, eval = F}
-geo_ds1 <- "GSE80157"
-
-g_url_ds1 <- GEOquery::getGEOSuppFiles(geo_ds1, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds1 <- paste0(data_folder, "ds1.txt.gz")
-utils::download.file(url = as.character(g_url_ds1$url[2]), destfile = g_file_ds1)
-
-X_ds1 <- read.table(gzfile(g_file_ds1), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
-
-# convert to rpkm & wb_id
-X_ds1 <- format_ids(X_ds1, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
-X_ds1 <- raw2rpkm(X = X_ds1, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
-
-
-
-
-
-# pheno data
-P_ds1 <- Biobase::pData(GEOquery::getGEO(geo_ds1, getGPL = F)[[1]])
-P_ds1[,10:34] <- NULL
-P_ds1[, 3:8] <- NULL
-
-colnames(P_ds1)[4] <- "strain"
-P_ds1$strain <- factor(P_ds1$strain)
-P_ds1$title <- gsub('[-\\(\\);]', '.', P_ds1$title)
-
-colnames(X_ds1) <- gsub('RNASeq_riboM_', '', colnames(X_ds1), fixed = T)
-P_ds1$title <- gsub('RNASeq_riboM_', '', P_ds1$title, fixed = T)
-
-# get age 
-P_ds1$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds1$`time in development:ch1`))
-
-
-X_ds1 <- X_ds1[, P_ds1$title]
-
-ds1 <- list(g = X_ds1, p = P_ds1)
-save(ds1, file = paste0(data_folder, "ds1.RData"), compress = "xz")
-
-# cleanup
-file.remove(g_file_ds1)
-rm(geo_ds1, g_url_ds1, g_file_ds1, X_ds1, P_ds1)
+###### `dsaeschimann2017`
+```{r ex1_load_dsaeschimann2017_c, code = readLines("load_dsaeschimann2017.R"), echo = TRUE, eval=FALSE}
 ```
 
 <br>
 
-###### `ds2`
-```{r ex1_load_ds2_c, eval = F}
-geo_ds2 <- "GSE52861"
-
-g_url_ds2 <- GEOquery::getGEOSuppFiles(geo_ds2, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds2 <- paste0(data_folder, "ds2.txt.gz")
-utils::download.file(url = as.character(g_url_ds2$url[2]), destfile = g_file_ds2)
-
-X_ds2 <- read.table(gzfile(g_file_ds2), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
-
-# convert to rpkm & wb_id
-X_ds2 <- format_ids(X_ds2, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
-X_ds2 <- raw2rpkm(X = X_ds2, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
-
-
-# pheno data
-P_ds2 <- Biobase::pData(GEOquery::getGEO(geo_ds2, getGPL = F)[[1]])
-
-# filter relevant fields/samples
-P_ds2 <- P_ds2[(P_ds2$`strain:ch1` == 'N2') & (P_ds2$`growth protocol:ch1` == 'Continuous'), ]
-P_ds2 <- P_ds2[, c("title", "geo_accession", "time in development:ch1")]
-
-# get age 
-P_ds2$age <- as.numeric(sub('(\\d+)\\shours', '\\1', P_ds2$`time in development:ch1`))
-
-
-# formatting
-P_ds2$title <- gsub('RNASeq_polyA_', '', 
-                  gsub('hr', 'h', 
-                       gsub('-', '.', fixed = T, as.character(P_ds2$title))))
-colnames(X_ds2) <- gsub('RNASeq_polyA_','', colnames(X_ds2))
-X_ds2 <- X_ds2[, P_ds2$title]
-
-ds2 <- list(g = X_ds2, p = P_ds2)
-save(ds2, file = paste0(data_folder, "ds2.RData"), compress = "xz")
-
-# cleanup
-file.remove(g_file_ds2)
-rm(geo_ds2, g_url_ds2, g_file_ds2, X_ds2, P_ds2)
+###### `dshendriks2014`
+```{r ex1_load_dshendriks2014_c, code = readLines("load_dshendriks2014.R"), echo = TRUE, eval=FALSE}
 ```
 
 
 
 #### Normalization & Quick look
 ```{r ex1_load, include=FALSE, eval = gen_figs}
-load("../inst/extdata/ds1.RData")
-load("../inst/extdata/ds2.RData")
+load("../inst/extdata/dsaeschimann2017.RData")
+load("../inst/extdata/dshendriks2014.RData")
 ```
 
 ```{r ex1_qnorm_log, eval = gen_figs}
-ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
-ds1$g <- log(ds1$g + 1)
+dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
+dsaeschimann2017$g <- log1p(dsaeschimann2017$g)
 
-ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
-ds2$g <- log(ds2$g + 1)
+dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, method = "quantile")
+dshendriks2014$g <- log1p(dshendriks2014$g)
 ```
 
 ```{r ex1_ql_c1, results='markup', eval = gen_figs}
-ds1$g[1:5, 1:4]
+dsaeschimann2017$g[1:5,1:4]
 #>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
-#> WBGene00000001          2.619273          2.530099          2.528902          2.518151
-#> WBGene00000002          2.204660          2.527502          2.095510          1.922935
-#> WBGene00000003          2.210836          2.005761          2.105462          2.291663
-#> WBGene00000004          2.481065          2.335821          2.190166          2.217177
-#> WBGene00000005          1.586324          2.152875          1.498992          1.135504
+#> WBGene00007063         2.1206604          2.469532          2.373273          2.175924
+#> WBGene00007064         2.1621558          2.260804          2.661102          2.354485
+#> WBGene00007065         2.7763061          2.847833          2.727037          2.960098
+#> WBGene00003525         0.9434159          2.466223          2.609585          1.313603
+#> WBGene00007067         1.0787531          1.081964          1.350796          1.236899
 
-head(ds1$p, n = 5)
+head(dsaeschimann2017$p, n = 5)
 #>                        title geo_accession           organism_ch1       strain
 #> GSM2113587 let.7.n2853._18hr    GSM2113587 Caenorhabditis elegans let-7(n2853)
 #> GSM2113588 let.7.n2853._20hr    GSM2113588 Caenorhabditis elegans let-7(n2853)
@@ -223,22 +134,22 @@ head(ds1$p, n = 5)
 ##### Correlation Matrix
 ```{r ex1_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
 show_fig(expr = {
-  cor_ds1 <- cor(ds1$g, method = "spearman")
-  ord <- order(ds1$p$age)
-  heatmap(cor_ds1[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,5),
-          RowSideColors = transp(as.numeric(ds1$p$strain[ord])), labRow = "", labCol = "")
+  cor_dsaeschimann2017 <- cor(dsaeschimann2017$g, method = "spearman")
+  ord <- order(dsaeschimann2017$p$age)
+  heatmap(cor_dsaeschimann2017[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,5),
+          RowSideColors = transp(as.numeric(dsaeschimann2017$p$strain[ord])), labRow = "", labCol = "")
   par(xpd = T)
-  mtext(text = unique(ds1$p$age), side = 1, line = 4, at = seq(-.1,.915, l = 11))
+  mtext(text = unique(dsaeschimann2017$p$age), side = 1, line = 4, at = seq(-.1,.915, l = 11))
   
   # color key
   image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
-        z = matrix(seq(min(cor_ds1), max(cor_ds1), l = 10), ncol = 10),
+        z = matrix(seq(min(cor_dsaeschimann2017), max(cor_dsaeschimann2017), l = 10), ncol = 10),
         col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
   
   strain_legend <- c("let-7", "lin-41", "let-7/lin-41", "N2")
   text(.975, 1, pos = 3, labels = expression(rho), font = 2)
   text(1, y = seq(0.6,1, l = 10), pos = 4, 
-       labels = round(seq(min(cor_ds1), max(cor_ds1), l = 10), 2), cex = .6)
+       labels = round(seq(min(cor_dsaeschimann2017), max(cor_dsaeschimann2017), l = 10), 2), cex = .6)
   
   xlp <- 1.025
   text(xlp, .5, labels = "Strain", font = 2, cex = .8, adj = .5)
@@ -253,21 +164,22 @@ show_fig(expr = {
 ##### Plotting components
 
 ```{r ex1_ql_c3, eval = gen_figs}
-pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
+pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), rank = 25,
+                                      center = TRUE, scale = FALSE)
 ```
 
 ```{r ex1_ql_c4, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    # points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    # points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
       legend("topleft", bty = 'n', legend = strain_legend,
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
@@ -281,25 +193,26 @@ show_fig(expr = {
 #### Component number
 
 ```{r ex1_mf_c1, eval = gen_figs}
-nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
+nc <- sum(summary(pca_dsaeschimann2017)$importance[3,] < .99) + 1
 nc
-#> [1] 24
+#> [1] 32
 ```
 
 #### Model
 
 ```{r ex1_mf_c2, eval = gen_figs}
-m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = nc)
+m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, 
+                            formula = "X ~ s(age, bs = 'ts') + strain", nc = nc)
 ```
 
 ```{r ex1_mf_c3, echo = F, eval=gen_figs}
-mp_ds1 <- mperf(scale(ds1$g), predict(m_ds1), is.t = T)
-as.data.frame(mp_ds1, row.names = "")
+mp_dsaeschimann2017 <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T)
+as.data.frame(mp_dsaeschimann2017, row.names = "")
 ```
 
 ```{r ex1_print_mf}
-#>       aCC         aRE         MSE      aRMSE
-#>  0.817616 0.008558632 0.004256494 0.06524181
+#>       aCC       aRE        MSE     aRMSE
+#> 0.7977299 0.1301014 0.01431891 0.1196617
 ```
 
 
@@ -312,7 +225,7 @@ as.data.frame(mp_ds1, row.names = "")
 # setup newdat
 n.inter <- 100 # nb of new timepoints
 newdat <- data.frame(
-  age = seq(min(ds1$p$age), max(ds1$p$age), l = n.inter),
+  age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p$age), l = n.inter),
   strain = rep("N2", n.inter) # we want to predict as N2 
   )
 head(newdat)
@@ -325,8 +238,8 @@ head(newdat)
 #> 6 19.01010     N2
 
 # predict 
-pred_m_ds1 <- predict(m_ds1, newdata = newdat)
-pred_m_ds1_comp <- predict(m_ds1, newdata = newdat, as.c = TRUE)
+pred_m_dsaeschimann2017 <- predict(m_dsaeschimann2017, newdata = newdat)
+pred_m_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, newdata = newdat, as.c = TRUE)
 ```
 
 ##### Plot component predictions
@@ -335,14 +248,14 @@ pred_m_ds1_comp <- predict(m_ds1, newdata = newdat, as.c = TRUE)
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
              pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
@@ -354,46 +267,46 @@ show_fig(expr = {
 
 ```{r ex1_vd_c3, eval = F}
 # make a 'reference object' 
-r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
 
-ae_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
-ae_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
+ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
 ```
 
 ```{r ex1_vd_c3bis, include = F, eval = gen_figs}
 # make a 'reference object' 
-r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
 
 # speed up w/ no bootstrap
-ae_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
-ae_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
+ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
 ```
 
 
 ```{r ex1_vd_c4, echo=F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,2))
-  rg <- range(c(ae_ds1$age.estimates[,1], ds1$p$age))
-  plot(ae_ds1$age.estimates[,1]~ds1$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+  rg <- range(c(ae_dsaeschimann2017$age.estimates[,1], dsaeschimann2017$p$age))
+  plot(ae_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
-  invisible(sapply(levels(factor(ds1$p$strain)), function(l){
-    s <- ds1$p$strain == l
-    points(ae_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-           lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+       main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
+  invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
+    s <- dsaeschimann2017$p$strain == l
+    points(ae_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(dsaeschimann2017$p$strain))))
   }))
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
          lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
   
-  rg <- range(c(ae_ds2$age.estimates[,1], ds2$p$age))
-  plot(ae_ds2$age.estimates[,1]~ds2$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+  rg <- range(c(ae_dshendriks2014$age.estimates[,1], dshendriks2014$p$age))
+  plot(ae_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
-  points(ae_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
+  points(ae_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
