@@ -217,10 +217,10 @@ head(ds2$p, n = 5)
 We'll quantile-normalize and log the expression data.
 ```{r quantile_norm_log, eval = gen_figs}
 ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
-ds1$g <- log(ds1$g + 1)
+ds1$g <- log1p(ds1$g) # log1p(x) = log(x + 1)
 
 ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
-ds2$g <- log(ds2$g + 1)
+ds2$g <- log1p(ds2$g)
 ```
 
 
@@ -228,7 +228,7 @@ ds2$g <- log(ds2$g + 1)
 The only other transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. 
 For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
 
-To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (built directly from the `biomaRt`).
+To help with this conversion, gene ID reference tables should be included in the data-packages with common gene IDs (built directly from the `biomaRt`).
 
 
 
@@ -261,7 +261,7 @@ In the interest of lightening the computational load you can choose smaller valu
 r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 ```
 
-Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C)
+Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C).
 
 
 ## Performing a simple age estimate
@@ -269,7 +269,7 @@ Note that age estimates will be given in the time unit and scale of the chosen r
 All we need to do now is run the `ae()` function.
 
 ```{r include=FALSE, eval=gen_figs}
-set.seed(10)
+set.seed(1)
 ```
 
 
@@ -335,8 +335,8 @@ show_fig(expr = {
 ```
 
 
-Since the staged samples were all grown at 25$^\circ$C, and the reference time is on 20$^\circ$C development, 
-we can observe the well-known growth speed difference of 1.5 between *C. elegans* worms grown at these temperatures by fitting a simple linear model.
+Since the staged nematode samples were all grown at 25$^\circ$C, and the reference time is on 20$^\circ$C development, 
+we can observe the well-known growth speed difference of 1.5 between *C. elegans* worms grown at these temperatures by fitting a simple linear model between chronological and estimated age.
 
 
 ```{r lm_ds, eval = gen_figs}
@@ -473,16 +473,16 @@ You can also plot these correlation profiles with `plot_cor.ae()`
 
 ```{r plot_cor_print, eval = F}
 par(mfrow=c(2,2))
-plot_cor.ae(ae_ds2, subset = c(1,4,9,12))
+plot_cor.ae(ae_ds2, subset = c(1,4,9,11))
 ```
 ```{r plot_cor, echo = F, fig.height=6, fig.width=12, fig.align='center'}
 show_fig(expr = {
   par(mfrow=c(2,2))
-  plot_cor.ae(ae_ds2, subset = c(1,4,9,12))
+  plot_cor.ae(ae_ds2, subset = c(1,4,9,11))
 }, fig.height=6, fig.width=12)
 ```
 The confidence interval of the estimates is represented with the red bars and the bootstrap correlation scores' 95% interval along the reference series are shown (as the black dotted lines). 
-The sample's estimate is also given below the interval.
+The sample's global estimate is also displayed below the interval.
 
 <br>
 <br>
@@ -512,7 +512,7 @@ This function takes as input 3 key arguments :
 
 For example, using the `ds1` dataset we could build the following model.
 ```{r model_ds1, eval = gen_figs}
-m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = 24)
+m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'tp', k = 8, fx=TRUE) + strain", nc = 19)
 ```
 
 
@@ -550,13 +550,13 @@ PCA and ICA interpolation yield near-identical results in most scenarios.
 
 The number of components to use for the interpolation is by default set to the number of samples.
 However, we recommend to set a cutoff on explained variance of PCA components to select it. 
-For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
+For example, on the `ds1` dataset, we set the threshold at $99\%$ :
 
 ```{r pca_ds1, eval = gen_figs}
-pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
-nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
+pca_ds1 <- stats::prcomp(t(ds1$g), center = TRUE, scale = FALSE, rank = 25)
+nc <- sum(summary(pca_ds1)$importance[3,] < .99) + 1
 nc
-#> [1] 24
+#> [1] 19
 ```
 
 Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
@@ -568,14 +568,15 @@ The function inputs the `X`, `p` and a `formula_list` to test.
 Other parameters on the CV itself can also be given (*e.g.* training set size).
 
 
-Below is an example of usage to choose between 4 available smooth terms on the `ds1` GEIM.
+Below is an example of usage to choose a degree of freedom for a spline on the `ds1` GEIM.
 ```{r include = F, eval = gen_figs}
-set.seed(10)
+set.seed(2)
 ```
 
 ```{r cv_ds1, eval = gen_figs, results='markup'}
-smooth_methods <- c("tp", "ts", "cr", "ps")
-flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
+k <- seq(6,10, 1)
+# smooth_methods <- c("tp", "ts", "cr", "ps")
+flist <- as.list(paste0("X ~ s(age, bs = \'tp\', k=", k, ", fx=TRUE) + strain"))
 flist
 #> [[1]]
 #> [1] "X ~ s(age, bs = 'tp') + strain"
@@ -600,12 +601,12 @@ cv_ds1 <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flist,
 ```
 
 ```{r plot_cv_ds1_print, eval = F}
-plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+plot(cv_ds1, names = paste0("k = ", k), outline = F,
      swarmargs = list(cex = .8))
 ```
 ```{r plot_cv_ds1, echo = F, fig.width=12, fig.height=8, fig.align='center'}
 show_fig(expr = {
-  plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+  plot(cv_ds1, names = paste0("k = ", k), outline = F,
        swarmargs = list(cex = .8))
   
 }, fig.width=12, fig.height=8)
@@ -616,12 +617,12 @@ the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`),
 These indices all compare model predictions and the true data. 
 The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
 
-From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
+From the plots above, choosing `k = 8` seems to be the best-performing choice (minimum CV error and plateau of model performance). 
 
 
 ## Predicting from the model
 
-The `geim` object returned by `ge_im()` has its predict method which can be used like for any model.
+The `geim` object returned by `ge_im()` has its predict method which can be used like for any R model.
 You can also specify if you want the predictions as components or as the full gene expression matrix.
 
 On our `ds1` example :
@@ -652,15 +653,15 @@ show_fig(expr = {
   
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+    plot(ds1$p$age, pca_ds1$x[,i], lwd = 2, col = ds1$p$strain,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(ds1$p$strain)), function(l){
       s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+      points(ds1$p$age[s], pca_ds1$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
-    if(i == 1)
+    if(i == 2)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
              pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
   }))
