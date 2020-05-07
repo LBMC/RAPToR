@@ -50,11 +50,11 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 We are using two *Drosophila melanogaster*  embryonic development time series datasets. 
 The dataset used to build the reference was chosen with a very low time resolution on purpose to display the effectiveness of interpolating on gene expression data
 
-1. A time series Drosophila embryonic development, part of the modENCODE project and published by @graveley2011developmental, hereafter called `ds3`. This is the dataset used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
- 1. A high-resolution time series of embryonic development published by @levin2016mid, called `ds4`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+1. A time series Drosophila embryonic development, part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. This is the dataset used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
+ 1. A high-resolution time series of embryonic development published by @levin2016mid, called `dslevin2016dmel`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
 
 #### {.tabset}
-Code to generate `ds3` and `ds4` :
+Code to generate `dsgraveley2011` and `dslevin2016dmel` :
 
 ##### Hide
 
@@ -70,20 +70,9 @@ requireNamespace("Biobase", quietly = T)
 ```
 
 
-```{r ex2_raw2rpkm_func, eval = FALSE}
-raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
-  # Compute RPKM from raw counts
-  if(!all(rownames(X)%in%gene.length[, id.col])){
-    stop("Some genes are missing length info !")
-  }
-  res <- sapply(colnames(X), function(samp){
-    pm <- sum(X[,samp])/1e6
-    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
-  })
-  rownames(res) <- rownames(X)
-  return(res)
-}
+```{r ex2_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
 ```
+
 
 ```{r load_droso_genes, eval = F}
 requireNamespace("biomaRt", quietly = TRUE)
@@ -101,82 +90,82 @@ rm(mart)
 
 <br>
 
-###### `ds3`
+###### `dsgraveley2011`
 
-```{r load_ds3_c, eval = F}
-g_url_ds3 <- "ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz"
-g_file_ds3 <- paste0(data_folder, "ds3.csv.gz")
-utils::download.file(g_url_ds3, destfile = g_file_ds3)
+```{r load_dsgraveley2011_c, eval = F}
+g_url_dsgraveley2011 <- "ftp://ftp.fruitfly.org/pub/download/modencode_expression_scores/Celniker_Drosophila_Annotation_20120616_1428_allsamps_MEAN_gene_expression.csv.gz"
+g_file_dsgraveley2011 <- paste0(data_folder, "dsgraveley2011.csv.gz")
+utils::download.file(g_url_dsgraveley2011, destfile = g_file_dsgraveley2011)
 
 
-X_ds3 <- read.table(gzfile(g_file_ds3), sep = ',', row.names = 1, h = T)
+X_dsgraveley2011 <- read.table(gzfile(g_file_dsgraveley2011), sep = ',', row.names = 1, h = T)
 
 # convert gene ids to FBgn
-X_ds3 <- RAPToR::format_ids(X_ds3, droso_genes, from = "gene_name", to = "fb_id")
+X_dsgraveley2011 <- RAPToR::format_ids(X_dsgraveley2011, droso_genes, from = "gene_name", to = "fb_id")
 
 # select embryo time series samples
-X_ds3 <- X_ds3[,1:12]
+X_dsgraveley2011 <- X_dsgraveley2011[,1:12]
 
-P_ds3 <- data.frame(sname = colnames(X_ds3),
-                    age = as.numeric(gsub("em(\\d+)\\.\\d+hr", "\\1", colnames(X_ds3))),
+P_dsgraveley2011 <- data.frame(sname = colnames(X_dsgraveley2011),
+                    age = as.numeric(gsub("em(\\d+)\\.\\d+hr", "\\1", colnames(X_dsgraveley2011))),
                     stringsAsFactors = FALSE)
 
-ds3 <- list(g = X_ds3, p = P_ds3)
+dsgraveley2011 <- list(g = X_dsgraveley2011, p = P_dsgraveley2011)
 
-save(ds3, file = paste0(data_folder, "ds3.RData"), compress = "xz")
+save(dsgraveley2011, file = paste0(data_folder, "dsgraveley2011.RData"), compress = "xz")
 
 # cleanup
-file.remove(g_file_ds3)
-rm(g_url_ds3, g_file_ds3, X_ds3, P_ds3)
+file.remove(g_file_dsgraveley2011)
+rm(g_url_dsgraveley2011, g_file_dsgraveley2011, X_dsgraveley2011, P_dsgraveley2011)
 ```
 
 
 
 <br>
 
-###### `ds4`
-```{r load_ds4_c, eval = F}
-geo_ds4 <- "GSE60471"
+###### `dslevin2016dmel`
+```{r load_dslevin2016dmel_c, eval = F}
+geo_dslevin2016dmel <- "GSE60471"
 
-g_url_ds4 <- GEOquery::getGEOSuppFiles(geo_ds4, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds4 <- paste0(data_folder, "ds4.txt.gz")
-utils::download.file(url = as.character(g_url_ds4$url[3]), destfile = g_file_ds4)
+g_url_dslevin2016dmel <- GEOquery::getGEOSuppFiles(geo_dslevin2016dmel, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_dslevin2016dmel <- paste0(data_folder, "dslevin2016dmel.txt.gz")
+utils::download.file(url = as.character(g_url_dslevin2016dmel$url[3]), destfile = g_file_dslevin2016dmel)
 
-X_ds4 <- read.table(gzfile(g_file_ds4), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
+X_dslevin2016dmel <- read.table(gzfile(g_file_dslevin2016dmel), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
 
 # filter poor quality samples
-cm_ds4 <- RAPToR::cor.gene_expr(X_ds4, X_ds4)
-f_ds4 <- which(0.6 > apply(cm_ds4, 1, quantile, probs = .99))
-X_ds4 <- X_ds4[, -f_ds4]
+cm_dslevin2016dmel <- RAPToR::cor.gene_expr(X_dslevin2016dmel, X_dslevin2016dmel)
+f_dslevin2016dmel <- which(0.6 > apply(cm_dslevin2016dmel, 1, quantile, probs = .99))
+X_dslevin2016dmel <- X_dslevin2016dmel[, -f_dslevin2016dmel]
 
 # convert to rpkm & FBgn
-X_ds4 <- RAPToR::format_ids(X_ds4, droso_genes, from = "fb_id", to = "fb_id")
-X_ds4 <- raw2rpkm(X = X_ds4, gene.length = droso_genes, id.col = "fb_id", l.col = "transcript_length")
+X_dslevin2016dmel <- RAPToR::format_ids(X_dslevin2016dmel, droso_genes, from = "fb_id", to = "fb_id")
+X_dslevin2016dmel <- raw2rpkm(X = X_dslevin2016dmel, gene.length = droso_genes, id.col = "fb_id", l.col = "transcript_length")
 
 
 # pheno data
-P_ds4 <- Biobase::pData(GEOquery::getGEO(geo_ds4, getGPL = F)[[1]])
+P_dslevin2016dmel <- Biobase::pData(GEOquery::getGEO(geo_dslevin2016dmel, getGPL = F)[[1]])
 
 # filter relevant fields/samples
-P_ds4 <- P_ds4[, c("title", "geo_accession", "time (minutes cellularization stage):ch1")]
-colnames(P_ds4)[3] <- "time"
-P_ds4$title <- as.character(P_ds4$title)
+P_dslevin2016dmel <- P_dslevin2016dmel[, c("title", "geo_accession", "time (minutes cellularization stage):ch1")]
+colnames(P_dslevin2016dmel)[3] <- "time"
+P_dslevin2016dmel$title <- as.character(P_dslevin2016dmel$title)
 
-P_ds4 <- P_ds4[P_ds4$title %in% colnames(X_ds4),]
-X_ds4 <- X_ds4[, P_ds4$title]
+P_dslevin2016dmel <- P_dslevin2016dmel[P_dslevin2016dmel$title %in% colnames(X_dslevin2016dmel),]
+X_dslevin2016dmel <- X_dslevin2016dmel[, P_dslevin2016dmel$title]
 
 # formatting
-P_ds4$title <- gsub('Metazome_Drosophila_timecourse_', '', P_ds4$title)
-colnames(X_ds4) <- P_ds4$title
+P_dslevin2016dmel$title <- gsub('Metazome_Drosophila_timecourse_', '', P_dslevin2016dmel$title)
+colnames(X_dslevin2016dmel) <- P_dslevin2016dmel$title
 
-P_ds4$age <- as.numeric(P_ds4$time) / 60
+P_dslevin2016dmel$age <- as.numeric(P_dslevin2016dmel$time) / 60
 
-ds4 <- list(g = X_ds4, p = P_ds4)
-save(ds4, file = paste0(data_folder, "ds4.RData"), compress = "xz")
+dslevin2016dmel <- list(g = X_dslevin2016dmel, p = P_dslevin2016dmel)
+save(dslevin2016dmel, file = paste0(data_folder, "dslevin2016dmel.RData"), compress = "xz")
 
 # cleanup
-file.remove(g_file_ds4)
-rm(geo_ds4, g_url_ds4, g_file_ds4, X_ds4, P_ds4)
+file.remove(g_file_dslevin2016dmel)
+rm(geo_dslevin2016dmel, g_url_dslevin2016dmel, g_file_dslevin2016dmel, X_dslevin2016dmel, P_dslevin2016dmel)
 ```
 
 ```{r cleanup_genes, eval = F}
@@ -186,20 +175,20 @@ rm(droso_genes, raw2rpkm)
 
 #### Normalization & Quick look
 ```{r ex2_load, include=FALSE, eval=gen_figs}
-load("../inst/extdata/ds3.RData")
-load("../inst/extdata/ds4.RData")
+load("../inst/extdata/dsgraveley2011.RData")
+load("../inst/extdata/dslevin2016dmel.RData")
 ```
 
 ```{r ex2_qnorm_log, eval=gen_figs}
-ds3$g <- limma::normalizeBetweenArrays(ds3$g, method = "quantile")
-ds3$g <- log(ds3$g + 1)
+dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
+dsgraveley2011$g <- log(dsgraveley2011$g + 1)
 
-ds4$g <- limma::normalizeBetweenArrays(ds4$g, method = "quantile")
-ds4$g <- log(ds4$g + 1)
+dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
+dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
 ```
 
 ```{r ex2_ql_c1, results='markup', eval=gen_figs}
-ds3$g[1:5, 1:5]
+dsgraveley2011$g[1:5, 1:5]
 #>               em0.2hr   em2.4hr   em4.6hr   em6.8hr  em8.10hr
 #> FBgn0000003 3.9651391 4.2738527 3.3174101 4.5644242 4.6982706
 #> FBgn0000008 1.2949845 0.9215699 0.6958672 0.6476801 0.7445991
@@ -208,7 +197,7 @@ ds3$g[1:5, 1:5]
 #> FBgn0000017 1.7968429 2.0901351 1.3389420 1.5336183 1.6777064
 
 
-head(ds3$p, n = 5)
+head(dsgraveley2011$p, n = 5)
 #>      sname age
 #> 1  em0.2hr   0
 #> 2  em2.4hr   2
@@ -220,20 +209,20 @@ head(ds3$p, n = 5)
 ##### Correlation Matrix
 ```{r ex2_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
 show_fig(expr = {
-  cor_ds3 <- cor(ds3$g, method = "spearman")
-  ord <- order(ds3$p$age)
-  heatmap(cor_ds3[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
+  cor_dsgraveley2011 <- cor(dsgraveley2011$g, method = "spearman")
+  ord <- order(dsgraveley2011$p$age)
+  heatmap(cor_dsgraveley2011[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
           labRow = "", labCol = "")
   par(xpd = T)
-  mtext(text = unique(ds3$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
+  mtext(text = unique(dsgraveley2011$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
   
   # color key
   image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
-        z = matrix(seq(min(cor_ds3), max(cor_ds3), l = 9), ncol = 9),
+        z = matrix(seq(min(cor_dsgraveley2011), max(cor_dsgraveley2011), l = 9), ncol = 9),
         col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
   text(.975, 1, pos = 3, labels = expression(rho), font = 2)
   text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
-       labels = round(seq(min(cor_ds3), max(cor_ds3), l = 9)[c(T,F)], 2), cex = .6)
+       labels = round(seq(min(cor_dsgraveley2011), max(cor_dsgraveley2011), l = 9)[c(T,F)], 2), cex = .6)
   
   
   xlp <- 1.025
@@ -244,17 +233,17 @@ show_fig(expr = {
 ##### Plotting components
 
 ```{r ex2_ql_c3, eval=gen_figs}
-pca_ds3 <- stats::prcomp(ds3$g, rank = 12)
+pca_dsgraveley2011 <- stats::prcomp(dsgraveley2011$g, rank = 12)
 ```
 
 ```{r ex2_ql_c4, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+    plot(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], lwd = 2,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
-    points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
+    points(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], type = 'l', lty = 2)
   }))
 }, fig.height=6, fig.width=12)
 ```
@@ -265,7 +254,7 @@ show_fig(expr = {
 #### Component number
 
 ```{r ex2_mf_c1, eval=gen_figs}
-nc <- sum(summary(pca_ds3)$importance[3,] < .999) + 1
+nc <- sum(summary(pca_dsgraveley2011)$importance[3,] < .999) + 1
 nc
 #> [1] 10
 ```
@@ -273,12 +262,12 @@ nc
 #### Model
 
 ```{r ex2_mf_c2, eval=gen_figs}
-m_ds3 <- ge_im(X = ds3$g, p = ds3$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
+m_dsgraveley2011 <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
 ```
 
 ```{r ex2_mf_c3, echo = F, eval=gen_figs}
-mp_ds3 <- mperf(scale(ds3$g), predict(m_ds3), is.t = T)
-as.data.frame(mp_ds3, row.names = "")
+mp_dsgraveley2011 <- mperf(scale(dsgraveley2011$g), predict(m_dsgraveley2011), is.t = T)
+as.data.frame(mp_dsgraveley2011, row.names = "")
 ```
 
 ```{r ex2_mf_print}
@@ -295,7 +284,7 @@ as.data.frame(mp_ds3, row.names = "")
 # setup newdat
 n.inter <- 100 # nb of new timepoints
 newdat <- data.frame(
-  age = seq(min(ds3$p$age), max(ds3$p$age), l = n.inter)
+  age = seq(min(dsgraveley2011$p$age), max(dsgraveley2011$p$age), l = n.inter)
   )
 head(newdat)
 #>         age
@@ -308,8 +297,8 @@ head(newdat)
 
 
 # predict 
-pred_m_ds3 <- predict(m_ds3, newdata = newdat)
-pred_m_ds3_comp <- predict(m_ds3, newdata = newdat, as.c = TRUE)
+pred_m_dsgraveley2011 <- predict(m_dsgraveley2011, newdata = newdat)
+pred_m_dsgraveley2011_comp <- predict(m_dsgraveley2011, newdata = newdat, as.c = TRUE)
 ```
 
 ##### Plot component predictions
@@ -318,13 +307,13 @@ pred_m_ds3_comp <- predict(m_ds3, newdata = newdat, as.c = TRUE)
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds3$p$age, pca_ds3$rotation[,i], lwd = 2,
+    plot(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], lwd = 2,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
-    points(ds3$p$age, pca_ds3$rotation[,i], type = 'l', lty = 2)
-    points(newdat$age, pred_m_ds3_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    points(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], type = 'l', lty = 2)
+    points(newdat$age, pred_m_dsgraveley2011_comp[, i], col = "royalblue", type = 'l', lwd = 3)
     if(i == 1)
-      legend("topleft", bty = 'n', legend = c("ds3", "pred"),
+      legend("topleft", bty = 'n', legend = c("dsgraveley2011", "pred"),
              pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
   }))
 }, fig.width=12, fig.height=6)
@@ -334,41 +323,41 @@ show_fig(expr = {
 
 ```{r ex2_vd_c3, eval = F}
 # make a 'reference object' 
-r_ds3 <- list(interpGE = pred_m_ds3, time.series = newdat$age)
+r_dsgraveley2011 <- list(interpGE = pred_m_dsgraveley2011, time.series = newdat$age)
 
-ae_ds3 <- ae(ds3$g, r_ds3$interpGE, r_ds3$time.series)
-ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series)
+ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series)
+ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series)
 ```
 
 ```{r ex2_vd_c3bis, include = F, eval = gen_figs}
 # make a 'reference object' 
-r_ds3 <- list(interpGE = pred_m_ds3, time.series = newdat$age)
+r_dsgraveley2011 <- list(interpGE = pred_m_dsgraveley2011, time.series = newdat$age)
 
 # speed up w/ no bootstrap
-ae_ds3 <- ae(ds3$g, r_ds3$interpGE, r_ds3$time.series, bootstrap.n = 1)
-ae_ds4 <- ae(ds4$g, r_ds3$interpGE, r_ds3$time.series, bootstrap.n = 1)
+ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series, bootstrap.n = 1)
+ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series, bootstrap.n = 1)
 ```
 
 
 ```{r ex2_vd_c4, echo=F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,2))
-  rg <- range(c(ae_ds3$age.estimates[,1], ds3$p$age))
-  plot(ae_ds3$age.estimates[,1] ~ ds3$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+  rg <- range(c(ae_dsgraveley2011$age.estimates[,1], dsgraveley2011$p$age))
+  plot(ae_dsgraveley2011$age.estimates[,1] ~ dsgraveley2011$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds3 (on ds3 reference)", lwd = 2)
-  points(ae_ds3$age.estimates[,1]~ds3$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dsgraveley2011 (on dsgraveley2011 reference)", lwd = 2)
+  points(ae_dsgraveley2011$age.estimates[,1]~dsgraveley2011$p$age, type = 'l', lty = 2)
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
   
-  rg <- range(c(ae_ds4$age.estimates[,1], ds4$p$age))
-  plot(ae_ds4$age.estimates[,1] ~ ds4$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds3)", 
+  rg <- range(c(ae_dslevin2016dmel$age.estimates[,1], dslevin2016dmel$p$age))
+  plot(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds4 (on ds3 reference)", lwd = 2)
-  # points(ae_ds4$age.estimates[,1] ~ ds4$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dslevin2016dmel (on dsgraveley2011 reference)", lwd = 2)
+  # points(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
@@ -377,10 +366,10 @@ show_fig(expr = {
 
 
 Notice here, that our validation dataset's estimates appear quite noisy.
-However, if we look at the dynamics of the `ds4` data, we'll see that the chronological age specified for the samples is erroneous.
+However, if we look at the dynamics of the `dslevin2016dmel` data, we'll see that the chronological age specified for the samples is erroneous.
 
 ```{r ex2_vd_c5, eval=gen_figs}
-pca_ds4 <- stats::prcomp(ds4$g, rank = 20)
+pca_dslevin2016dmel <- stats::prcomp(dslevin2016dmel$g, rank = 20)
 ```
 
 ```{r ex2_vd_c6, echo = F, fig.height=12, fig.width=12}
@@ -389,12 +378,12 @@ show_fig(expr = {
   invisible(sapply(c(0,4), function(ipp){
     sapply(seq_len(4), function(i){
       i <- i + ipp
-      plot(ds4$p$age, pca_ds4$rotation[,i], lwd = 2,
+      plot(dslevin2016dmel$p$age, pca_dslevin2016dmel$rotation[,i], lwd = 2,
            xlab = "age", ylab = "PC", main = paste0("PC", i))
     })
     sapply(seq_len(4), function(i){
       i <- i + ipp
-      plot(ae_ds4$age.estimates[,1], pca_ds4$rotation[,i], lwd = 2, col = "firebrick",
+      plot(ae_dslevin2016dmel$age.estimates[,1], pca_dslevin2016dmel$rotation[,i], lwd = 2, col = "firebrick",
            xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
       box(col = "firebrick", lwd = 2)
     })
