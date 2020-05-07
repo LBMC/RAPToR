@@ -75,28 +75,10 @@ requireNamespace("Biobase", quietly = T)
 ```
 
 
-```{r ex3_raw2rpkm_func}
-raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
-  # Compute RPKM from raw counts
-  if(!all(rownames(X)%in%gene.length[, id.col])){
-    stop("Some genes are missing length info !")
-  }
-  res <- sapply(colnames(X), function(samp){
-    pm <- sum(X[,samp])/1e6
-    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
-  })
-  rownames(res) <- rownames(X)
-  return(res)
-}
+```{r ex3_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
 ```
 
-```{r load_zeb_genes, eval = F}
-requireNamespace("biomaRt", quietly = TRUE)
-
-mart <- biomaRt::useMart("ensembl", dataset = "drerio_gene_ensembl")
-zeb_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", "transcript_length"), 
-                               mart = mart)
-rm(mart)
+```{r ex3_load_zeb_genes, code = readLines("load_zebrafish_genes.R"), echo = TRUE, eval=FALSE}
 ```
 
 <br>
