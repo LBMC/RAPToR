@@ -175,11 +175,11 @@ Here is what our data looks like
 ```{r head_dsaeschimann2017, eval = gen_figs}
 dsaeschimann2017$g[1:5,1:4]
 #>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
-#> WBGene00000001         12.681443         11.267268         11.778583         11.581853
-#> WBGene00000002          8.004784         11.242239          7.244600          5.837729
-#> WBGene00000003          8.051166          6.108188          7.324310          8.981919
-#> WBGene00000004         11.035511          9.075311          8.019064          8.234069
-#> WBGene00000005          3.713297          7.289794          3.474924          1.972653
+#> WBGene00007063          7.501850         10.988212          10.45480          7.994587
+#> WBGene00007064          8.023767          8.655388          14.21012          9.759401
+#> WBGene00007065         15.919452         16.875057          15.23932         18.847718
+#> WBGene00003525          1.416181         10.938876          13.42202          2.488798
+#> WBGene00007067          1.765342          1.775650           2.77224          2.200257
 
 head(dsaeschimann2017$p, n = 5)
 #>                        title geo_accession           organism_ch1       strain
@@ -512,7 +512,7 @@ This function takes as input 3 key arguments :
 
 For example, using the `dsaeschimann2017` dataset we could build the following model.
 ```{r model_dsaeschimann2017, eval = gen_figs}
-m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, formula = "X ~ s(age, bs = 'tp', k = 9, fx=TRUE) + strain", nc = 19)
+m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
 ```
 
 
@@ -556,7 +556,7 @@ For example, on the `dsaeschimann2017` dataset, we set the threshold at $99\%$ :
 pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), center = TRUE, scale = FALSE, rank = 25)
 nc <- sum(summary(pca_dsaeschimann2017)$importance[3,] < .99) + 1
 nc
-#> [1] 19
+#> [1] 32
 ```
 
 Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
@@ -574,9 +574,9 @@ set.seed(2)
 ```
 
 ```{r cv_dsaeschimann2017, eval = gen_figs, results='markup'}
-k <- seq(6,10, 1)
-# smooth_methods <- c("tp", "ts", "cr", "ps")
-flist <- as.list(paste0("X ~ s(age, bs = \'tp\', k=", k, ", fx=TRUE) + strain"))
+# k <- seq(6,10, 1)
+smooth_methods <- c("tp", "ts", "cr", "ps")
+flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain")) #, k=", k, ", fx=TRUE
 flist
 #> [[1]]
 #> [1] "X ~ s(age, bs = 'tp') + strain"
@@ -601,12 +601,12 @@ cv_dsaeschimann2017 <- ge_imCV(X = dsaeschimann2017$g, p = dsaeschimann2017$p, f
 ```
 
 ```{r plot_cv_dsaeschimann2017_print, eval = F}
-plot(cv_dsaeschimann2017, names = paste0("k = ", k), outline = F,
+plot(cv_dsaeschimann2017, names = paste0("bs = ", k), outline = F,
      swarmargs = list(cex = .8))
 ```
 ```{r plot_cv_dsaeschimann2017, echo = F, fig.width=12, fig.height=8, fig.align='center'}
 show_fig(expr = {
-  plot(cv_dsaeschimann2017, names = paste0("k = ", k), outline = F,
+  plot(cv_dsaeschimann2017, names = paste0("bs = ", smooth_methods), outline = F,
        swarmargs = list(cex = .8))
   
 }, fig.width=12, fig.height=8)
@@ -661,7 +661,7 @@ show_fig(expr = {
              type = 'l', lty = 2)
     })
     points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
-    if(i == 2)
+    if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
              pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
   }))
@@ -692,7 +692,7 @@ show_fig(expr = {
   plot(ae_test_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dsaeschimann2017 (on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
+       main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
   invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
     s <- dsaeschimann2017$p$strain == l
     points(ae_test_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], type = 'l', 
@@ -707,7 +707,7 @@ show_fig(expr = {
   plot(ae_test_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dshendriks2014 (on dsaeschimann2017 reference)", lwd = 2)
+       main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
   points(ae_test_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
@@ -842,7 +842,7 @@ data_folder <- "../inst/extdata/"
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
 requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
-requireNamespace("Biobase", quietly = T)
+requireNamespace("Biobase", quietly = T) # same
 ```
 
 ```{r c2tpm_func, code = readLines("vignettes/convert2tpm.R"), echo = TRUE, eval=FALSE}
@@ -901,8 +901,8 @@ X_dshendriks2014 <- read.table(gzfile(g_file_dshendriks2014), h=T, sep = '\t', s
 # convert to tpm & wb_id
 X_dshendriks2014 <- X_dshendriks2014[rownames(X_dshendriks2014)%in%wormRef::Cel_genes$wb_id,]
 X_dshendriks2014 <- raw2tpm(rawcounts = X_dshendriks2014, 
-                              genelengths = wormRef::Cel_genes$transcript_length[match(rownames(X_dshendriks2014),
-                                                                                       wormRef::Cel_genes$wb_id)])
+                            genelengths = wormRef::Cel_genes$transcript_length[match(rownames(X_dshendriks2014),
+                                                                                     wormRef::Cel_genes$wb_id)])
 
 
 # pheno data
