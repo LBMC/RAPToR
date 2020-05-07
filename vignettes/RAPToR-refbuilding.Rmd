@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
+gen_figs <- F # whether to generate figures or read from RAPToR-refbuilding_files/figs
 
 figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
@@ -58,8 +58,8 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 ```
 
 ```{r load_ds, include=FALSE, eval = gen_figs}
-load("../inst/extdata/ds1.RData")
-load("../inst/extdata/ds2.RData")
+load("../inst/extdata/dsaeschimann2017.RData")
+load("../inst/extdata/dshendriks2014.RData")
 ```
 
 ```{r transp_function, echo=F, eval = gen_figs}
@@ -80,7 +80,7 @@ Building references is one of the key aspects of `RAPToR`.
 An appropriate reference is needed to stage samples, and since they are re-usable we believe they are worth the trouble to set up.
 
 Throughout this vignette, you will see the general workflow of building a reference from the selection of an appropriate dataset, to choosing and validating a model for interpolation. 
-In the midst of the explanations, examples will be given using the same `ds1` and `ds2` datasets as in the general usage vignette ( [you can check out how these were built at the end of the vignette](#code-gen_ds1-ds2) ).
+In the midst of the explanations, examples will be given using the same `dsaeschimann2017` and `dshendriks2014` datasets as in the general usage vignette ( [you can check out how these were built at the end of the vignette](#code-gen_dsaeschimann2017-dshendriks2014) ).
 
 Finally, a few more examples of reference building on different datasets will be included at the end of this document.
 
@@ -104,11 +104,11 @@ Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery
 ### What to look out for
 Several points of the experimental design should be kept in mind when selecting a dataset for a reference.
 
-   * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a high-resolution experiment with one batch to build a reference.
+   * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a higher-resolution experiment with one batch to build a reference.
    * ***Is the timepoint sampling even ?*** Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
-   * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the samples to stage fit within, this is good).
+   * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the samples to stage fit within, it is enough).
    * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
-   * ***What's the profiling technology*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do.
+   * ***What's the profiling technology*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do. When using RNA-seq counts, apply some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately.
    
    
 ### ID formatting
@@ -159,11 +159,11 @@ For this, we use the `normalizeBetweenArrays()` function of the [`limma`](https:
 We also apply a $log(X + 1)$.
 
 ```{r quantile_norm_log, eval = gen_figs}
-ds1$g <- limma::normalizeBetweenArrays(ds1$g, method = "quantile")
-ds1$g <- log(ds1$g + 1)
+dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
+dsaeschimann2017$g <- log1p(dsaeschimann2017$g)
 
-ds2$g <- limma::normalizeBetweenArrays(ds2$g, method = "quantile")
-ds2$g <- log(ds2$g + 1)
+dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, method = "quantile")
+dshendriks2014$g <- log1p(dshendriks2014$g)
 ```
 
 
@@ -172,15 +172,15 @@ ds2$g <- log(ds2$g + 1)
 It's usually a good practice to take a look at what's inside your data before doing anything else to it.
 
 ```{r obs_head, results='markup', eval=gen_figs}
-ds1$g[1:5, 1:4]
+dsaeschimann2017$g[1:5,1:4]
 #>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
-#> WBGene00000001          2.619273          2.530099          2.528902          2.518151
-#> WBGene00000002          2.204660          2.527502          2.095510          1.922935
-#> WBGene00000003          2.210836          2.005761          2.105462          2.291663
-#> WBGene00000004          2.481065          2.335821          2.190166          2.217177
-#> WBGene00000005          1.586324          2.152875          1.498992          1.135504
+#> WBGene00007063          7.501850         10.988212          10.45480          7.994587
+#> WBGene00007064          8.023767          8.655388          14.21012          9.759401
+#> WBGene00007065         15.919452         16.875057          15.23932         18.847718
+#> WBGene00003525          1.416181         10.938876          13.42202          2.488798
+#> WBGene00007067          1.765342          1.775650           2.77224          2.200257
 
-head(ds1$p, n = 5)
+head(dsaeschimann2017$p, n = 5)
 #>                        title geo_accession           organism_ch1       strain
 #> GSM2113587 let.7.n2853._18hr    GSM2113587 Caenorhabditis elegans let-7(n2853)
 #> GSM2113588 let.7.n2853._20hr    GSM2113588 Caenorhabditis elegans let-7(n2853)
@@ -200,7 +200,7 @@ head(ds1$p, n = 5)
 With our time series data, we can look at correlation heatmaps or boxplots of the samples to catch potential ouliers and observe the clear correlation between samples of similar development.
 
 ```{r obs_data_corr, eval = gen_figs}
-cor_ds1 <- cor(ds1$g, method = "spearman")
+cor_dsaeschimann2017 <- cor(dsaeschimann2017$g, method = "spearman")
 ```
 
 ##### {.tabset}
@@ -209,11 +209,11 @@ cor_ds1 <- cor(ds1$g, method = "spearman")
 <div style="width:40%; float:left">
 ```{r hm_cor, echo = F, fig.height=5, fig.width=5}
 show_fig(expr = {
-  ord <- order(ds1$p$age)
-  heatmap(cor_ds1[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
-          RowSideColors = transp(as.numeric(ds1$p$strain[ord])), labRow = "", labCol = "")
+  ord <- order(dsaeschimann2017$p$age)
+  heatmap(cor_dsaeschimann2017[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
+          RowSideColors = transp(as.numeric(dsaeschimann2017$p$strain[ord])), labRow = "", labCol = "")
   par(xpd = T)
-  mtext(text = unique(ds1$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11))
+  mtext(text = unique(dsaeschimann2017$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11))
 
 }, fig.height=5, fig.width=5)
 
@@ -222,9 +222,9 @@ show_fig(expr = {
 <div style="width:59%; float:right">
 ```{r bxplot_cor, echo = F, fig.show='hold', warning=FALSE}
 show_fig(expr = {
-boxplot(cor_ds1 ~ interaction(ds1$p$strain, ds1$p$age), col = transp(1:4), xaxt = "n", ylab = "Spearman correlation",
+boxplot(cor_dsaeschimann2017 ~ interaction(dsaeschimann2017$p$strain, dsaeschimann2017$p$age), col = transp(1:4), xaxt = "n", ylab = "Spearman correlation",
         xlab = "age", at = seq(1,44, l = 55)[c(T,T,T,T,F)])
-axis(side = 1, at = seq(2,42, l = 11), labels = unique(ds1$p$age))
+axis(side = 1, at = seq(2,42, l = 11), labels = unique(dsaeschimann2017$p$age))
 legend(23,.86, fill = transp(1:4), legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
        bty = "n")
 })
@@ -236,17 +236,17 @@ legend(23,.86, fill = transp(1:4), legend = c("let-7", "lin-41", "let-7/lin-41",
 ###### Code
 ```{r hm_bxp_code_print, eval = F}
 # Heatmap
-ord <- order(ds1$p$age)
-heatmap(cor_ds1[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
-        RowSideColors = as.numeric(ds1$p$strain[ord]), labRow = "", labCol = "")
+ord <- order(dsaeschimann2017$p$age)
+heatmap(cor_dsaeschimann2017[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,1),
+        RowSideColors = as.numeric(dsaeschimann2017$p$strain[ord]), labRow = "", labCol = "")
 
 par(xpd = T) # text may have to be tweaked to plot size
-mtext(text = unique(ds1$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11)) 
+mtext(text = unique(dsaeschimann2017$p$age), side = 1, line = 4, at = seq(-.1,1.05, l = 11)) 
 
 # Boxplot
-boxplot(cor_ds1 ~ interaction(ds1$p$strain, ds1$p$age), col = 1:4, xaxt = "n", 
+boxplot(cor_dsaeschimann2017 ~ interaction(dsaeschimann2017$p$strain, dsaeschimann2017$p$age), col = 1:4, xaxt = "n", 
         ylab = "Spearman correlation", xlab = "age", at = seq(1,44, l = 55)[c(T,T,T,T,F)])
-axis(side = 1, at = seq(2,42, l = 11), labels = unique(ds1$p$age))
+axis(side = 1, at = seq(2,42, l = 11), labels = unique(dsaeschimann2017$p$age))
 
 legend(23,.86, fill = 1:4, legend = c("let-7", "lin-41", "let-7/lin-41", "N2"), bty = "n")
 ```
@@ -256,25 +256,28 @@ legend(23,.86, fill = 1:4, legend = c("let-7", "lin-41", "let-7/lin-41", "N2"), 
 
 ### Plotting components
 You can also plot components (PCA or ICA) with respect to time, to get an idea of the dynamics.
+For PCA, we want to perform a non-scaled, centered PCA. 
+Centering must be done gene-wise, not sample-wise (hence the matrix rotation below).
 
 ```{r obs_prcomp, eval = gen_figs}
-pca_ds1 <- stats::prcomp(ds1$g, rank = 25)
+pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), rank = 25,
+                                      center = TRUE, scale = FALSE)
 ```
 
 ##### {.tabset}
 ###### Plot
-```{r plot_pcads1, echo = F, fig.height=6, fig.width=12}
+```{r plot_pcadsaeschimann2017, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    # points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    # points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
@@ -283,17 +286,17 @@ show_fig(expr = {
 ```
 
 ###### Code
-```{r plot_pcads1_print, eval = F}
+```{r plot_pcadsaeschimann2017_print, eval = F}
 par(mfrow = c(2,4))
 invisible(
 sapply(seq_len(8), function(i){
-  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+  plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
        xlab = "age", ylab = "PC", main = paste0("PC", i))
   
   # connect the dots
-  sapply(seq_along(levels(ds1$p$strain)), function(l){
-    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+  sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+    s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+    points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
            type = 'l', lty = 2)
   })
 
@@ -306,7 +309,7 @@ sapply(seq_len(8), function(i){
 ##### {}
 
 In this data, we see that between different strains, we get very consistent dynamics. 
-Also, PC3 and PC4 capture an oscillatory dynamic characteristic of the molting processes of *C. elegans* larval development.
+Also, PC2 and PC3 capture an oscillatory dynamic which is characteristic of the molting processes of *C. elegans* larval development.
 
 
 ### Plotting random genes
@@ -316,20 +319,20 @@ Another approach can be to look at a few random genes. You get a first hand look
 ###### Plots
 ```{r plot_rdgn, echo = F, fig.height=3, fig.width=12}
 show_fig(expr = {
-  set.seed(3)
-  gtp <- sample(nrow(ds1$g), size = 4)
+  set.seed(10)
+  gtp <- sample(nrow(dsaeschimann2017$g), size = 4)
   par(mfrow = c(1,4))
   invisible(sapply(gtp, function(i){
-    plot(ds1$p$age, ds1$g[i,], lwd = 2, col = ds1$p$strain,
-         xlab = "age", ylab = "GExpr", main = rownames(ds1$g)[i])
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], ds1$g[i,s], col = l, 
+    plot(dsaeschimann2017$p$age, dsaeschimann2017$g[i,], lwd = 2, col = dsaeschimann2017$p$strain,
+         xlab = "age", ylab = "GExpr", main = rownames(dsaeschimann2017$g)[i])
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], dsaeschimann2017$g[i,s], col = l, 
              type = 'l', lty = 2)
     })
-    # points(ndat$age, pred_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 2)
-    if(i == gtp[1])
-      legend("topright", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+    # points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    if(i == gtp[4])
+      legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
   }))
 }, fig.height=3, fig.width=12)
@@ -337,24 +340,24 @@ show_fig(expr = {
 
 ###### Code
 ```{r plot_rdgn_print, eval = F}
-set.seed(3)
-gtp <- sample(nrow(ds1$g), size = 4)
+set.seed(10)
+gtp <- sample(nrow(dsaeschimann2017$g), size = 4)
 
 par(mfrow = c(1,4))
 invisible(
 sapply(gtp, function(i){
-  plot(ds1$p$age, ds1$g[i,], lwd = 2, col = ds1$p$strain,
-       xlab = "age", ylab = "GExpr", main = rownames(ds1$g)[i])
+  plot(dsaeschimann2017$p$age, dsaeschimann2017$g[i,], lwd = 2, col = dsaeschimann2017$p$strain,
+       xlab = "age", ylab = "GExpr", main = rownames(dsaeschimann2017$g)[i])
   
   # connect the dots
-  sapply(seq_along(levels(ds1$p$strain)), function(l){
-    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-    points(ds1$p$age[s], ds1$g[i,s], col = l, 
+  sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+    s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+    points(dsaeschimann2017$p$age[s], dsaeschimann2017$g[i,s], col = l, 
            type = 'l', lty = 2)
   })
 
-  if(i == gtp[1])
-    legend("topright", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
+  if(i == gtp[4])
+    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
            pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
 })
 )
@@ -412,9 +415,10 @@ This function takes as input 3 key arguments :
  
 Another important argument is the number of components used for the interpolation, `nc`.
 
-For example, using the `ds1` dataset we could build the following model.
-```{r model_ds1, eval = gen_figs}
-m_ds1 <- ge_im(X = ds1$g, p = ds1$p, formula = "X ~ s(age, bs = 'cr') + strain", nc = 24)
+For example, using the `dsaeschimann2017` dataset we could build the following model.
+```{r model_dsaeschimann2017, eval = gen_figs}
+m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, 
+                            formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
 ```
 
 Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on each component.
@@ -422,7 +426,7 @@ Note that a single model formula is specified and applied to all the components,
 Feel free to have a look at the documentation of the function for additionnal parameters `?ge_im()`.
 
 To get model predictions, you simply use the `predict()` function, like for any standard R model.
-**Note that predictions correspond to a scaled version of `X` because of the dimension reduction procedure.**
+<!-- **Note that predictions correspond to a scaled version of `X` because of the dimension reduction procedure.** -->
 
 
 ## Finding the appropriate model and parameters
@@ -449,7 +453,7 @@ The model is fit with the `lmFit()` function of the `limma` package (hence the n
 
 
 Note that when using GAMs, there is by definition no interaction possible between terms. 
-It is possible to include a `by` argument to the `s()` function, but this essentialy corresponds to separate fits on the levels of the specified variable.
+It is possible to include a `by` argument to the `s()` function, but this essentialy corresponds to separate fits on the levels of the specified factor/variable.
 
 ### Model performance
 
@@ -487,28 +491,30 @@ Note that these indices are computed and averaged *with respect to variables, no
 You can either get the overall (averaged) index or the value per gene with the `global` parameter.
 
 
-```{r mperf_ds1, results='markup', eval = gen_figs}
-g_mp <- mperf(scale(ds1$g), predict(m_ds1), is.t = T)
+```{r mperf_dsaeschimann2017, results='markup', eval = gen_figs}
+g_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T)
 g_mp
 #> $aCC
-#> [1] 0.817616
+#> [1] 0.7977299
 #> 
 #> $aRE
-#> [1] 0.008558632
+#> [1] 0.1301014
 #> 
 #> $MSE
-#> [1] 0.004256494
+#> [1] 0.01431891
 #> 
 #> $aRMSE
-#> [1] 0.06524181
-ng_mp <- mperf(scale(ds1$g), predict(m_ds1), is.t = T, global = F)
+#> [1] 0.1196617
+ng_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T, global = F)
+ng_mp <- lapply(ng_mp, na.omit) # remove NAs (eg. 0 variance genes)
+ng_mp$aRE <- ng_mp$aRE[ng_mp$aRE < Inf] # remove Inf values (/0)
 ```
 
 It's possible to check the model performance by looking at the index distributions over all genes, *e.g. :*
 
 ##### {.tabset}
 ###### Plots
-```{r bxp_mperf_ds1, echo = F, fig.height=5, fig.width=8}
+```{r bxp_mperf_dsaeschimann2017, echo = F, fig.height=5, fig.width=8}
 show_fig(expr = {  
   par(mfrow = c(2,2))
   invisible(sapply(names(ng_mp), function(idx){
@@ -527,7 +533,7 @@ show_fig(expr = {
 ```
 
 ###### Code
-```{r bxp_mperf_ds1_print, eval = F}
+```{r bxp_mperf_dsaeschimann2017_print, eval = F}
 par(mfrow = c(2,2))
 invisible(
 sapply(names(ng_mp), function(idx){
@@ -560,15 +566,15 @@ The number of components to use for the interpolation is by default set to the n
 However, we recommend to set a cutoff on explained variance of PCA components to select it. 
 You can do this (on PCA explained variance) even if you choose to use ICA for interpolation.
 
-For example, on the `ds1` dataset, we set the threshold at $99.9\%$ :
+For example, on the `dsaeschimann2017` dataset, we set the threshold at $99\%$ :
 
-```{r nc_ds1, eval=gen_figs}
-nc <- sum(summary(pca_ds1)$importance[3,] < .999) + 1
+```{r nc_dsaeschimann2017, eval=gen_figs}
+nc <- sum(summary(pca_dsaeschimann2017)$importance[3,] < .99) + 1
 nc
-#> [1] 24
+#> [1] 32
 ```
 
-Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
 
 You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
 
@@ -590,12 +596,12 @@ Note that the model type (GAM/GLM, PCA/ICA) is fixed for all formulas in one cal
 `ge_imCV()` computes the indices of model performance with `mperf()`, excluding `aCC` due to computing time. 
 Indices are computed on the validation set (CV Error) *and* on the training set (Model PerFormance).
 
-Below is an example of usage to choose between 4 available GAM smooth terms on the `ds1` GEIM.
+Below is an example of usage to choose between 4 available GAM smooth terms on the `dsaeschimann2017` GEIM.
 ```{r include = F, eval = gen_figs}
-set.seed(10)
+set.seed(2)
 ```
 
-```{r cv_ds1, results='markup', eval = gen_figs}
+```{r cv_dsaeschimann2017, results='markup', eval = gen_figs}
 smooth_methods <- c("tp", "ts", "cr", "ps")
 flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
 flist
@@ -611,7 +617,7 @@ flist
 #> [[4]]
 #> [1] "X ~ s(age, bs = 'ps') + strain"
 
-cv_ds1 <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flist,
+cv_dsaeschimann2017 <- ge_imCV(X = dsaeschimann2017$g, p = dsaeschimann2017$p, formula_list = flist,
                   cv.n = 20, nc = nc, nb.cores = 3)
 #> CV on 4 models. cv.n = 20 | cv.s = 0.8
 #> 
@@ -621,14 +627,14 @@ cv_ds1 <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flist,
 #> ...Cleanup and formatting
 ```
 
-```{r plot_cv_ds1_show, eval = F}
-plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+```{r plot_cv_dsaeschimann2017_show, eval = F}
+plot(cv_dsaeschimann2017, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
 ```
 
-```{r plot_cv_ds1, echo = F, fig.width=9, fig.height=8, fig.align='center'}
+```{r plot_cv_dsaeschimann2017, echo = F, fig.width=9, fig.height=8, fig.align='center'}
 show_fig(expr = {
-  plot(cv_ds1, names = paste0("bs = ", smooth_methods), outline = F,
+  plot(cv_dsaeschimann2017, names = paste0("bs = ", smooth_methods), outline = F,
        swarmargs = list(cex = .8))
 }, fig.width=9, fig.height=8)
 ```
@@ -644,9 +650,9 @@ In our experience, this is not really necessary as the parameter estimation done
 To force a spline with `k` knots, you must also set `fx = TRUE` (note this fits a spline of `k` knots on *all* components, whereas the penalized spline will adjust). 
 You can look at the `s()` or `choose.k` documentation for further information.
 
-Below is an example with the `ds1` data.
+Below is an example with the `dsaeschimann2017` data.
 
-```{r cv_ds1_k, eval = gen_figs}
+```{r cv_dsaeschimann2017_k, eval = gen_figs}
 ks <- c(4,6,8,10)
 flistk <- as.list(c(
   "X ~ s(age, bs =  'cr') + strain",
@@ -681,7 +687,7 @@ flistk
 #> [[9]]
 #> [1] "X ~ s(age, bs =  'cr', k = 10, fx=TRUE) + strain"
 
-cv_ds1k <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flistk,
+cv_dsaeschimann2017k <- ge_imCV(X = dsaeschimann2017$g, p = dsaeschimann2017$p, formula_list = flistk,
                    cv.n = 20, nc = nc, nb.cores = 3)
 #> CV on 9 models. cv.n = 20 | cv.s = 0.8
 #> 
@@ -691,10 +697,10 @@ cv_ds1k <- ge_imCV(X = ds1$g, p = ds1$p, formula_list = flistk,
 #> ...Cleanup and formatting
 ```
 
-```{r plot_cv_ds1k, echo = F, fig.width=12, fig.height=9, fig.align='center'}
+```{r plot_cv_dsaeschimann2017k, echo = F, fig.width=12, fig.height=9, fig.align='center'}
 show_fig(expr = {
   par(mar = c(7,4,3,1))
-  plot(cv_ds1k, names = c("na", paste0("k=", ks, rep(c("", ", fx=T"), each = 4))), outline = F,
+  plot(cv_dsaeschimann2017k, names = c("na", paste0("k=", ks, rep(c("", ", fx=T"), each = 4))), outline = F,
        col = transp(c("royalblue", rep(c(1, "firebrick"), each = 4))), 
        tcol = c("royalblue", rep(c(1, "firebrick"), each = 4)),
        names.arrange = 5, swarmargs = list(cex = .8))
@@ -710,10 +716,10 @@ We want a higher precision time series to stage samples.
 To do this, as for any R model, we will use the `predict()` function.
 We first need to set up the new data to predict from. 
 
-```{r ndat_mds1, results='markup', eval = gen_figs}
+```{r ndat_mdsaeschimann2017, results='markup', eval = gen_figs}
 n.inter <- 100 # nb of new timepoints
 newdat <- data.frame(
-  age = seq(min(ds1$p$age), max(ds1$p$age), l = n.inter),
+  age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p$age), l = n.inter),
   strain = rep("N2", n.inter) # we want to predict as N2 
   )
 head(newdat)
@@ -726,14 +732,14 @@ head(newdat)
 #> 6 19.01010     N2
 
 # predict 
-pred_m_ds1 <- predict(m_ds1, newdata = newdat)
+pred_m_dsaeschimann2017 <- predict(m_dsaeschimann2017, newdata = newdat)
 ```
 
 You can choose to output the predictions directly as the full gene expression matrix (default) or as components.
 Predictions as components with the `as.c = TRUE` option can be useful when checking the interpolation (see the next section).
 
-```{r pred_mds1_comp, eval = gen_figs}
-pred_m_ds1_comp <- predict(m_ds1, newdata = newdat, as.c = TRUE)
+```{r pred_mdsaeschimann2017_comp, eval = gen_figs}
+pred_m_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, newdata = newdat, as.c = TRUE)
 ```
 
 
@@ -751,22 +757,22 @@ You may also notice some noisy components get "flattened", with a null model fit
 These have little impact on the results as they usually correspond to a minuscule part of total variance. 
 They also sometimes actually get rid of some unwanted variation.
  
-On the `ds1` dataset, the predictions of the first few components are plotted below.
+On the `dsaeschimann2017` dataset, the predictions of the first few components are plotted below.
 
 ##### {.tabset}
 ###### Plots
-```{r plot_pca_ds1, echo = F, fig.width=12, fig.height=6}
+```{r plot_pca_dsaeschimann2017, echo = F, fig.width=12, fig.height=6}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
              pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
@@ -775,22 +781,22 @@ show_fig(expr = {
 ```
 
 ###### Code
-```{r plot_pca_ds1_print, eval=F}
+```{r plot_pca_dsaeschimann2017_print, eval=F}
 par(mfrow = c(2,4))
 invisible(
 sapply(seq_len(8), function(i){
-  plot(ds1$p$age, pca_ds1$rotation[,i], lwd = 2, col = ds1$p$strain,
+  plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
        xlab = "age", ylab = "PC", main = paste0("PC", i))
   
   # connect the dots
-  sapply(seq_along(levels(ds1$p$strain)), function(l){
-    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-    points(ds1$p$age[s], pca_ds1$rotation[s,i], col = l, 
+  sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+    s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+    points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
            type = 'l', lty = 2)
   })
   
   # add model prediction
-  points(newdat$age, pred_m_ds1_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+  points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
   
   if(i == 1)
     legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
@@ -801,24 +807,23 @@ sapply(seq_len(8), function(i){
 ##### {}
 
  
-The interpolation should translates well back on the (*scaled*) full expression matrix :
+The interpolation should translates well back on the full expression matrix :
 
 ##### {.tabset}
 ###### Plots
 ```{r plot_rd_genes_pred, echo = F, fig.height = 3, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,4))
-  sX <- scale(ds1$g)
   invisible(sapply(gtp, function(i){
-    plot(ds1$p$age, sX[i,], lwd = 2, col = ds1$p$strain,
-         xlab = "age", ylab = "Scaled GExpr", main = rownames(ds1$g)[i])
-    sapply(seq_along(levels(ds1$p$strain)), function(l){
-      s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-      points(ds1$p$age[s], sX[i,s], col = l, 
+    plot(dsaeschimann2017$p$age, dsaeschimann2017$g[i,], lwd = 2, col = dsaeschimann2017$p$strain,
+         xlab = "age", ylab = "GExpr", main = rownames(dsaeschimann2017$g)[i])
+    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+      points(dsaeschimann2017$p$age[s], dsaeschimann2017$g[i,s], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_ds1[i, ], col = "royalblue", type = 'l', lwd = 3)
-    if(i == 1)
+    points(newdat$age, pred_m_dsaeschimann2017[i, ], col = "royalblue", type = 'l', lwd = 3)
+    if(i == gtp[4])
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
   }))
@@ -828,23 +833,22 @@ show_fig(expr = {
 ###### Code
 ```{r plot_rd_genes_pred_print, eval = F}
 par(mfrow = c(1,4))
-sX <- scale(ds1$g) # scale X
 invisible(
 sapply(gtp, function(i){ # gtp is from the earlier gene plots
-  plot(ds1$p$age, sX[i,], lwd = 2, col = ds1$p$strain,
-       xlab = "age", ylab = "Scaled GExpr", main = rownames(ds1$g)[i])
+  plot(dsaeschimann2017$p$age, dsaeschimann2017$g[i,], lwd = 2, col = dsaeschimann2017$p$strain,
+       xlab = "age", ylab = "GExpr", main = rownames(dsaeschimann2017$g)[i])
   
   # connect the dots
-  sapply(seq_along(levels(ds1$p$strain)), function(l){
-    s <- which(ds1$p$strain == levels(ds1$p$strain)[l])
-    points(ds1$p$age[s], sX[i,s], col = l, 
+  sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
+    s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
+    points(dsaeschimann2017$p$age[s], dsaeschimann2017$g[i,s], col = l, 
            type = 'l', lty = 2)
   })
   
   # add model prediction
-  points(newdat$age, pred_m_ds1[i, ], col = "royalblue", type = 'l', lwd = 3)
+  points(newdat$age, pred_m_dsaeschimann2017[i, ], col = "royalblue", type = 'l', lwd = 3)
   
-  if(i == 1)
+  if(i == gtp[4])
     legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
            pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
 })
@@ -862,22 +866,22 @@ A first test is to stage the samples you used to build the reference on their ow
 Finally, the best validation is to stage another time series from the literature on your reference if such data exists.
 This provides external validation, confirming the dynamics you interpolated on indeed correspond to development processes and not a specific effect of the dataset (which is unlikely, but not impossible).
 
-We can do this with our example, and the `ds2` dataset can be used for external validation.
+We can do this with our example, and the `dshendriks2014` dataset can be used for external validation.
 
-```{r ae_ds1_test_print, eval = F}
+```{r ae_dsaeschimann2017_test_print, eval = F}
 # make a 'reference object' 
-r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
 
-ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series)
-ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
 ```
 
-```{r ae_ds1_test, include = F, eval = gen_figs}
+```{r ae_dsaeschimann2017_test, include = F, eval = gen_figs}
 # make a 'reference object' 
-r_ds1 <- list(interpGE = pred_m_ds1, time.series = newdat$age)
+r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
 
-ae_test_ds1 <- ae(ds1$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
-ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
 ```
 
 ##### {.tabset}
@@ -885,27 +889,27 @@ ae_test_ds2 <- ae(ds2$g, r_ds1$interpGE, r_ds1$time.series, bootstrap.n = 1)
 ```{r ae_vs_est_plot, echo=F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,2))
-  rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
-  plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+  rg <- range(c(ae_test_dsaeschimann2017$age.estimates[,1], dsaeschimann2017$p$age))
+  plot(ae_test_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, col = factor(ds1$p$strain))
-  invisible(sapply(levels(factor(ds1$p$strain)), function(l){
-    s <- ds1$p$strain == l
-    points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-           lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+       main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
+  invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
+    s <- dsaeschimann2017$p$strain == l
+    points(ae_test_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(dsaeschimann2017$p$strain))))
   }))
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
          lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
   
-  rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
-  plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+  rg <- range(c(ae_test_dshendriks2014$age.estimates[,1], dshendriks2014$p$age))
+  plot(ae_test_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
-  points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
+  points(ae_test_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
@@ -915,19 +919,19 @@ show_fig(expr = {
 ###### Code
 ```{r ae_vs_est_plot_print, eval=F}
 par(mfrow = c(1,2))
-rg <- range(c(ae_test_ds1$age.estimates[,1], ds1$p$age))
+rg <- range(c(ae_test_dsaeschimann2017$age.estimates[,1], dsaeschimann2017$p$age))
 
 # Plot 1
-plot(ae_test_ds1$age.estimates[,1]~ds1$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+plot(ae_test_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
      xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds1 (on ds1 reference)", lwd = 2, 
-     col = factor(ds1$p$strain))
+     main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, 
+     col = factor(dsaeschimann2017$p$strain))
 # connect the dots
-invisible(sapply(levels(factor(ds1$p$strain)), function(l){
-  s <- ds1$p$strain == l
-  points(ae_test_ds1$age.estimates[s,1]~ds1$p$age[s], type = 'l', 
-         lty = 2, col = which(l==levels(factor(ds1$p$strain))))
+invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
+  s <- dsaeschimann2017$p$strain == l
+  points(ae_test_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], type = 'l', 
+         lty = 2, col = which(l==levels(factor(dsaeschimann2017$p$strain))))
 }))
 abline(a = 0, b = 1, lty = 3, lwd = 2) # x = y
 
@@ -936,13 +940,13 @@ legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y
 
 
 # Plot 2
-rg <- range(c(ae_test_ds2$age.estimates[,1], ds2$p$age))
-plot(ae_test_ds2$age.estimates[,1]~ds2$p$age, 
-     xlab = "Chronological age", ylab = "Estimated age (ds1)", 
+rg <- range(c(ae_test_dshendriks2014$age.estimates[,1], dshendriks2014$p$age))
+plot(ae_test_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
+     xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
      xlim = rg, ylim = rg,
-     main = "Chron. vs Estimated ages for ds2 (on ds1 reference)", lwd = 2)
+     main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
 # connect the dots
-points(ae_test_ds2$age.estimates[,1] ~ ds2$p$age, type = 'l', lty = 2)
+points(ae_test_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
 abline(a = 0, b = 1, lty = 3, lwd = 2) # x = y
 
 legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
@@ -961,6 +965,7 @@ Here you will find a few examples of reference building on different organisms.
 <br>
 <br>
 <a name="ex-1"></a>
+
 
 ## *C. elegans* larval development
 ```{r ex_1, child = "ex_1.Rmd"}
