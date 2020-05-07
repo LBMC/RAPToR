@@ -898,9 +898,11 @@ utils::download.file(url = as.character(g_url_dshendriks2014$url[2]), destfile =
 
 X_dshendriks2014 <- read.table(gzfile(g_file_dshendriks2014), h=T, sep = '\t', stringsAsFactors = F, row.names = 1)
 
-# convert to rpkm & wb_id
-X_dshendriks2014 <- RAPToR::format_ids(X_dshendriks2014, wormRef::Cel_genes, from = "wb_id", to = "wb_id")
-X_dshendriks2014 <- raw2rpkm(X = X_dshendriks2014, gene.length = wormRef::Cel_genes, id.col = "wb_id", l.col = "transcript_length")
+# convert to tpm & wb_id
+X_dshendriks2014 <- X_dshendriks2014[rownames(X_dshendriks2014)%in%wormRef::Cel_genes$wb_id,]
+X_dshendriks2014 <- raw2tpm(rawcounts = X_dshendriks2014, 
+                              genelengths = wormRef::Cel_genes$transcript_length[match(rownames(X_dshendriks2014),
+                                                                                       wormRef::Cel_genes$wb_id)])
 
 
 # pheno data
