@@ -104,10 +104,10 @@ load("../inst/extdata/dslevin2016dmel.RData")
 
 ```{r ex2_qnorm_log, eval=gen_figs}
 dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
-dsgraveley2011$g <- log(dsgraveley2011$g + 1)
+dsgraveley2011$g <- log1p(dsgraveley2011$g)
 
 dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
-dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
+dslevin2016dmel$g <- log1p(dslevin2016dmel$g)
 ```
 
 ```{r ex2_ql_c1, results='markup', eval=gen_figs}
@@ -156,17 +156,18 @@ show_fig(expr = {
 ##### Plotting components
 
 ```{r ex2_ql_c3, eval=gen_figs}
-pca_dsgraveley2011 <- stats::prcomp(dsgraveley2011$g, rank = 12)
+pca_dsgraveley2011 <- stats::prcomp(t(dsgraveley2011$g), rank = 12,
+                                    center = TRUE, scale = FALSE)
 ```
 
 ```{r ex2_ql_c4, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], lwd = 2,
+    plot(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], lwd = 2,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
-    points(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], type = 'l', lty = 2)
+    points(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], type = 'l', lty = 2)
   }))
 }, fig.height=6, fig.width=12)
 ```
@@ -177,9 +178,9 @@ show_fig(expr = {
 #### Component number
 
 ```{r ex2_mf_c1, eval=gen_figs}
-nc <- sum(summary(pca_dsgraveley2011)$importance[3,] < .999) + 1
+nc <- sum(summary(pca_dsgraveley2011)$importance[3,] < .99) + 1
 nc
-#> [1] 10
+#> [1] 8
 ```
 
 #### Model
@@ -189,13 +190,13 @@ m_dsgraveley2011 <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = 
 ```
 
 ```{r ex2_mf_c3, echo = F, eval=gen_figs}
-mp_dsgraveley2011 <- mperf(scale(dsgraveley2011$g), predict(m_dsgraveley2011), is.t = T)
+mp_dsgraveley2011 <- mperf(dsgraveley2011$g, predict(m_dsgraveley2011), is.t = T)
 as.data.frame(mp_dsgraveley2011, row.names = "")
 ```
 
 ```{r ex2_mf_print}
-#>        aCC         aRE         MSE      aRMSE
-#>  0.9094025 -0.04019692 0.005621654 0.07497769
+#>        aCC       aRE         MSE      aRMSE
+#>  0.9400184  0.389298 0.009916307 0.09958065
 ```
 
 
@@ -230,10 +231,10 @@ pred_m_dsgraveley2011_comp <- predict(m_dsgraveley2011, newdata = newdat, as.c =
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], lwd = 2,
+    plot(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], lwd = 2,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
-    points(dsgraveley2011$p$age, pca_dsgraveley2011$rotation[,i], type = 'l', lty = 2)
+    points(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], type = 'l', lty = 2)
     points(newdat$age, pred_m_dsgraveley2011_comp[, i], col = "royalblue", type = 'l', lwd = 3)
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("dsgraveley2011", "pred"),
@@ -269,7 +270,7 @@ show_fig(expr = {
   plot(ae_dsgraveley2011$age.estimates[,1] ~ dsgraveley2011$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dsgraveley2011 (on dsgraveley2011 reference)", lwd = 2)
+       main = "Chron. vs Estimated ages for dsgraveley2011\n(on dsgraveley2011 reference)", lwd = 2)
   points(ae_dsgraveley2011$age.estimates[,1]~dsgraveley2011$p$age, type = 'l', lty = 2)
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
@@ -279,7 +280,7 @@ show_fig(expr = {
   plot(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dslevin2016dmel (on dsgraveley2011 reference)", lwd = 2)
+       main = "Chron. vs Estimated ages for dslevin2016dmel\n(on dsgraveley2011 reference)", lwd = 2)
   # points(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
@@ -292,7 +293,8 @@ Notice here, that our validation dataset's estimates appear quite noisy.
 However, if we look at the dynamics of the `dslevin2016dmel` data, we'll see that the chronological age specified for the samples is erroneous.
 
 ```{r ex2_vd_c5, eval=gen_figs}
-pca_dslevin2016dmel <- stats::prcomp(dslevin2016dmel$g, rank = 20)
+pca_dslevin2016dmel <- stats::prcomp(t(dslevin2016dmel$g), rank = 20,
+                                     center = TRUE, scale = FALSE)
 ```
 
 ```{r ex2_vd_c6, echo = F, fig.height=12, fig.width=12}
@@ -301,12 +303,12 @@ show_fig(expr = {
   invisible(sapply(c(0,4), function(ipp){
     sapply(seq_len(4), function(i){
       i <- i + ipp
-      plot(dslevin2016dmel$p$age, pca_dslevin2016dmel$rotation[,i], lwd = 2,
+      plot(dslevin2016dmel$p$age, pca_dslevin2016dmel$x[,i], lwd = 2,
            xlab = "age", ylab = "PC", main = paste0("PC", i))
     })
     sapply(seq_len(4), function(i){
       i <- i + ipp
-      plot(ae_dslevin2016dmel$age.estimates[,1], pca_dslevin2016dmel$rotation[,i], lwd = 2, col = "firebrick",
+      plot(ae_dslevin2016dmel$age.estimates[,1], pca_dslevin2016dmel$x[,i], lwd = 2, col = "firebrick",
            xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
       box(col = "firebrick", lwd = 2)
     })
