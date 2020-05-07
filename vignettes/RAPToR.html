@@ -696,8 +696,7 @@ nc
 <p><br></p>
 <p>Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the <code>ge_imCV()</code> function. The function inputs the <code>X</code>, <code>p</code> and a <code>formula_list</code> to test. Other parameters on the CV itself can also be given (<em>e.g.</em> training set size).</p>
 <p>Below is an example of usage to choose a degree of freedom for a spline on the <code>dsaeschimann2017</code> GEIM.</p>
-<pre class="r"><code># k &lt;- seq(6,10, 1)
-smooth_methods &lt;- c(&quot;tp&quot;, &quot;ts&quot;, &quot;cr&quot;, &quot;ps&quot;)
+<pre class="r"><code>smooth_methods &lt;- c(&quot;tp&quot;, &quot;ts&quot;, &quot;cr&quot;, &quot;ps&quot;)
 flist &lt;- as.list(paste0(&quot;X ~ s(age, bs = \'&quot;, smooth_methods, &quot;\') + strain&quot;)) #, k=&quot;, k, &quot;, fx=TRUE
 flist
 #&gt; [[1]]

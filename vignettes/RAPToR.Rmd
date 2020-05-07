@@ -575,7 +575,6 @@ set.seed(2)
 ```
 
 ```{r cv_dsaeschimann2017, eval = gen_figs, results='markup'}
-# k <- seq(6,10, 1)
 smooth_methods <- c("tp", "ts", "cr", "ps")
 flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain")) #, k=", k, ", fx=TRUE
 flist
