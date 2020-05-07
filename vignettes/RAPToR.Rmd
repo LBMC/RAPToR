@@ -199,11 +199,11 @@ head(dsaeschimann2017$p, n = 5)
 ```{r head_dshendriks2014, eval = gen_figs}
 dshendriks2014$g[1:5,1:5]
 #>                contDevA_N2_21h contDevA_N2_22h contDevA_N2_23h contDevA_N2_24h contDevA_N2_25h
-#> WBGene00000001       11.215486       10.561063        10.41683        9.703136       11.210885
-#> WBGene00000002        5.954298        7.922576        11.32737       13.220574        9.781628
-#> WBGene00000003       46.333242       29.539269        18.65796       12.425843       18.007778
-#> WBGene00000004       13.939740       11.806423        10.60732       10.098591        9.553716
-#> WBGene00000005        4.854516        7.360959        11.17349       13.243724       10.057926
+#> WBGene00007063       2.7298009        2.928176       2.3023107        2.960860        3.275716
+#> WBGene00007064       5.2372118        6.161017       7.0817623        5.769718        6.910397
+#> WBGene00007065      14.5928869       11.448793       9.7072795       11.616851       11.769170
+#> WBGene00003525       0.2554172        1.182322       3.8705742       10.072059       16.148716
+#> WBGene00007067       1.3860572        1.025319       0.6974292        1.031272        1.765380
 
 head(dshendriks2014$p, n = 5)
 #>                      title geo_accession time in development:ch1 age
@@ -348,18 +348,18 @@ summary(lm_dsaeschimann2017)
 #> 
 #> Residuals:
 #>      Min       1Q   Median       3Q      Max 
-#> -2.01733 -0.77423  0.03879  0.57014  2.04296 
+#> -2.06673 -0.64196  0.07043  0.59626  1.90407 
 #> 
 #> Coefficients:
-#>             Estimate Std. Error t value Pr(>|t|)    
-#> (Intercept) -4.17218    0.70058  -5.955 5.01e-07 ***
-#> dsaeschimann2017$p$age    1.50745    0.02462  61.223  < 2e-16 ***
+#>                        Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept)            -4.04996    0.66919  -6.052 3.65e-07 ***
+#> dsaeschimann2017$p$age  1.50404    0.02352  63.950  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Residual standard error: 1.002 on 41 degrees of freedom
-#> Multiple R-squared:  0.9892, Adjusted R-squared:  0.9889 
-#> F-statistic:  3748 on 1 and 41 DF,  p-value: < 2.2e-16
+#> Residual standard error: 0.9576 on 41 degrees of freedom
+#> Multiple R-squared:  0.9901, Adjusted R-squared:  0.9898 
+#> F-statistic:  4090 on 1 and 41 DF,  p-value: < 2.2e-16
 
 lm_dshendriks2014 <- lm(ae_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age)
 summary(lm_dshendriks2014)
@@ -369,18 +369,18 @@ summary(lm_dshendriks2014)
 #> 
 #> Residuals:
 #>     Min      1Q  Median      3Q     Max 
-#> -0.7945 -0.2882 -0.1206  0.1447  0.8391 
+#> -0.7566 -0.2409 -0.1657  0.1468  0.8074 
 #> 
 #> Coefficients:
-#>             Estimate Std. Error t value Pr(>|t|)    
-#> (Intercept) -2.76603    0.76488  -3.616  0.00281 ** 
-#> dshendriks2014$p$age    1.55868    0.02562  60.845  < 2e-16 ***
+#>                      Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept)          -2.77413    0.74278  -3.735  0.00222 ** 
+#> dshendriks2014$p$age  1.55958    0.02488  62.692  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Residual standard error: 0.4724 on 14 degrees of freedom
-#> Multiple R-squared:  0.9962, Adjusted R-squared:  0.996 
-#> F-statistic:  3702 on 1 and 14 DF,  p-value: < 2.2e-16
+#> Residual standard error: 0.4587 on 14 degrees of freedom
+#> Multiple R-squared:  0.9965, Adjusted R-squared:  0.9962 
+#> F-statistic:  3930 on 1 and 14 DF,  p-value: < 2.2e-16
 ```
 
 ```{r plot_compae, echo=F, fig.height=6, fig.width=12}
@@ -419,26 +419,26 @@ General information can be accessed via the `summary()` function.
 ```{r summ_ae, eval = gen_figs}
 summary(ae_dshendriks2014)
 #> 
-#> Span of samples : 23.339
-#> Range of samples :  [ 31.701 , 55.04 ]
+#> Span of samples : 23.324
+#> Range of samples :  [ 31.68 , 55.005 ]
 #> -----------------------------------------------------------
 #>                 age.estimate     lb     ub
-#> contDevA_N2_21h       31.701 31.587 31.815
-#> contDevA_N2_22h       33.079 33.033 33.125
-#> contDevA_N2_23h       34.273 34.227 34.319
-#> contDevA_N2_24h       35.927 35.881 35.973
-#> contDevA_N2_25h       37.673 37.491 37.855
-#> contDevA_N2_26h       39.143 39.097 39.189
-#> contDevA_N2_27h       41.716 41.534 41.898
-#> contDevA_N2_28h       43.186 43.072 43.300
-#> contDevA_N2_29h       44.105 43.923 44.287
-#> contDevA_N2_30h       45.300 45.117 45.482
-#> contDevA_N2_31h       46.770 46.588 46.952
-#> contDevA_N2_32h       48.516 48.333 48.698
-#> contDevA_N2_33h       49.435 49.252 49.617
-#> contDevA_N2_34h       51.456 51.274 51.638
-#> contDevA_N2_35h       54.121 54.075 54.167
-#> contDevA_N2_36h       55.040 54.994 55.085
+#> contDevA_N2_21h       31.680 31.498 31.862
+#> contDevA_N2_22h       33.150 32.968 33.332
+#> contDevA_N2_23h       34.343 34.161 34.525
+#> contDevA_N2_24h       35.904 35.859 35.950
+#> contDevA_N2_25h       37.557 37.511 37.603
+#> contDevA_N2_26h       39.210 39.096 39.324
+#> contDevA_N2_27h       41.690 41.644 41.736
+#> contDevA_N2_28h       43.159 43.045 43.273
+#> contDevA_N2_29h       44.169 44.123 44.215
+#> contDevA_N2_30h       45.363 45.249 45.477
+#> contDevA_N2_31h       46.924 46.742 47.106
+#> contDevA_N2_32h       48.485 48.439 48.531
+#> contDevA_N2_33h       49.495 49.313 49.677
+#> contDevA_N2_34h       51.423 51.241 51.605
+#> contDevA_N2_35h       54.178 53.996 54.360
+#> contDevA_N2_36h       55.005 54.959 55.050
 #> -----------------------------------------------------------
 ```
 
@@ -449,12 +449,12 @@ If you want to get the estimates and their confidence intervals, they are access
 ```{r show_ae, eval = gen_figs}
 head(ae_dshendriks2014$age.estimates)
 #>                 age.estimate       lb       ub cor.score
-#> contDevA_N2_21h     31.70057 31.58651 31.81462 0.9296414
-#> contDevA_N2_22h     33.07885 33.03291 33.12479 0.9297492
-#> contDevA_N2_23h     34.27337 34.22742 34.31931 0.9331700
-#> contDevA_N2_24h     35.92731 35.88137 35.97325 0.9312395
-#> contDevA_N2_25h     37.67314 37.49096 37.85531 0.9315294
-#> contDevA_N2_26h     39.14331 39.09736 39.18925 0.9345927
+#> contDevA_N2_21h     31.68042 31.49836 31.86248 0.9312136
+#> contDevA_N2_22h     33.14966 32.96760 33.33171 0.9310279
+#> contDevA_N2_23h     34.34341 34.16135 34.52547 0.9346601
+#> contDevA_N2_24h     35.90448 35.85856 35.95039 0.9328182
+#> contDevA_N2_25h     37.55737 37.51145 37.60328 0.9330641
+#> contDevA_N2_26h     39.21026 39.09627 39.32424 0.9359745
 ```
 
 The table holds the following :
@@ -512,7 +512,8 @@ This function takes as input 3 key arguments :
 
 For example, using the `dsaeschimann2017` dataset we could build the following model.
 ```{r model_dsaeschimann2017, eval = gen_figs}
-m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
+m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, 
+                            formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
 ```
 
 
