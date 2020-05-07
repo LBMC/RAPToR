@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   out.width = '100%'
 )
 options(width=100)
-gen_figs <- F # wether to generate figures or read from RAPToR-refbuilding_files/figs
+gen_figs <- F # whether to generate figures or read from RAPToR-refbuilding_files/figs
 
 figpath <- "../inst/cdoc/RAPToR_figs/"
 if(!file.exists(figpath)){
@@ -107,7 +107,7 @@ The method works in a three-step process.
 # What type of data can be used ?
 
 The `RAPToR` package allows you to estimate the developmental age of samples from their transcriptome.
-This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (preferably RPKM), MicroArray/Chips...
+This means that any data providing information on gene expression on a large scale is appropriate : normalized RNA-seq counts (preferably TPM), MicroArray/Chips...
 Note that the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data may lead to better performance of the tool.  
 
 <div class="alert alert-danger">
@@ -140,7 +140,8 @@ You can also build your own reference data-packages following a few rules given 
 
 # Usage example
 
-In this part, we'll be showcasing usage of the tool on two *C. elegans* time series datasets from the literature. 
+In this part, we'll be showcasing usage of the tool on two *C. elegans* time series datasets from the literature.
+Note that you will need the `wormRef` package installed to use its references ( [see here for installation](https://github.com/LBMC/RAPToR) ).
 
  1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, hereafter called `ds1`.
  1. A high-resolution time series of late larval development published by @hendriks2014extensive, hereafter called `ds2`
