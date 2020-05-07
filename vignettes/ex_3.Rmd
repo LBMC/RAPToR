@@ -55,11 +55,11 @@ We show a trick using ranks to build an adequate model in order to avoid interpo
 
 The datasets are 
 
- 1. A time series of zebrafish embryonic development (with uneven sampling) published by @white2017high, hereafter called `ds5`. This is the dataset used to build the reference. ([Data accessible in the publication](https://elifesciences.org/articles/30860))
- 1. A high-resolution time series of embryonic development published by @levin2016mid, hereafter called `ds6`. This is the dataset used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
+ 1. A time series of zebrafish embryonic development (with uneven sampling) published by @white2017high, hereafter called `dswhite2017`. This is the dataset used to build the reference. ([Data accessible in the publication](https://elifesciences.org/articles/30860))
+ 1. A high-resolution time series of embryonic development published by @levin2016mid, hereafter called `dslevin2016zeb`. This is the dataset used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
 
 #### {.tabset}
-Code to generate `ds5` and `ds6` :
+Code to generate `dswhite2017` and `dslevin2016zeb` :
 
 ##### Hide
 
@@ -101,87 +101,87 @@ rm(mart)
 
 <br>
 
-###### `ds5`
-```{r load_ds5_c, eval = F}
-p_url_ds5 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp1.tsv"
+###### `dswhite2017`
+```{r load_dswhite2017_c, eval = F}
+p_url_dswhite2017 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp1.tsv"
 
-g_url_ds5 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp2.tsv"
-g_file_ds5 <- paste0(data_folder, "ds5.tsv")
-utils::download.file(g_url_ds5, destfile = g_file_ds5)
+g_url_dswhite2017 <- "http://europepmc.org/articles/PMC5690287/bin/elife-30860-supp2.tsv"
+g_file_dswhite2017 <- paste0(data_folder, "dswhite2017.tsv")
+utils::download.file(g_url_dswhite2017, destfile = g_file_dswhite2017)
 
-X_ds5 <- read.table(g_file_ds5, h = T, sep  ="\t", as.is = T, quote = "\"")
-rownames(X_ds5) <- X_ds5$Gene.ID
-X_ds5 <- X_ds5[,-(1:8)]
+X_dswhite2017 <- read.table(g_file_dswhite2017, h = T, sep  ="\t", as.is = T, quote = "\"")
+rownames(X_dswhite2017) <- X_dswhite2017$Gene.ID
+X_dswhite2017 <- X_dswhite2017[,-(1:8)]
 
 
 # convert to rpkm & ensembl_id
-X_ds5 <- RAPToR::format_ids(X_ds5, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
-X_ds5 <- raw2rpkm(X = X_ds5, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
+X_dswhite2017 <- RAPToR::format_ids(X_dswhite2017, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
+X_dswhite2017 <- raw2rpkm(X = X_dswhite2017, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
 
 
 # pheno data
-P_ds5 <- read.table(p_url_ds5, h = T, sep = "\t", as.is = T)
-P_ds5 <- P_ds5[P_ds5$sequencing == "RNASeq", c("sample", "accession_number", "stage", "stageName", "sampleName")]
+P_dswhite2017 <- read.table(p_url_dswhite2017, h = T, sep = "\t", as.is = T)
+P_dswhite2017 <- P_dswhite2017[P_dswhite2017$sequencing == "RNASeq", c("sample", "accession_number", "stage", "stageName", "sampleName")]
 
 # timings of stages from the White et al. eLife (2017) publication of the data.
 # time given in hours post-fertilization
-timepoints <- data.frame(stage = unique(P_ds5$stageName), 
+timepoints <- data.frame(stage = unique(P_dswhite2017$stageName), 
                          hours_pf = c(0, .75, 2.25, 3, 4.3, 5.25, 6, 8, 10.3, 
                                       16, 19, 24, 30, 36, 48, 72, 96, 120),
                          stringsAsFactors = F, row.names = "stage")
-P_ds5$age <- timepoints[P_ds5$stageName, "hours_pf"]
-P_ds5$batch <- factor(gsub(".*-(\\d)$", "\\1", P_ds5$sampleName))
+P_dswhite2017$age <- timepoints[P_dswhite2017$stageName, "hours_pf"]
+P_dswhite2017$batch <- factor(gsub(".*-(\\d)$", "\\1", P_dswhite2017$sampleName))
 
-X_ds5 <- X_ds5[, P_ds5$sample]
+X_dswhite2017 <- X_dswhite2017[, P_dswhite2017$sample]
 
-ds5 <- list(g = X_ds5, p = P_ds5)
-save(ds5, file = paste0(data_folder, "ds5.RData"), compress = "xz")
+dswhite2017 <- list(g = X_dswhite2017, p = P_dswhite2017)
+save(dswhite2017, file = paste0(data_folder, "dswhite2017.RData"), compress = "xz")
 
 # cleanup
-file.remove(g_file_ds5)
-rm(p_url_ds5, g_url_ds5, g_file_ds5, X_ds5, P_ds5, timepoints)
+file.remove(g_file_dswhite2017)
+rm(p_url_dswhite2017, g_url_dswhite2017, g_file_dswhite2017, X_dswhite2017, P_dswhite2017, timepoints)
 ```
 
 <br>
 
-###### `ds6`
-```{r load_ds6_c, eval = F}
-geo_ds6 <- "GSE60619"
+###### `dslevin2016zeb`
+```{r load_dslevin2016zeb_c, eval = F}
+geo_dslevin2016zeb <- "GSE60619"
 
-g_url_ds6 <- GEOquery::getGEOSuppFiles(geo_ds6, makeDirectory = FALSE, fetch_files = FALSE)
-g_file_ds6 <- paste0(data_folder, "ds6.txt.gz")
-utils::download.file(url = as.character(g_url_ds6$url[2]), destfile = g_file_ds6)
+g_url_dslevin2016zeb <- GEOquery::getGEOSuppFiles(geo_dslevin2016zeb, makeDirectory = FALSE, fetch_files = FALSE)
+g_file_dslevin2016zeb <- paste0(data_folder, "dslevin2016zeb.txt.gz")
+utils::download.file(url = as.character(g_url_dslevin2016zeb$url[2]), destfile = g_file_dslevin2016zeb)
 
-X_ds6 <- read.table(gzfile(g_file_ds6), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
+X_dslevin2016zeb <- read.table(gzfile(g_file_dslevin2016zeb), h = T, sep = '\t', as.is = T, row.names = 1, comment.char = "")
 
 # convert to rpkm & ensembl id
-X_ds6 <- RAPToR::format_ids(X_ds6, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
-X_ds6 <- raw2rpkm(X = X_ds6, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
+X_dslevin2016zeb <- RAPToR::format_ids(X_dslevin2016zeb, zeb_genes, from = "ensembl_gene_id", to = "ensembl_gene_id")
+X_dslevin2016zeb <- raw2rpkm(X = X_dslevin2016zeb, gene.length = zeb_genes, id.col = "ensembl_gene_id", l.col = "transcript_length")
 
 
 # pheno data
-P_ds6 <- Biobase::pData(GEOquery::getGEO(geo_ds6, getGPL = F)[[1]])
+P_dslevin2016zeb <- Biobase::pData(GEOquery::getGEO(geo_dslevin2016zeb, getGPL = F)[[1]])
 
 # filter relevant fields/samples
-P_ds6 <- P_ds6[, c("title", "geo_accession", "time (min after fertilization):ch1")]
-colnames(P_ds6)[3] <- "time"
-P_ds6$title <- as.character(P_ds6$title)
+P_dslevin2016zeb <- P_dslevin2016zeb[, c("title", "geo_accession", "time (min after fertilization):ch1")]
+colnames(P_dslevin2016zeb)[3] <- "time"
+P_dslevin2016zeb$title <- as.character(P_dslevin2016zeb$title)
 
-P_ds6 <- P_ds6[P_ds6$title %in% colnames(X_ds6),]
-X_ds6 <- X_ds6[, P_ds6$title]
+P_dslevin2016zeb <- P_dslevin2016zeb[P_dslevin2016zeb$title %in% colnames(X_dslevin2016zeb),]
+X_dslevin2016zeb <- X_dslevin2016zeb[, P_dslevin2016zeb$title]
 
 # formatting
-P_ds6$title <- gsub('Metazome_ZF_timecourse_', '', P_ds6$title)
-colnames(X_ds6) <- P_ds6$title
+P_dslevin2016zeb$title <- gsub('Metazome_ZF_timecourse_', '', P_dslevin2016zeb$title)
+colnames(X_dslevin2016zeb) <- P_dslevin2016zeb$title
 
-P_ds6$age <- as.numeric(P_ds6$time) / 60
+P_dslevin2016zeb$age <- as.numeric(P_dslevin2016zeb$time) / 60
 
-ds6 <- list(g = X_ds6, p = P_ds6)
-save(ds6, file = paste0(data_folder, "ds6.RData"), compress = "xz")
+dslevin2016zeb <- list(g = X_dslevin2016zeb, p = P_dslevin2016zeb)
+save(dslevin2016zeb, file = paste0(data_folder, "dslevin2016zeb.RData"), compress = "xz")
 
 # cleanup
-file.remove(g_file_ds6)
-rm(geo_ds6, g_url_ds6, g_file_ds6, X_ds6, P_ds6)
+file.remove(g_file_dslevin2016zeb)
+rm(geo_dslevin2016zeb, g_url_dslevin2016zeb, g_file_dslevin2016zeb, X_dslevin2016zeb, P_dslevin2016zeb)
 ```
 
 ```{r ex3_cleanup_genes, eval = F}
@@ -191,20 +191,20 @@ rm(zeb_genes, raw2rpkm)
 
 #### Normalization & Quick look
 ```{r ex3_load, include=FALSE, eval=gen_figs}
-load("../inst/extdata/ds5.RData")
-load("../inst/extdata/ds6.RData")
+load("../inst/extdata/dswhite2017.RData")
+load("../inst/extdata/dslevin2016zeb.RData")
 ```
 
 ```{r ex3_qnorm_log, eval=gen_figs}
-ds5$g <- limma::normalizeBetweenArrays(ds5$g, method = "quantile")
-ds5$g <- log(ds5$g + 1)
+dswhite2017$g <- limma::normalizeBetweenArrays(dswhite2017$g, method = "quantile")
+dswhite2017$g <- log(dswhite2017$g + 1)
 
-ds6$g <- limma::normalizeBetweenArrays(ds6$g, method = "quantile")
-ds6$g <- log(ds6$g + 1)
+dslevin2016zeb$g <- limma::normalizeBetweenArrays(dslevin2016zeb$g, method = "quantile")
+dslevin2016zeb$g <- log(dslevin2016zeb$g + 1)
 ```
 
 ```{r ex3_ql_c1, results='markup', eval=gen_figs}
-ds5$g[1:5, 1:5]
+dswhite2017$g[1:5, 1:5]
 #>                    zmp_ph133_B zmp_ph133_D zmp_ph133_E zmp_ph133_F zmp_ph133_G
 #> ENSDARG00000000001    1.992991    1.827910   1.7427071    1.839980   1.7305791
 #> ENSDARG00000000002    1.013519    1.049910   0.7850242    1.046494   0.8564017
@@ -212,7 +212,7 @@ ds5$g[1:5, 1:5]
 #> ENSDARG00000000019    4.198081    4.295515   4.3738184    4.298936   4.3578940
 #> ENSDARG00000000068    4.172288    4.226427   4.0332980    4.059632   3.9252796
 
-head(ds5$p, n = 5)
+head(dswhite2017$p, n = 5)
 #>        sample accession_number         stage stageName sampleName age batch
 #> 1 zmp_ph133_B       ERS1079239 Zygote:1-cell    1-cell   1-cell-1   0     1
 #> 2 zmp_ph133_D       ERS1079240 Zygote:1-cell    1-cell   1-cell-2   0     2
@@ -224,28 +224,28 @@ head(ds5$p, n = 5)
 ##### Correlation Matrix
 ```{r ex3_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
 show_fig(expr = {
-  cor_ds5 <- cor(ds5$g, method = "spearman")
-  ord <- order(ds5$p$age)
-  heatmap(cor_ds5[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,5),
-          RowSideColors = transp(as.numeric(ds5$p$batch[ord])), labRow = "", labCol = "")
+  cor_dswhite2017 <- cor(dswhite2017$g, method = "spearman")
+  ord <- order(dswhite2017$p$age)
+  heatmap(cor_dswhite2017[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,5),
+          RowSideColors = transp(as.numeric(dswhite2017$p$batch[ord])), labRow = "", labCol = "")
   par(xpd = T)
-  mtext(text = unique(ds5$p$age), side = 1, line = c(3.8, 4), 
-        at = seq(-.12, .915, l = length(unique(ds5$p$age))), cex = .6)
+  mtext(text = unique(dswhite2017$p$age), side = 1, line = c(3.8, 4), 
+        at = seq(-.12, .915, l = length(unique(dswhite2017$p$age))), cex = .6)
   
   # color key
   image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
-        z = matrix(seq(min(cor_ds5), max(cor_ds5), l = 10), ncol = 10),
+        z = matrix(seq(min(cor_dswhite2017), max(cor_dswhite2017), l = 10), ncol = 10),
         col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
   
   text(.975, 1, pos = 3, labels = expression(rho), font = 2)
   text(1, y = seq(0.6,1, l = 10), pos = 4, 
-       labels = round(seq(min(cor_ds5), max(cor_ds5), l = 10), 2), cex = .6)
+       labels = round(seq(min(cor_dswhite2017), max(cor_dswhite2017), l = 10), 2), cex = .6)
   
   xlp <- 1.025
   batch_legend <- as.character(1:5)
   text(xlp, .5, labels = "batch", font = 2, cex = .8, adj = .5)
   text(xlp, seq(.3,.48, l = 5), labels = batch_legend, adj = 1, pos = 1,
-       col = levels(ds5$p$batch), font = 2, cex = .7)
+       col = levels(dswhite2017$p$batch), font = 2, cex = .7)
   
   mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
 }, fig.height=5, fig.width=5)
@@ -254,21 +254,21 @@ show_fig(expr = {
 ##### Plotting components
 
 ```{r ex3_ql_c3, eval = gen_figs}
-pca_ds5 <- stats::prcomp(ds5$g, rank = 25)
+pca_dswhite2017 <- stats::prcomp(dswhite2017$g, rank = 25)
 ```
 
 ```{r ex3_ql_c4, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds5$p$age, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds5$p$batch)), function(l){
-      s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-      points(ds5$p$age[s], pca_ds5$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+      s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    # points(ndat$age, pred_ds5_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    # points(ndat$age, pred_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
       legend("bottomright", bty = 'n', legend = batch_legend, title = "Batch",
              pch = c(rep(1, 5)), lty = c(rep(NA, 5)), col = c(1:5), lwd = 3)
@@ -283,7 +283,7 @@ To bypass this issue, we can use ranks instead of the timepoints.
 
 ```{r ex3_ql_c5, eval = gen_figs}
 # using data.table's rank function to get the "dense" tie method
-ds5$p$rank <- data.table::frank(ds5$p$age, ties.method = "dense")
+dswhite2017$p$rank <- data.table::frank(dswhite2017$p$age, ties.method = "dense")
 ```
 
 
@@ -291,15 +291,15 @@ ds5$p$rank <- data.table::frank(ds5$p$age, ties.method = "dense")
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds5$p$rank, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+    plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "rank", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds5$p$batch)), function(l){
-      s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-      points(ds5$p$rank[s], pca_ds5$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+      s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+      points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
              type = 'l', lty = 2)
     })
     box(col = "grey50", lwd = 3)
-    # points(ndat$age, pred_ds5_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    # points(ndat$age, pred_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
       legend("top", bty = 'n', legend = batch_legend, title = "Batch",
              pch = c(rep(1, 5)), lty = c(rep(NA, 5)), col = c(1:5), lwd = 3)
@@ -316,7 +316,7 @@ To predict the data in a uniform time scale, we can just pick values on the rank
 #### Component number
 
 ```{r ex3_mf_c1, eval=gen_figs}
-nc <- sum(summary(pca_ds5)$importance[3,] < .999) + 1
+nc <- sum(summary(pca_dswhite2017)$importance[3,] < .999) + 1
 nc
 #> [1] 77
 ```
@@ -324,12 +324,12 @@ nc
 #### Model
 
 ```{r ex3_mf_c2, eval=gen_figs}
-m_ds5 <- ge_im(X = ds5$g, p = ds5$p, formula = "X ~ s(rank, bs = 'ds') + batch", nc = nc)
+m_dswhite2017 <- ge_im(X = dswhite2017$g, p = dswhite2017$p, formula = "X ~ s(rank, bs = 'ds') + batch", nc = nc)
 ```
 
 ```{r ex3_mf_c3, echo = F, eval=gen_figs}
-mp_ds5 <- mperf(scale(ds5$g), predict(m_ds5), is.t = T)
-as.data.frame(mp_ds5, row.names = "")
+mp_dswhite2017 <- mperf(scale(dswhite2017$g), predict(m_dswhite2017), is.t = T)
+as.data.frame(mp_dswhite2017, row.names = "")
 ```
 
 ```{r ex3_mf_print}
@@ -375,11 +375,11 @@ linwarp <- function(x, xyt, xc = 1, yc = 2){
 ```{r ex3_vd_c1, results='markup', eval=gen_figs}
 # setup newdat
 n.inter <- 200
-newdat <- data.frame(age = seq(min(ds5$p[, "age"]), max(ds5$p[, "age"]), l = n.inter),
+newdat <- data.frame(age = seq(min(dswhite2017$p[, "age"]), max(dswhite2017$p[, "age"]), l = n.inter),
                      batch = rep("1", n.inter)) # predict as batch 1
 
 # apply linwarp
-newdat$rank <- linwarp(newdat$age, xyt = ds5$p[, c("age", "rank")], xc = 1, yc = 2)
+newdat$rank <- linwarp(newdat$age, xyt = dswhite2017$p[, c("age", "rank")], xc = 1, yc = 2)
 
 head(newdat)
 #>         age batch     rank
@@ -391,8 +391,8 @@ head(newdat)
 #> 6 3.0150754     1 4.011596
 
 # predict 
-pred_m_ds5 <- predict(m_ds5, newdata = newdat)
-pred_m_ds5_comp <- predict(m_ds5, newdata = newdat, as.c = TRUE)
+pred_m_dswhite2017 <- predict(m_dswhite2017, newdata = newdat)
+pred_m_dswhite2017_comp <- predict(m_dswhite2017, newdata = newdat, as.c = TRUE)
 ```
 
 We want a uniform series on the age scale, but have to input values on the rank scale in the model which is why we use `linwarp()`.
@@ -400,9 +400,9 @@ To give a sense of what the function did, we can plot the ranks against the age.
 
 ```{r ex3_vd_c1.1, echo = F, fig.height=4, fig.width=6, out.width="60%"}
 show_fig(expr = {
-  plot(rank ~ age, data = ds5$p)
+  plot(rank ~ age, data = dswhite2017$p)
   points(rank ~ age, data = newdat, col = "firebrick", cex = .5, pch = 1, main = "rank vs. age")
-  legend("bottomright", legend = c("ds5", "newdat"), bty = "n",
+  legend("bottomright", legend = c("dswhite2017", "newdat"), bty = "n",
          col = c(1, "firebrick"), pt.cex = c(1,.5), lwd = 2, pch = 1, lty = NA)
 }, fig.height=4, fig.width=6)
 ```
@@ -416,14 +416,14 @@ On the rank scale :
 show_fig(expr = {
 par(mfrow = c(2,4))
 invisible(sapply(seq_len(8), function(i){
-  plot(ds5$p$rank, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+  plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
        xlab = "rank", ylab = "PC", main = paste0("PC", i))
-  sapply(seq_along(levels(ds5$p$batch)), function(l){
-    s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-    points(ds5$p$rank[s], pca_ds5$rotation[s,i], col = l, 
+  sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+    s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+    points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
            type = 'l', lty = 2)
   })
-  points(newdat$rank, pred_m_ds5_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+  points(newdat$rank, pred_m_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
   box(col = "grey50", lwd = 3)
   if(i == 1)
     legend("top", bty = 'n', legend = c(batch_legend, "pred"), title = "Batch",
@@ -438,14 +438,14 @@ Back on the age scale :
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds5$p$age, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds5$p$batch)), function(l){
-      s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-      points(ds5$p$age[s], pca_ds5$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+      s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_ds5_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    points(newdat$age, pred_m_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
     if(i == 1)
       legend("bottomright", bty = 'n', legend = c(batch_legend, "pred"), title = "Batch",
              pch = c(rep(1, 5), NA), lty = c(rep(NA, 5), 1), col = c(1:5, "royalblue"), lwd = 3)
@@ -460,46 +460,46 @@ show_fig(expr = {
 
 ```{r ex3_vd_c3, eval = F}
 # make a 'reference object' 
-r_ds5 <- list(interpGE = pred_m_ds5, time.series = newdat$age)
+r_dswhite2017 <- list(interpGE = pred_m_dswhite2017, time.series = newdat$age)
 
-ae_ds5 <- ae(ds5$g, r_ds5$interpGE, r_ds5$time.series)
-ae_ds6 <- ae(ds6$g, r_ds5$interpGE, r_ds5$time.series)
+ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017$interpGE, r_dswhite2017$time.series)
+ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017$interpGE, r_dswhite2017$time.series)
 ```
 
 ```{r ex3_vd_c3bis, include = F, eval = gen_figs}
 # make a 'reference object' 
-r_ds5 <- list(interpGE = pred_m_ds5, time.series = newdat$age)
+r_dswhite2017 <- list(interpGE = pred_m_dswhite2017, time.series = newdat$age)
 
 # speed up w/ no bootstrap
-ae_ds5 <- ae(ds5$g, r_ds5$interpGE, r_ds5$time.series, bootstrap.n = 1)
-ae_ds6 <- ae(ds6$g, r_ds5$interpGE, r_ds5$time.series, bootstrap.n = 1)
+ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017$interpGE, r_dswhite2017$time.series, bootstrap.n = 1)
+ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017$interpGE, r_dswhite2017$time.series, bootstrap.n = 1)
 ```
 
 
 ```{r ex3_vd_c4, echo=F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(1,2))
-  rg <- range(c(ae_ds5$age.estimates[,1], ds5$p$age))
-  plot(ae_ds5$age.estimates[,1]~ds5$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds5)", 
+  rg <- range(c(ae_dswhite2017$age.estimates[,1], dswhite2017$p$age))
+  plot(ae_dswhite2017$age.estimates[,1]~dswhite2017$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds5 (on ds5 reference)", lwd = 2, col = factor(ds5$p$batch))
-  invisible(sapply(levels(factor(ds5$p$batch)), function(l){
-    s <- ds5$p$batch == l
-    points(ae_ds5$age.estimates[s,1]~ds5$p$age[s], type = 'l', 
-           lty = 2, col = which(l==levels(factor(ds5$p$batch))))
+       main = "Chron. vs Estimated ages for dswhite2017 (on dswhite2017 reference)", lwd = 2, col = factor(dswhite2017$p$batch))
+  invisible(sapply(levels(factor(dswhite2017$p$batch)), function(l){
+    s <- dswhite2017$p$batch == l
+    points(ae_dswhite2017$age.estimates[s,1]~dswhite2017$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(dswhite2017$p$batch))))
   }))
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   legend("bottomright", legend = c(batch_legend, "x = y"), 
          lwd=3, col=c(1:5, 1), bty='n', pch = c(rep(1,5),NA), lty = c(rep(NA, 5), 3))
   
-  # rg <- range(c(ae_ds6$age.estimates[,1], ds6$p$age))
-  plot(ae_ds6$age.estimates[,1]~ds6$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds5)", 
+  # rg <- range(c(ae_dslevin2016zeb$age.estimates[,1], dslevin2016zeb$p$age))
+  plot(ae_dslevin2016zeb$age.estimates[,1]~dslevin2016zeb$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds6 (on ds5 reference)", lwd = 2)
-  # points(ae_ds6$age.estimates[,1] ~ ds6$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dslevin2016zeb (on dswhite2017 reference)", lwd = 2)
+  # points(ae_dslevin2016zeb$age.estimates[,1] ~ dslevin2016zeb$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
@@ -512,12 +512,12 @@ show_fig(expr = {
 We'll build the same model (not the optimal model !) without considering uneven sampling, for comparison.
 
 ```{r ex3_vd_c5, eval=gen_figs}
-m_ds5_norank <- ge_im(X = ds5$g, p = ds5$p, formula = "X ~ s(age, bs = 'ds') + batch", nc = nc)
+m_dswhite2017_norank <- ge_im(X = dswhite2017$g, p = dswhite2017$p, formula = "X ~ s(age, bs = 'ds') + batch", nc = nc)
 ```
 
 ```{r ex3_vd_c5bis, echo=F, eval=gen_figs}
-mp_ds5_norank <- mperf(scale(ds5$g), predict(m_ds5_norank), is.t = T)
-as.data.frame(mp_ds5_norank, row.names = "")
+mp_dswhite2017_norank <- mperf(scale(dswhite2017$g), predict(m_dswhite2017_norank), is.t = T)
+as.data.frame(mp_dswhite2017_norank, row.names = "")
 ```
 
 ```{r ex3_vd_mf_print}
@@ -527,8 +527,8 @@ as.data.frame(mp_ds5_norank, row.names = "")
 
 
 ```{r ex3_vd_c6, eval=gen_figs}
-pred_m_ds5_norank <- predict(m_ds5_norank, newdata = newdat)
-pred_m_ds5_comp_norank <- predict(m_ds5_norank, newdata = newdat, as.c = TRUE)
+pred_m_dswhite2017_norank <- predict(m_dswhite2017_norank, newdata = newdat)
+pred_m_dswhite2017_comp_norank <- predict(m_dswhite2017_norank, newdata = newdat, as.c = TRUE)
 ```
 
 Let's plot the components on the rank and age scales, as before.
@@ -537,14 +537,14 @@ Let's plot the components on the rank and age scales, as before.
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds5$p$rank, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+    plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "rank", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds5$p$batch)), function(l){
-      s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-      points(ds5$p$rank[s], pca_ds5$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+      s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+      points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$rank, pred_m_ds5_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
+    points(newdat$rank, pred_m_dswhite2017_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
     box(col = "grey50", lwd = 3)
     if(i == 1)
       legend("top", bty = 'n', legend = c(batch_legend, "pred (no rk)"), title = "Batch",
@@ -559,14 +559,14 @@ Back on the age scale :
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(ds5$p$age, pca_ds5$rotation[,i], lwd = 2, col = ds5$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(ds5$p$batch)), function(l){
-      s <- which(ds5$p$batch == levels(ds5$p$batch)[l])
-      points(ds5$p$age[s], pca_ds5$rotation[s,i], col = l, 
+    sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
+      s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
+      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_ds5_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
+    points(newdat$age, pred_m_dswhite2017_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
     if(i == 1)
       legend("bottomright", bty = 'n', legend = c(batch_legend, "pred (no rk)"), title = "Batch",
              pch = c(rep(1, 5), NA), lty = c(rep(NA, 5), 1), col = c(1:5, "firebrick"), lwd = 3)
@@ -581,45 +581,45 @@ This has consequences on the estimates *of the validation dataset*, as you'll se
 
 ```{r ex3_vd_c8, eval = F}
 # make a 'reference object' 
-r_ds5_norank <- list(interpGE = pred_m_ds5_norank, time.series = newdat$age)
+r_dswhite2017_norank <- list(interpGE = pred_m_dswhite2017_norank, time.series = newdat$age)
 
-ae_ds5_norank <- ae(ds5$g, r_ds5_norank$interpGE, r_ds5_norank$time.series)
-ae_ds6_norank <- ae(ds6$g, r_ds5_norank$interpGE, r_ds5_norank$time.series)
+ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series)
+ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series)
 ```
 
 ```{r ex3_vd_c8bis, include = F, eval=gen_figs}
 # make a 'reference object' 
-r_ds5_norank <- list(interpGE = pred_m_ds5_norank, time.series = newdat$age)
+r_dswhite2017_norank <- list(interpGE = pred_m_dswhite2017_norank, time.series = newdat$age)
 
-ae_ds5_norank <- ae(ds5$g, r_ds5_norank$interpGE, r_ds5_norank$time.series, bootstrap.n = 1)
-ae_ds6_norank <- ae(ds6$g, r_ds5_norank$interpGE, r_ds5_norank$time.series, bootstrap.n = 1)
+ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series, bootstrap.n = 1)
+ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series, bootstrap.n = 1)
 ```
 
 
 ```{r ex3_vd_c9, echo=F, fig.height=6, fig.width=13}
 show_fig(expr = {
   par(mfrow = c(1,2))
-  rg <- range(c(ae_ds5$age.estimates[,1], ds5$p$age))
-  plot(ae_ds5_norank$age.estimates[,1]~ds5$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds5)", 
+  rg <- range(c(ae_dswhite2017$age.estimates[,1], dswhite2017$p$age))
+  plot(ae_dswhite2017_norank$age.estimates[,1]~dswhite2017$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds5 (on ds5 norank reference)", lwd = 2, col = factor(ds5$p$batch))
-  invisible(sapply(levels(factor(ds5$p$batch)), function(l){
-    s <- ds5$p$batch == l
-    points(ae_ds5_norank$age.estimates[s,1]~ds5$p$age[s], type = 'l', 
-           lty = 2, col = which(l==levels(factor(ds5$p$batch))))
+       main = "Chron. vs Estimated ages for dswhite2017 (on dswhite2017 norank reference)", lwd = 2, col = factor(dswhite2017$p$batch))
+  invisible(sapply(levels(factor(dswhite2017$p$batch)), function(l){
+    s <- dswhite2017$p$batch == l
+    points(ae_dswhite2017_norank$age.estimates[s,1]~dswhite2017$p$age[s], type = 'l', 
+           lty = 2, col = which(l==levels(factor(dswhite2017$p$batch))))
   }))
   
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   legend("bottomright", legend = c(batch_legend, "x = y"), 
          lwd=3, col=c(1:5, 1), bty='n', pch = c(rep(1,5),NA), lty = c(rep(NA, 5), 3))
   
-  # rg <- range(c(ae_ds6$age.estimates[,1], ds6$p$age))
-  plot(ae_ds6_norank$age.estimates[,1]~ds6$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (ds5)", 
+  # rg <- range(c(ae_dslevin2016zeb$age.estimates[,1], dslevin2016zeb$p$age))
+  plot(ae_dslevin2016zeb_norank$age.estimates[,1]~dslevin2016zeb$p$age, 
+       xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for ds6 (on ds5 norank reference)", lwd = 2)
-  # points(ae_ds6$age.estimates[,1] ~ ds6$p$age, type = 'l', lty = 2)
+       main = "Chron. vs Estimated ages for dslevin2016zeb (on dswhite2017 norank reference)", lwd = 2)
+  # points(ae_dslevin2016zeb$age.estimates[,1] ~ dslevin2016zeb$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
   legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
