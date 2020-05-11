@@ -65,6 +65,14 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.3 (warning : model construction behavior altered)
+ - Fixed a bug with the PCA centering not working as intended (in practice, this removes an erroneous 1st component corresponding to mean gene expression level rather than dynamics). Applied the same changes to ICA. Reconstructed expression matrix is now comparable to input matrix (previously comparable to scaled input matrix). This change impacted the references of the `wormRef` package as well, which has been updated accordingly.
+ - Updated all vignettes according to the changes of the above point. 
+ - Changed dataset names to be meaningful in the main and refbuilding vignettes (eg. `dshendriks2014` instead of `ds2`). 
+ - Detailed some sections of the showcase vignette.
+ - Fixed a bug when specifying a color in `plot.ae()` along with `glob.above = TRUE`.
+ 
+
 #### v1.1.2
  - Created a "showcase" vignette with 3 different uses of `RAPToR` `vignette("RAPToR-showcase")`
  - Updated vignettes with a `data_folder` variable to build the example objects more easily
