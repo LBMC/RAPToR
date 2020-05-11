@@ -105,33 +105,12 @@ requireNamespace("Biobase", quietly = T)
 ```
 
 
-```{r sc2_raw2rpkm_func, eval = FALSE}
-raw2rpkm <- function(X, gene.length, id.col = 1, l.col='length'){
-  # Compute RPKM from raw counts
-  if(!all(rownames(X)%in%gene.length[, id.col])){
-    stop("Some genes are missing length info !")
-  }
-  res <- sapply(colnames(X), function(samp){
-    pm <- sum(X[,samp])/1e6
-    rpkm <- (X[,samp]/pm)/(gene.length[match(rownames(X), gene.length[, id.col]), l.col]/1000)
-  })
-  rownames(res) <- rownames(X)
-  return(res)
-}
+```{r sc2_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
 ```
 
-```{r load_dmel_genes, eval = F}
-requireNamespace("biomaRt", quietly = TRUE)
-
-mart <- biomaRt::useMart("ensembl", dataset = "dmelanogaster_gene_ensembl")
-dmel_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", 
-                                            "ensembl_transcript_id",
-                                            "external_gene_name",
-                                            "transcript_length"),
-                              mart = mart)
-colnames(dmel_genes)[1:3] <- c("fb_id", "transcript_id", "gene_name")
-rm(mart)
+```{r sc2_load_droso_genes, code = readLines("load_droso_genes.R"), echo = TRUE, eval=FALSE}
 ```
+
 
 <br>
 
