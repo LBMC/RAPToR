@@ -560,7 +560,7 @@ nc
 #> [1] 32
 ```
 
-Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99.9\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
 
 <br>
 
@@ -569,7 +569,7 @@ The function inputs the `X`, `p` and a `formula_list` to test.
 Other parameters on the CV itself can also be given (*e.g.* training set size).
 
 
-Below is an example of usage to choose a degree of freedom for a spline on the `dsaeschimann2017` GEIM.
+Below is an example of usage to choose among available spline types for the `dsaeschimann2017` GEIM.
 ```{r include = F, eval = gen_figs}
 set.seed(2)
 ```
@@ -617,7 +617,8 @@ the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`),
 These indices all compare model predictions and the true data. 
 The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
 
-From the plots above, choosing `k = 8` seems to be the best-performing choice (minimum CV error and plateau of model performance). 
+From the plots above, we can see the different splines perform similarly in this scenario, all could work. 
+We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error without much impact model performance. 
 
 
 ## Predicting from the model
