@@ -209,7 +209,7 @@ dslevin2016dmel$p$ae <- ae_dmel$age.estimates[,1]
 
 #### Build a C. elegans embryo reference
 
-As we have components that are rather noisy with this data, we'll only use 5 components to build the reference.
+As we have components that are rather noisy with this data, we'll only use 7 components to build the reference.
 ```{r sc2_build_celref, eval=gen_figs}
 pca_cel <- stats::prcomp(t(dslevin2016cel$g_cel), rank = 10,
                          center = TRUE, scale = FALSE)
