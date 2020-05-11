@@ -169,14 +169,13 @@ load("../inst/extdata/sc2_glist.RData")
 
 ```{r sc2_qnorm, eval=gen_figs}
 dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
-dsgraveley2011$g <- log(dsgraveley2011$g + 1)
+dsgraveley2011$g <- log1p(dsgraveley2011$g)
 
 dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
-dslevin2016dmel$g <- log(dslevin2016dmel$g + 1)
+dslevin2016dmel$g <- log1p(dslevin2016dmel$g)
 
 dslevin2016cel$g <- limma::normalizeBetweenArrays(dslevin2016cel$g, method = "quantile")
-dslevin2016cel$g <- log(dslevin2016cel$g + 1)
-
+dslevin2016cel$g <- log1p(dslevin2016cel$g)
 ```
 
 
@@ -193,7 +192,7 @@ We know from previous use of the `dslevin2016dmel` dataset that its samples have
 We'll first estimate the age of the samples and use that as a basis for the comparison when staging on *C. elegans* data.
 
 ```{r sc2_aedmel, eval=gen_figs}
-m_grav <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = 4)
+m_grav <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = 3)
 
 n.inter <- 200 
 newdat <- data.frame(
@@ -212,8 +211,9 @@ dslevin2016dmel$p$ae <- ae_dmel$age.estimates[,1]
 
 As we have components that are rather noisy with this data, we'll only use 5 components to build the reference.
 ```{r sc2_build_celref, eval=gen_figs}
-pca_cel <- stats::prcomp(dslevin2016cel$g_cel, rank = 10)
-nc <- 5 
+pca_cel <- stats::prcomp(t(dslevin2016cel$g_cel), rank = 10,
+                         center = TRUE, scale = FALSE)
+nc <- 7
 
 m_cel <- ge_im(X = dslevin2016cel$g_cel, p = dslevin2016cel$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
 
@@ -232,7 +232,7 @@ show_fig(expr = {
 
   par(mfrow = c(2,3))
   invisible(sapply(seq_len(6), function(i){
-    plot(dslevin2016cel$p$age, pca_cel$rotation[,i], lwd = 2, col = "darkblue",
+    plot(dslevin2016cel$p$age, pca_cel$x[,i], lwd = 2, col = "darkblue",
          xlab = "age", ylab = "PC", main = paste0("PC", i))
   
     # points(dslevin2016cel$p$age, pca_cel$rotation[,i], type = 'l', lty = 2)
