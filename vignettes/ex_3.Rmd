@@ -1,4 +1,4 @@
-```{r, include = FALSE, eval = F}
+```{r, include = FALSE, eval = T}
 knitr::opts_knit$set(out.format = "html")
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -116,11 +116,11 @@ dslevin2016zeb$g <- log(dslevin2016zeb$g + 1)
 ```{r ex3_ql_c1, results='markup', eval=gen_figs}
 dswhite2017$g[1:5, 1:5]
 #>                    zmp_ph133_B zmp_ph133_D zmp_ph133_E zmp_ph133_F zmp_ph133_G
-#> ENSDARG00000000001    1.992991    1.827910   1.7427071    1.839980   1.7305791
-#> ENSDARG00000000002    1.013519    1.049910   0.7850242    1.046494   0.8564017
-#> ENSDARG00000000018    2.247738    2.322763   2.0246236    2.159045   2.3384767
-#> ENSDARG00000000019    4.198081    4.295515   4.3738184    4.298936   4.3578940
-#> ENSDARG00000000068    4.172288    4.226427   4.0332980    4.059632   3.9252796
+#> ENSDARG00000000001    2.192007    2.019082    1.929426    2.031762   1.9166338
+#> ENSDARG00000000002    1.149510    1.188959    0.900076    1.185358   0.9783448
+#> ENSDARG00000000018    2.456661    2.534134    2.224970    2.364784   2.5503750
+#> ENSDARG00000000019    4.432509    4.529970    4.608232    4.533400   4.5923212
+#> ENSDARG00000000068    4.406696    4.460862    4.267657    4.294028   4.1594844
 
 head(dswhite2017$p, n = 5)
 #>        sample accession_number         stage stageName sampleName age batch
@@ -164,18 +164,19 @@ show_fig(expr = {
 ##### Plotting components
 
 ```{r ex3_ql_c3, eval = gen_figs}
-pca_dswhite2017 <- stats::prcomp(dswhite2017$g, rank = 25)
+pca_dswhite2017 <- stats::prcomp(t(dswhite2017$g), rank = 25,
+                                 center = TRUE, scale = FALSE)
 ```
 
 ```{r ex3_ql_c4, echo = F, fig.height=6, fig.width=12}
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
       s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
+      points(dswhite2017$p$age[s], pca_dswhite2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     # points(ndat$age, pred_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
@@ -201,11 +202,11 @@ dswhite2017$p$rank <- data.table::frank(dswhite2017$p$age, ties.method = "dense"
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+    plot(dswhite2017$p$rank, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "rank", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
       s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-      points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
+      points(dswhite2017$p$rank[s], pca_dswhite2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     box(col = "grey50", lwd = 3)
@@ -226,9 +227,9 @@ To predict the data in a uniform time scale, we can just pick values on the rank
 #### Component number
 
 ```{r ex3_mf_c1, eval=gen_figs}
-nc <- sum(summary(pca_dswhite2017)$importance[3,] < .999) + 1
+nc <- sum(summary(pca_dswhite2017)$importance[3,] < .99) + 1
 nc
-#> [1] 77
+#> [1] 67
 ```
 
 #### Model
@@ -238,13 +239,13 @@ m_dswhite2017 <- ge_im(X = dswhite2017$g, p = dswhite2017$p, formula = "X ~ s(ra
 ```
 
 ```{r ex3_mf_c3, echo = F, eval=gen_figs}
-mp_dswhite2017 <- mperf(scale(dswhite2017$g), predict(m_dswhite2017), is.t = T)
+mp_dswhite2017 <- mperf(dswhite2017$g, predict(m_dswhite2017), is.t = T)
 as.data.frame(mp_dswhite2017, row.names = "")
 ```
 
 ```{r ex3_mf_print}
-#>        aCC       aRE        MSE     aRMSE
-#>  0.8772099 0.2281205 0.01266176 0.1125245
+#>       aCC     aRE        MSE     aRMSE
+#> 0.8593854 1.14166 0.03793716 0.1947746
 ```
 
 
@@ -326,11 +327,11 @@ On the rank scale :
 show_fig(expr = {
 par(mfrow = c(2,4))
 invisible(sapply(seq_len(8), function(i){
-  plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+  plot(dswhite2017$p$rank, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
        xlab = "rank", ylab = "PC", main = paste0("PC", i))
   sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
     s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-    points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
+    points(dswhite2017$p$rank[s], pca_dswhite2017$x[s,i], col = l, 
            type = 'l', lty = 2)
   })
   points(newdat$rank, pred_m_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
@@ -348,11 +349,11 @@ Back on the age scale :
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
       s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
+      points(dswhite2017$p$age[s], pca_dswhite2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     points(newdat$age, pred_m_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
@@ -393,7 +394,7 @@ show_fig(expr = {
   plot(ae_dswhite2017$age.estimates[,1]~dswhite2017$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dswhite2017 (on dswhite2017 reference)", lwd = 2, col = factor(dswhite2017$p$batch))
+       main = "Chron. vs Estimated ages for dswhite2017\n(on dswhite2017 reference)", lwd = 2, col = factor(dswhite2017$p$batch))
   invisible(sapply(levels(factor(dswhite2017$p$batch)), function(l){
     s <- dswhite2017$p$batch == l
     points(ae_dswhite2017$age.estimates[s,1]~dswhite2017$p$age[s], type = 'l', 
@@ -408,7 +409,7 @@ show_fig(expr = {
   plot(ae_dslevin2016zeb$age.estimates[,1]~dslevin2016zeb$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dslevin2016zeb (on dswhite2017 reference)", lwd = 2)
+       main = "Chron. vs Estimated ages for dslevin2016zeb\n(on dswhite2017 reference)", lwd = 2)
   # points(ae_dslevin2016zeb$age.estimates[,1] ~ dslevin2016zeb$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
@@ -419,7 +420,8 @@ show_fig(expr = {
 
 ##### On a model without using ranks
 
-We'll build the same model (not the optimal model !) without considering uneven sampling, for comparison.
+We'll build the same model (not the optimal model !) without considering uneven sampling, for comparison. 
+This will allow us to showcase some interpolation issues to look out for.
 
 ```{r ex3_vd_c5, eval=gen_figs}
 m_dswhite2017_norank <- ge_im(X = dswhite2017$g, p = dswhite2017$p, formula = "X ~ s(age, bs = 'ds') + batch", nc = nc)
@@ -431,8 +433,8 @@ as.data.frame(mp_dswhite2017_norank, row.names = "")
 ```
 
 ```{r ex3_vd_mf_print}
-#>        aCC       aRE        MSE     aRMSE
-#>  0.8477562 0.2153231 0.01803523 0.1342953
+#>       aCC       aRE      MSE    aRMSE
+#> 0.8201534 0.6431004 2.668498 1.633554
 ```
 
 
@@ -447,11 +449,11 @@ Let's plot the components on the rank and age scales, as before.
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dswhite2017$p$rank, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+    plot(dswhite2017$p$rank, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "rank", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
       s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-      points(dswhite2017$p$rank[s], pca_dswhite2017$rotation[s,i], col = l, 
+      points(dswhite2017$p$rank[s], pca_dswhite2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     points(newdat$rank, pred_m_dswhite2017_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
@@ -469,11 +471,11 @@ Back on the age scale :
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dswhite2017$p$age, pca_dswhite2017$rotation[,i], lwd = 2, col = dswhite2017$p$batch,
+    plot(dswhite2017$p$age, pca_dswhite2017$x[,i], lwd = 2, col = dswhite2017$p$batch,
          xlab = "age", ylab = "PC", main = paste0("PC", i))
     sapply(seq_along(levels(dswhite2017$p$batch)), function(l){
       s <- which(dswhite2017$p$batch == levels(dswhite2017$p$batch)[l])
-      points(dswhite2017$p$age[s], pca_dswhite2017$rotation[s,i], col = l, 
+      points(dswhite2017$p$age[s], pca_dswhite2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
     points(newdat$age, pred_m_dswhite2017_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
@@ -485,7 +487,7 @@ show_fig(expr = {
 ```
 
 We can already see that the model has trouble predicting the dynamics accurately.
-For example, we pick up noise in PC6 and flatten dynamics in PC7.
+For example, we pick up noise in PC5 and flatten dynamics in PC6.
 
 This has consequences on the estimates *of the validation dataset*, as you'll see when we stage the samples.
 
@@ -501,8 +503,10 @@ ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, 
 # make a 'reference object' 
 r_dswhite2017_norank <- list(interpGE = pred_m_dswhite2017_norank, time.series = newdat$age)
 
-ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series, bootstrap.n = 1)
-ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series, bootstrap.n = 1)
+ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, 
+                            r_dswhite2017_norank$time.series, bootstrap.n = 1)
+ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, 
+                               r_dswhite2017_norank$time.series, bootstrap.n = 1)
 ```
 
 
@@ -513,7 +517,7 @@ show_fig(expr = {
   plot(ae_dswhite2017_norank$age.estimates[,1]~dswhite2017$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dswhite2017 (on dswhite2017 norank reference)", lwd = 2, col = factor(dswhite2017$p$batch))
+       main = "Chron. vs Estimated ages for dswhite2017\n(on dswhite2017 norank reference)", lwd = 2, col = factor(dswhite2017$p$batch))
   invisible(sapply(levels(factor(dswhite2017$p$batch)), function(l){
     s <- dswhite2017$p$batch == l
     points(ae_dswhite2017_norank$age.estimates[s,1]~dswhite2017$p$age[s], type = 'l', 
@@ -528,7 +532,7 @@ show_fig(expr = {
   plot(ae_dslevin2016zeb_norank$age.estimates[,1]~dslevin2016zeb$p$age, 
        xlab = "Chronological age", ylab = "Estimated age (dswhite2017)", 
        xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dslevin2016zeb (on dswhite2017 norank reference)", lwd = 2)
+       main = "Chron. vs Estimated ages for dslevin2016zeb\n(on dswhite2017 norank reference)", lwd = 2)
   # points(ae_dslevin2016zeb$age.estimates[,1] ~ dslevin2016zeb$p$age, type = 'l', lty = 2)
   abline(a = 0, b = 1, lty = 3, lwd = 2)
   
@@ -537,8 +541,9 @@ show_fig(expr = {
 ```
 
 The "gaps" or "steps" you can see on the validation dataset's estimates are due to interpolation bias : the picked up noise and flattened dynamics mentioned above.
-Essentially, the model errors create local "unlikely/unrealistic" gene expression zones, which will not correlate well with the samples of corresponding age.
-These zones will most often find themselves in the gaps between timepoints of the dataset used to build the reference, meaning the estimates of its samples are unaffected.
+Essentially, the model errors create local "unlikely/unrealistic" gene expression zones in the interpolation, which will not correlate well with the samples of corresponding age.
+These zones will most often find themselves in between timepoints of the dataset used to build the reference, meaning the estimates of its samples are unaffected.
+However, the validation dataset has clear blank ranges of age estimates, around which are clustered the samples of corresponding age.
 
-While we've used a suboptimal model here (which clearly displays the model errors on component plots), some interpolation bias can be much more subtle. 
+While we've used a suboptimal model here (which clearly displays model errors on component plots), some interpolation bias can be much more subtle. 
 In such cases, this is something that can only be assessed using an external dataset. 
