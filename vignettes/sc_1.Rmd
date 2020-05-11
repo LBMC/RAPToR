@@ -99,7 +99,7 @@ load("../inst/extdata/dslerhbach2012.RData")
 
 ```{r sc1_qnormlog, eval = gen_figs}
 dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, method = "quantile")
-dslehrbach2012$g <- log(dslehrbach2012$g + 1)
+dslehrbach2012$g <- log1p(dslehrbach2012$g)
 ```
 
 
@@ -351,7 +351,7 @@ dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimat
               name = "dge.ae", return.model = T)
 ```
 
-```{r sc1_plot_dge_func, echo = F}
+```{r sc1_plot_dge_func, echo = F, eval = gen_figs}
 plot_DGE_pval_vs <- function(pv.x, pv.y, 
                              xlab = "-log10(pv.x)", ylab = "-log10(pv.y)", 
                              main = "DE genes with pv.x vs pv.y", ...)
@@ -398,14 +398,14 @@ age_dif.ca <- sum(dge.ca$tage$adj.P.Val < 0.05)
 age_dif.ae <- sum(dge.ae$tage$adj.P.Val < 0.05)
 
 100 * (mut_dif.ae - mut_dif.ca) / (mut_dif.ca) # mut pct increase 
-#> [1] 91.8583
+#> [1] 96.39528
 
 100 * (age_dif.ae - age_dif.ca) / (age_dif.ca) # age pct increase
-#> [1] 9.081006
+#> [1] 7.674787
 
 ```
 
-We detect nearly *twice* as many DE genes for strain using our estimates compared to using the chronological age, and around $10 \%$ more genes with development.
+We detect nearly *twice* as many DE genes for strain using our estimates compared to using the chronological age, and around $8 \%$ more genes with development.
 This shows how crucial it can be to take developmental dynamics into account correctly in DGE analyses.
 
 
