@@ -97,7 +97,7 @@ You may also have your own time-series data on hand.
 
 ### Databases
 There are a few databases you can download datasets from. 
-The most well-known the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
+The most well-known are the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
 
 Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts).
 
@@ -108,7 +108,7 @@ Several points of the experimental design should be kept in mind when selecting 
    * ***Is the timepoint sampling even ?*** Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
    * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the samples to stage fit within, it is enough).
    * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
-   * ***What's the profiling technology*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do. When using RNA-seq counts, apply some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately.
+   * ***What's the profiling technology ?*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do. When using RNA-seq counts, apply some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately.
    
    
 ### ID formatting
@@ -578,7 +578,7 @@ Note that this threshold must be set in accordance with the noise in the data. F
 
 You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
 
-In very noisy dataset, you may have to keep very few components ($<5$) for the interpolation.
+In a very noisy dataset, you may have to keep very few components ($<5$) for the interpolation.
 
 
 ### Comparing formulas
@@ -644,11 +644,11 @@ We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error
 
 
 You can also specify extra spline parameters for a fit. 
-With `s()`, you can give the number of knots to use with the `k` parameters. 
-By default, the spline is a *penalized spline*, so it will not necessarily use `k` knots, but it will stay around that value. 
+With `s()`, you can give the spline's basis dimension (~= number of knots) to use with the `k` parameter. 
+By default, the spline is a *penalized spline*, so it will not necessarily use `k` knots, but it will stay below that value. 
 In our experience, this is not really necessary as the parameter estimation done with `gam()` is usually sufficient.
 
-To force a spline with `k` knots, you must also set `fx = TRUE` (note this fits a spline of `k` knots on *all* components, whereas the penalized spline will adjust). 
+To force a spline with `k` basis dimension, you must also set `fx = TRUE` (note this fits a spline of dimension `k` on *all* components, whereas the penalized spline will adjust). 
 You can look at the `s()` or `choose.k` documentation for further information.
 
 Below is an example with the `dsaeschimann2017` data.
