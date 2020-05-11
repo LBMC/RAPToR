@@ -639,7 +639,8 @@ show_fig(expr = {
 }, fig.width=9, fig.height=8)
 ```
 
-From the plots above, the cubic regression spline (`cr`) seems to be the best-performing choice. 
+From the plots above, we can see the different splines perform similarly in this scenario, all could work. 
+We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error without much impact model performance. 
 
 
 You can also specify extra spline parameters for a fit. 
