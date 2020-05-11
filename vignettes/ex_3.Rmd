@@ -1,4 +1,4 @@
-```{r, include = FALSE, eval = T}
+```{r, include = FALSE, eval = F}
 knitr::opts_knit$set(out.format = "html")
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -212,7 +212,7 @@ show_fig(expr = {
     box(col = "grey50", lwd = 3)
     # points(ndat$age, pred_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
-      legend("top", bty = 'n', legend = batch_legend, title = "Batch",
+      legend("bottomright", bty = 'n', legend = batch_legend, title = "Batch",
              pch = c(rep(1, 5)), lty = c(rep(NA, 5)), col = c(1:5), lwd = 3)
   }))
 }, fig.height=6, fig.width=12)
@@ -337,7 +337,7 @@ invisible(sapply(seq_len(8), function(i){
   points(newdat$rank, pred_m_dswhite2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
   box(col = "grey50", lwd = 3)
   if(i == 1)
-    legend("top", bty = 'n', legend = c(batch_legend, "pred"), title = "Batch",
+    legend("bottomright", bty = 'n', legend = c(batch_legend, "pred"), title = "Batch",
            pch = c(rep(1, 5), NA), lty = c(rep(NA, 5), 1), col = c(1:5, "royalblue"), lwd = 3)
   }))
 }, fig.width=12, fig.height=6)
@@ -459,7 +459,7 @@ show_fig(expr = {
     points(newdat$rank, pred_m_dswhite2017_comp_norank[, i], col = "firebrick", type = 'l', lwd = 3)
     box(col = "grey50", lwd = 3)
     if(i == 1)
-      legend("top", bty = 'n', legend = c(batch_legend, "pred (no rk)"), title = "Batch",
+      legend("bottomright", bty = 'n', legend = c(batch_legend, "pred (no rk)"), title = "Batch",
              pch = c(rep(1, 5), NA), lty = c(rep(NA, 5), 1), col = c(1:5, "firebrick"), lwd = 3)
     }))
 }, fig.width=12, fig.height=6)
