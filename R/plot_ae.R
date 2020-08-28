@@ -39,7 +39,7 @@ plot.ae <- function(x, errbar.width=0.1,
   if(!is.null(subset)){
     # subset the data to plot
     x$age.estimates <- x$age.estimates[subset,,drop=F]
-    x$prior <- x$prior[subset,,drop=F]
+    x$prior <- x$prior[subset]
     x$boots <- x$boots[,subset, ,drop=F]
     if(!is.null(groups)){
       groups <- droplevels(groups[subset])
