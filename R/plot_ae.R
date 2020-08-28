@@ -71,6 +71,8 @@ plot.ae <- function(x, errbar.width=0.1,
     offset <- cumsum(c(0, diff(as.numeric(groups)) != 0))
     y <- 1L:n + 2 * offset
   }
+  color <- rep(color, n)[o]
+  
   # plot error bars
   arrows(err.sup, y,
          err.inf, y,
@@ -104,7 +106,6 @@ plot.ae <- function(x, errbar.width=0.1,
   }
   
   if(glob.above){
-    color <- rep(color, n)[o]
     graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, col = color, ...)
   }
 }
