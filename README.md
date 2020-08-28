@@ -56,6 +56,9 @@ This means that any data providing information on gene expression on a large sca
 Data-packages hold pre-built references for quick & easy usage.
 
  - [`wormRef` Nematode references](https://www.github.com/LBMC/wormRef) (*C. elegans* development)
+ - [`drosoRef` Drosophila references](https://www.github.com/LBMC/drosoRef) (*D. melanogaster* embryo development)
+ - [`zebraRef` Zebrafish references](https://www.github.com/LBMC/zebraRef) (*D. rerio* embryo and larval development)
+ - [`mouseRef` Mouse references](https://www.github.com/LBMC/mouseRef) (*M. musculus* embryo development)
 
 
 <br>
@@ -65,6 +68,10 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.4
+ - Fixed minor bugs in `plot.ae` 
+ - Added links to new data-packages for drosophila, zebrafish and mouse (above).
+ 
 #### v1.1.3 (warning : model construction behavior altered)
  - Fixed a bug with the PCA centering not working as intended (in practice, this removes an erroneous 1st component corresponding to mean gene expression level rather than dynamics). Applied the same changes to ICA. Reconstructed expression matrix is now comparable to input matrix (previously comparable to scaled input matrix). This change impacted the references of the `wormRef` package as well, which has been updated accordingly.
  - Updated all vignettes according to the changes of the above point. 

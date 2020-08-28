@@ -1,6 +1,6 @@
 Package: RAPToR
 Title: Real Age Prediction from Transcriptome staging On Reference
-Version: 1.1.3
+Version: 1.1.4
 Authors@R: c(
   person("Romain", "Bulteau", email = "romain.bulteau@ens-lyon.fr",
     role = c("aut", "cre")),
@@ -29,7 +29,7 @@ Imports:
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Roxygen: list(markdown = TRUE)
 RdMacros: Rdpack
 Suggests:
