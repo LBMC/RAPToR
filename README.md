@@ -48,7 +48,7 @@ The method works in a 2-step process.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
-<img src="inst/cdoc/tool_overview.png" alt="tool_overview" width="60%"/>
+<img src="inst/cdoc/tool_overview.png" alt="tool_overview" width="90%"/>
 </center>
 
 ### What data can be used ?
