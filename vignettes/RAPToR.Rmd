@@ -502,7 +502,7 @@ Note that [there is a vignette entirely dedicated to this process](RAPToR-refbui
 
 Interpolating on time series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
-,
+
 To build your reference, you will require a time series of gene expression data on your favourite organism.
 The `dsaeschimann2017` example dataset we loaded earlier will be used to illustrate the process.
 
