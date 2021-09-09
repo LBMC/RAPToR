@@ -523,10 +523,10 @@ m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p,
 
 
 ## About the models
-The strategy we put forward for predicting on such a large scale of output variables, is to interpolate in a dimensionally reduced space. 
+The strategy we put forward for predicting on such a large scale of output variables (genes), is to interpolate in a dimensionally reduced space. 
 We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
 
-Both PCA and ICA perform the same type of linear transformation on the data (they just maximize a different criteria). We get the following :
+Both PCA and ICA perform the same type of linear transformation on the data (they just optimize different criteria). We get the following :
 
 $$
 X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
