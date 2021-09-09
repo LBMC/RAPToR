@@ -11,7 +11,7 @@ most importantly, to recover perturbation specific effects on gene expression ev
 
 Please cite our preprint if you use RAPToR in your research:
 
- - Romain Bulteau, Mirko Francesconi. Real Age Prediction from the Transcriptome with RAPToR *bioRxiv* 2021.09.07.459270; doi: https://doi.org/10.1101/2021.09.07.459270
+ - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* doi: (https://doi.org/10.1101/2021.09.07.459270)
 
 ## Installation
 
