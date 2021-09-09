@@ -5,6 +5,10 @@
 We achieve this by building high-temporal-resolution time series across the development of organisms from multiple available datasets, which we use as a reference to stage samples. 
 Inferred age can then be used as a covariate in analyses and increase their power to detect differential expression by including time-dependant effects. 
 
+Please cite our preprint if you use RAPToR in your research:
+
+ - Romain Bulteau, Mirko Francesconi. Real Age Prediction from the Transcriptome with RAPToR *bioRxiv* 2021.09.07.459270; doi: https://doi.org/10.1101/2021.09.07.459270
+
 ## Installation
 
 To install the package, you can use the `devtools` R package. This should be done in your R console :
@@ -34,11 +38,10 @@ vignette("RAPToR")
 
 ### How does it work ?
 
-The method works in a three-step process. 
+The method works in a 2-step process. 
 
  1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
- 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
- 1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
+ 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
 <img src="inst/cdoc/tool_overview.png" alt="tool_overview" width="60%"/>
@@ -46,9 +49,9 @@ The method works in a three-step process.
 
 ### What data can be used ?
 The `RAPToR` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
-This means that any data providing information on gene expression on a large scale is appropriate : RNA-seq counts (or RPKM), MicroArray, Chips...
+This means that any method outputting information on gene expression on a large scale is appropriate : RNA-seq (preferably TPM), MicroArray...
 
-**The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
+**Data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 
 
 ## Current available data-packages
