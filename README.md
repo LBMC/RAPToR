@@ -1,9 +1,13 @@
 # `RAPToR` R package
 
-`RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict individual samples' developmental age from their gene expression profiles. 
+`RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict the developmental age of individual samples from their gene expression profiles. 
 
 We achieve this by building high-temporal-resolution time series across the development of organisms from multiple available datasets, which we use as a reference to stage samples. 
-Inferred age can then be used as a covariate in analyses and increase their power to detect differential expression by including time-dependant effects. 
+Inferred age can then be used in multiple ways to 
+precisely estimate perturbations effects on developmental timing, 
+increase power in differential expression analyses, 
+estimate differential expression due to uncontrolled development and, 
+most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
 
 Please cite our preprint if you use RAPToR in your research:
 
