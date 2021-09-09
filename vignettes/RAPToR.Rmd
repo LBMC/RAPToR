@@ -69,19 +69,25 @@ However, methods that extract this information are still lacking.
 
 We present `RAPToR`, a new tool to accurately predict individual samples' developmental age from their gene expression profiles. 
 We achieved this by building high-temporal-resolution time series across the entire development from multiple available datasets, which we use as a reference to stage samples. 
-Inferred age can be included as a covariate in analyses and increase their power to detect differential expression by including time-dependant effects. 
-<!-- We also show multiple examples of how development impacts gene expression studies in multiple organisms. -->
+Inferred age can then be used in multiple ways to 
+precisely estimate perturbations effects on developmental timing, 
+increase power in differential expression analyses, 
+estimate differential expression due to uncontrolled development and, 
+most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
 
-<!-- `RAPToR` was developped to mediate the issue of developmental differences between samples by estimating the true age of transcriptomic samples from their gene expression profiles.  -->
-<!-- While this is a major problem in the field of *C. elegans*, this issue occurs in various models where many factors can impact development speed (*e.g* *Drosophila*).  -->
 
+<br>
+
+Please cite our preprint (@bulteau2021raptor) if you use RAPToR in your research:
+
+ - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* [doi: 10.1101/2021.09.07.459270](https://doi.org/10.1101/2021.09.07.459270)
 
 
 # Why use `RAPToR` ?
 
 Imprecise developmental staging is a known problem in transcriptomic analyses.
 Unknown and unintended developmental variation among samples can obscure and confound the effect of variables of interest in a study.
-For example, when large developmental timecourse datasets are produced, the samples are almost always re-ordered post-profiling.
+For example, when large developmental timecourse datasets are produced, the samples are systematically re-ordered post-profiling.
 This is because we are unable to experimentally synchronize samples to a satisfactory degree.
 
 The methods used in the above scenario are usually a combination of a dimension-reduction analysis (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
@@ -94,25 +100,24 @@ The problem we are faced with is not limited to large scale experiments, why sho
 
 # How does it work ?
 
-The method works in a three-step process. 
+The method works in a 2-step process. 
 
  1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
- 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.
- 1. A **bootstrap procedure** of the previous step on random subsets of genes is performed to give a confidence interval of the estimates.
+ 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
-![tool_overview](../inst/cdoc/tool_overview.png){width=60%}
+![tool_overview](../inst/cdoc/tool_overview.png){width=90%}
 </center>
 
 # What type of data can be used ?
 
-The `RAPToR` package allows you to estimate the developmental age of samples from their transcriptome.
-This means that any data providing information on gene expression on a large scale is appropriate : normalized RNA-seq counts (preferably TPM), MicroArray/Chips...
+The `RAPToR` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
+This means that any method outputting information on gene expression on a large scale is appropriate : RNA-seq (preferably TPM), MicroArray...
 Note that the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data may lead to better performance of the tool.  
 
 <div class="alert alert-danger">
   <strong>Warning :</strong><br/>
-**The data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
+**Data must not be gene-centered**, as this destroys the relationship between gene levels within a sample.
 </div>
 
 
