@@ -13,7 +13,6 @@ X_dslevin2016cel <- X_dslevin2016cel[, -f_dslevin2016cel]
 
 
 # convert to tpm & FBgn
-
 X_dslevin2016cel <- X_dslevin2016cel[rownames(X_dslevin2016cel)%in%wormRef::Cel_genes$sequence_name,]
 X_dslevin2016cel <- raw2tpm(rawcounts = X_dslevin2016cel, 
                              genelengths = wormRef::Cel_genes$transcript_length[match(rownames(X_dslevin2016cel),
@@ -39,11 +38,13 @@ X_dslevin2016cel <- X_dslevin2016cel[, P_dslevin2016cel$title]
 P_dslevin2016cel$title <- gsub('Metazome_CE_timecourse_', '', P_dslevin2016cel$title)
 colnames(X_dslevin2016cel) <- P_dslevin2016cel$title
 
-X_dslevin2016cel <- X_dslevin2016cel[,-127] # remove extra outlier
+# remove extra outlier
+X_dslevin2016cel <- X_dslevin2016cel[,-127] 
 P_dslevin2016cel <- P_dslevin2016cel[-127,]
 
-
 dslevin2016cel <- list(g = X_dslevin2016cel, p = P_dslevin2016cel)
+
+
 save(dslevin2016cel, file = paste0(data_folder, "dslevin2016cel.RData"), compress = "xz")
 
 # cleanup
