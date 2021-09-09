@@ -58,7 +58,7 @@ We'll be working with a dataset published by @rockman2010selection.
 
 This dataset correpsonds to microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains. 
 These 208 samples were described as *"developmentally synchronized"* in the original paper. 
-However, it was later demonstrated that a very significant developmental spread of the samples existed, spanning around 20 hours of $20^\circ C$ late larval development existed (@francesconi2014effects).
+However, it was later demonstrated that a very significant developmental spread of the samples existed, spanning around 20 hours of $20^\circ C$ late larval development (@francesconi2014effects).
 
 This essentially makes this dataset a very high-resolution timecourse of late-larval development.
 
@@ -256,7 +256,7 @@ dsrockman2010$g <- log1p(dsrockman2010$g)
 
 ### Staging the samples (global)
 
-We can use one of the young-adult references for *C. elegans* to stage the samples
+We can use one of the young-adult references for *C. elegans* to stage the samples.
 
 ```{r sc3_ae, eval = gen_figs}
 r_ya <- prepare_refdata("Cel_YA_1", "wormRef", n.inter = 400)
@@ -491,7 +491,13 @@ par(mfcol = c(3,6))
 Notice how components IC1, IC4 and IC5, previously associated with soma, are much cleaner when plotting with the soma age. 
 Also, see that the IC2 and IC3 germline-associated components appear quite noisy.
 
-With the germline estimates, we get the opposite effect : much cleaner dynamics on the second and third components, at the cost of clarity on the oscillatory dynamics.
+With the germline estimates, we get the opposite effect: much cleaner dynamics on the second and third components, at the cost of clarity on the oscillatory dynamics.
+
+<br>
+
+**Note:** In the RAPToR paper (@bulteau2021raptor), we used a different reference to stage the samples (`Cel_larv_YA` instead of the presented `Cel_YA_1`). This was to showcase a combination of soma-germline heterochrony *between* the reference and the RILs, as well as among the RILs.
+Thus, you may note some differences in the figures presented here to those from the paper. We also kept the analysis brief in the present vignette. 
+(*e.g.* the ICA does not join reference and RILs, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clearly expressed).
 
 
 <!-- ```{r fig.height=9, fig.width=15} -->
