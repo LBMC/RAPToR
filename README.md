@@ -13,6 +13,8 @@ Please cite our preprint if you use RAPToR in your research:
 
  - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* [doi: 10.1101/2021.09.07.459270](https://doi.org/10.1101/2021.09.07.459270)
 
+
+
 ## Installation
 
 To install the package, you can use the `devtools` R package. This should be done in your R console :
@@ -27,7 +29,7 @@ If you don't have `devtools` installed, you can do the following :
 install.packages("devtools")
 ```
 
-
+We have verified RAPToR works with R v3.6.3 and v4.1.1
 
 
 
@@ -75,6 +77,10 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.5
+ - Added preprint citation to README and documentation.
+ - Updated showcase vignettes relevant to the paper analyses
+
 #### v1.1.4
  - Fixed minor bugs in `plot.ae` 
  - Added links to new data-packages for drosophila, zebrafish and mouse (above).
