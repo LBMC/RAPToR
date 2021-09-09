@@ -8,7 +8,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
+gen_figs <- F
 figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
@@ -308,7 +308,7 @@ plot(dslevin2016dmel$p$ae, ae_dmel_on_cel$age.estimates[,1],
 
 ### *C. elegans* staging on *D. melanogaster*
 
-We have already loaded a *D. melanogaster* with `dsgraveley2011`, which we can use directly here.
+We have already loaded a *D. melanogaster* reference with `dsgraveley2011`, which we can use directly here.
 
 ```{r sc2_cel_dmel, eval = gen_figs}
 dslevin2016cel$g_dmel <- format_ids(dslevin2016cel$g, glist, from = "wb_id", to = "fb_id")
