@@ -21,7 +21,9 @@ Please cite our preprint if you use RAPToR in your research:
 We have verified RAPToR works with R v3.6.3 and v4.1.1,
 on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
 
-Assuming a standard dataset size (n by g), 4Gb of RAM and 2 CPU cores
+Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
+For reference, the [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157) (`dsaeschimann2017`) dataset used for demo in the main vignette (43 samples by ~19500 genes) 
+can be downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
 
 #### Dependencies
 RAPToR has the following R package dependencies, which users can install from an R console:
@@ -29,7 +31,7 @@ RAPToR has the following R package dependencies, which users can install from an
 
 ```r
 # CRAN packages
-install.packages(c(ica, mgcv, parallel, data.table, pryr, beeswarm, Rdpack, R.rsp))
+install.packages(c("ica", "mgcv", "parallel", "data.table", "pryr", "beeswarm", "Rdpack", "R.rsp"))
 
 # Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -45,19 +47,15 @@ BiocManager::install(c("GEOquery", "biomaRt")
 ```
 
 
-To install the package, you can use the `devtools` R package. This should be done in your R console :
+Then, you can use the `devtools` R package to install the latest version of RAPToR, from your R console :
 
 ```r
-library(devtools)
+if (!requireNamespace("devtools", quietly = TRUE))
+    install.packages("devtools")
 devtools::install_github("LBMC/RAPToR", build_vignettes = T)
 ```
 
-If you don't have `devtools` installed, you can do the following :
-```r
-install.packages("devtools")
-```
-
-
+Installation of the RAPToR package itself should take under 20 seconds.
 
 
 
