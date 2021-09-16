@@ -17,6 +17,26 @@ Please cite our preprint if you use RAPToR in your research:
 
 ## Installation
 
+### System requirements
+We have verified RAPToR works with R v3.6.3 and v4.1.1, 
+on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
+
+Assuming a standard dataset size (n by g), 4Gb of RAM and 2 CPU cores
+
+RAPToR has the following R package dependencies, which users can install from an R console:
+
+
+```r
+# CRAN packages
+install.packages(c(ica, mgcv, parallel, data.table, pryr, beeswarm, Rdpack, R.rsp))
+
+# Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("limma")
+```
+
+
 To install the package, you can use the `devtools` R package. This should be done in your R console :
 
 ```r
@@ -29,7 +49,7 @@ If you don't have `devtools` installed, you can do the following :
 install.packages("devtools")
 ```
 
-We have verified RAPToR works with R v3.6.3 and v4.1.1
+
 
 
 
@@ -77,6 +97,10 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.5b
+ - Added software, hardware and runtime info to README. 
+ - Further specified dependencies
+
 #### v1.1.5
  - Added preprint citation to README and documentation.
  - Updated showcase vignettes relevant to the paper analyses
