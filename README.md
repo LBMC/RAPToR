@@ -18,11 +18,12 @@ Please cite our preprint if you use RAPToR in your research:
 ## Installation
 
 ### System requirements
-We have verified RAPToR works with R v3.6.3 and v4.1.1, 
+We have verified RAPToR works with R v3.6.3 and v4.1.1,
 on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
 
 Assuming a standard dataset size (n by g), 4Gb of RAM and 2 CPU cores
 
+#### Dependencies
 RAPToR has the following R package dependencies, which users can install from an R console:
 
 
@@ -34,6 +35,13 @@ install.packages(c(ica, mgcv, parallel, data.table, pryr, beeswarm, Rdpack, R.rs
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("limma")
+```
+
+We also recommend the installation of the following packages used in RAPToR vignettes to download demo data:
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("GEOquery", "biomaRt")
 ```
 
 
