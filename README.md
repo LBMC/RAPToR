@@ -104,8 +104,8 @@ Data-packages hold pre-built references for quick & easy usage.
 
 ### v1.1
 #### v1.1.5b
- - Added software, hardware and runtime info to README. 
- - Further specified dependencies
+ - Added software, hardware, and runtime info to README. 
+ - Added installation instructions for dependencies. 
 
 #### v1.1.5
  - Added preprint citation to README and documentation.
