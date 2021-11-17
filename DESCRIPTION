@@ -25,7 +25,8 @@ Imports:
   pryr,
   beeswarm,
   Rdpack,
-  R.rsp
+  R.rsp, 
+  pls
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
