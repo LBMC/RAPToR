@@ -11,6 +11,7 @@ Description: This package aims to recover the true developmental of transcriptom
   One can also create their own reference easily from a time series.
 Depends: 
   R (>= 3.4.0),
+biocViews: GeneExpression
 Imports:
   stats,
   utils,
@@ -32,6 +33,7 @@ RoxygenNote: 7.1.0
 Roxygen: list(markdown = TRUE)
 RdMacros: Rdpack
 Suggests:
+    GEOquery,
     knitr,
     rmarkdown,
     biomaRt,
