@@ -96,14 +96,14 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
                 tset <- cv.tsets[[i]]
                 if("limma" != method){
                   if("pca" == dim_red){
-                    Xr$x <- Xr$x[tset, ]
+                    Xr$x <- Xr$x[tset, , drop=F]
                   }
                   if("ica" == dim_red){
-                    Xr$M <- Xr$M[tset, ]
+                    Xr$M <- Xr$M[tset, , drop=F]
                   }
                   
                 } else {
-                  Xr <- Xr[, tset]
+                  Xr <- Xr[, tset, drop=F]
                   nc <- NA
                 }
                 
@@ -112,8 +112,8 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
                              formula = formula_list[[j]], 
                              method = method, dim_red = dim_red, drX = TRUE, nc = nc)
                   pred <- predict(m, newdata = plist[[j]])
-                  cve <- mperf(X[, -tset], pred[, -tset], to_compute = to_compute, is.t = T)
-                  mpf <- mperf(X[, tset], pred[, tset], to_compute = to_compute, is.t = T)
+                  cve <- mperf(X[, -tset, drop=F], pred[, -tset, drop=F], to_compute = to_compute, is.t = T)
+                  mpf <- mperf(X[, tset, drop=F], pred[, tset, drop=F], to_compute = to_compute, is.t = T)
                   return(list(cve = cve, mpf = mpf))
                 })
                 cve <- do.call(rbind, lapply(res, function(elt){ unlist(elt[["cve"]]) }))
