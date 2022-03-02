@@ -2,7 +2,7 @@
 
 `RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict the developmental age of individual samples from their gene expression profiles. 
 
-We achieve this by building high-temporal-resolution time series across the development of organisms from multiple available datasets, which we use as a reference to stage samples. 
+We achieve this by staging samples on high-resolution references we build by exploiting existing developmental profiling time-series.
 Inferred age can then be used in multiple ways to 
 precisely estimate perturbations effects on developmental timing, 
 increase power in differential expression analyses, 
@@ -88,9 +88,9 @@ This means that any method outputting information on gene expression on a large 
 
 ## Current available data-packages
 
-Data-packages hold pre-built references for quick & easy usage.
+We recommend you get our data-packages with pre-built references of common organisms for quick & easy usage.
 
- - [`wormRef` Nematode references](https://www.github.com/LBMC/wormRef) (*C. elegans* development)
+ - [`wormRef` Nematode references](https://www.github.com/LBMC/wormRef) (*C. elegans* embryo, larval and young-adult development)
  - [`drosoRef` Drosophila references](https://www.github.com/LBMC/drosoRef) (*D. melanogaster* embryo development)
  - [`zebraRef` Zebrafish references](https://www.github.com/LBMC/zebraRef) (*D. rerio* embryo and larval development)
  - [`mouseRef` Mouse references](https://www.github.com/LBMC/mouseRef) (*M. musculus* embryo development)
