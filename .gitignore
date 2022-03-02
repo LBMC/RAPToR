@@ -1,5 +1,7 @@
 ..Rcheck*
 inst/extdata/*
- 
+inst/cdoc/tool_overview.svg
+inst/cdoc/tool_overview.pdf
+
 .RData
 .Rhistory
