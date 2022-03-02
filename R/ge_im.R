@@ -2,7 +2,7 @@
 #' 
 #' Build a model to interpolate on a gene expression dataset. 
 #' This can be done either with gam or glm models fit on the components of a PCA or ICA.
-#' It's also possible to have a limma model fit directly on the gene expression data.
+#' It's also possible to have a linear model fit directly (per gene) on the gene expression data (uses limma).
 #' 
 #' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole 
 #' gene set \insertCite{storey2005significance}{RAPToR}.
@@ -11,8 +11,8 @@
 #' @param p a dataframe with the pheno data used in the formula (samples as rows) e.g. time, covariates.
 #' @param formula the model formula, which must start with 'X ~'. See \code{\link[mgcv]{gam}}, \code{\link[stats]{glm}} or \code{\link[limma]{lmFit}} documentation for specifications.
 #' @param method the model to fit, one of c("gam", "glm", "limma").
-#' @param dim_red the dimension reduction method to use for interpolation, one of c("pca", "ica"), ignored when method is "limma".
-#' @param nc the number of components to extract from \code{X} for interpolation, defaults to \code{ncol(X)}, ignored method is "limma".
+#' @param dim_red the dimension reduction method to use for interpolation, one of c("pca", "ica"), ignored if method is "limma".
+#' @param nc the number of components to extract from \code{X} for interpolation, defaults to \code{ncol(X)}, ignored if method is "limma".
 #' @param ... extra arguments passed on to model functions.
 #'
 #' @return a '\code{geim}' model object. This object has its predict method
@@ -40,12 +40,18 @@ ge_im <- function(X, p, formula,
     if("pca" == dim_red){
       m <- .model_gam_pca(X = X, p = p, formula = formula, nc = nc, ...)
     } else if("ica" == dim_red){
+      if(1==nc){
+        stop("nc=1: 1-component ICA is impossible, please use PCA")
+      }
       m <- .model_gam_ica(X = X, p = p, formula = formula, nc = nc, ...)
     }
   } else if("glm" == method){
     if("pca" == dim_red){
       m <- .model_glm_pca(X = X, p = p, formula = formula, nc = nc, ...)
     } else if("ica" == dim_red){
+      if(1==nc){
+        stop("nc=1: 1-component ICA is impossible, please use PCA")
+      }
       m <- .model_glm_ica(X = X, p = p, formula = formula, nc = nc, ...)
     }
   } else if("limma" == method){
