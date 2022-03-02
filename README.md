@@ -76,7 +76,7 @@ The method works in a 2-step process.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
-<img src="inst/cdoc/tool_overview.png" alt="tool_overview" width="90%"/>
+<img src="inst/cdoc/tool_overview.jpg" alt="tool_overview" width="90%"/>
 </center>
 
 ### What data can be used ?
@@ -103,6 +103,11 @@ Data-packages hold pre-built references for quick & easy usage.
 ## Update info
 
 ### v1.1
+#### v1.1.6
+ - Included biocViews in `DESCRIPTION` to automatically install bioconductor dependencies (thanks @helenmiller16)
+ - Removed deprecated pls-dependent functions
+ - Fixed edge cases for 1-component reference building
+
 #### v1.1.5b
  - Added software, hardware, and runtime info to README. 
  - Added installation instructions for dependencies. 
