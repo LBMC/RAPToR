@@ -1,16 +1,17 @@
 Package: RAPToR
 Title: Real Age Prediction from Transcriptome staging On Reference
-Version: 1.1.5
+Version: 1.1.6
 Authors@R: c(
   person("Romain", "Bulteau", email = "romain.bulteau@ens-lyon.fr",
     role = c("aut", "cre")),
   person("Mirko", "Francesconi", email = "mirko.francesconi@ens-lyon.fr", 
     role="aut"))
-Description: This package aims to recover the true developmental of transcriptome samples from their gene expression profiles.
-  Reference time series data is used to achieve this, included in related data-packages. 
-  One can also create their own reference easily from a time series.
+Description: RAPToR can infer the true developmental age of transcriptome samples from their gene expression profiles.
+  Reference time-series profiling data is used to achieve this, included in related data-packages. 
+  One can also create their own reference easily from a time-series.
 Depends: 
-  R (>= 3.4.0),
+  R (>= 3.4.0)
+biocViews:
 Imports:
   stats,
   utils,
@@ -35,5 +36,6 @@ Suggests:
     knitr,
     rmarkdown,
     biomaRt,
+    GEOquery,
     wormRef
 VignetteBuilder: R.rsp
