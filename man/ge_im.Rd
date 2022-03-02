@@ -23,9 +23,9 @@ ge_im(
 
 \item{method}{the model to fit, one of c("gam", "glm", "limma").}
 
-\item{dim_red}{the dimension reduction method to use for interpolation, one of c("pca", "ica"), ignored when method is "limma".}
+\item{dim_red}{the dimension reduction method to use for interpolation, one of c("pca", "ica"), ignored if method is "limma".}
 
-\item{nc}{the number of components to extract from \code{X} for interpolation, defaults to \code{ncol(X)}, ignored method is "limma".}
+\item{nc}{the number of components to extract from \code{X} for interpolation, defaults to \code{ncol(X)}, ignored if method is "limma".}
 
 \item{...}{extra arguments passed on to model functions.}
 }
@@ -35,7 +35,7 @@ a '\code{geim}' model object. This object has its predict method
 \description{
 Build a model to interpolate on a gene expression dataset.
 This can be done either with gam or glm models fit on the components of a PCA or ICA.
-It's also possible to have a limma model fit directly on the gene expression data.
+It's also possible to have a linear model fit directly (per gene) on the gene expression data (uses limma).
 }
 \details{
 Using components as "eigen genes" is not uncommon to find model parameters fitting the whole
