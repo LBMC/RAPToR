@@ -58,22 +58,13 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 <br>
 <br>
 
-Gene expression profiling has become standard practice and serves as the basis of many analyses in biology. 
-However, gene expression is highly variable during development. 
-Unknown and unintended developmental variation among samples can
-obscure and confound the effect of variables of interest in a study. 
-This is especially a problem for fast-developing organisms such as *Caenorhabditis elegans*, where drastic developmental changes in gene expression occur within hours. 
-The developmental speed of such organisms is usually heavily influenced by numerous factors and therefore obtaining developmentally synchronized samples is not trivial. 
-Genome-wide gene expression is a very rich source of data, which includes information about the developmental stage of an organism. 
-However, methods that extract this information are still lacking.
+`RAPToR` is a computational framework to estimate the real age of biological samples from gene expression. This is especially useful for fast-developing organisms -- such as *C. elegans* worms, flies, or zebrafish -- where many factors substantially impact developmental speed, and thus unintended developmental variation between samples could obscure or confound the effect of variables of interest.
 
-We present `RAPToR`, a new tool to accurately predict individual samples' developmental age from their gene expression profiles. 
-We achieved this by building high-temporal-resolution time series across the entire development from multiple available datasets, which we use as a reference to stage samples. 
-Inferred age can then be used in multiple ways to 
-precisely estimate perturbations effects on developmental timing, 
-increase power in differential expression analyses, 
-estimate differential expression due to uncontrolled development and, 
-most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
+With `RAPToR` and the inferred age of your samples, you can 
+ - precisely estimate perturbations effects on developmental timing, 
+ - increase power in differential expression analyses, 
+ - estimate differential expression due to uncontrolled development and,
+ - recover perturbation specific effects on gene expression even when the perturbation is completely confounded by development. 
 
 
 <br>
