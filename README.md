@@ -23,7 +23,7 @@ on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
 
 Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
 For reference, the [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157) (`dsaeschimann2017`) dataset used for demo in the main vignette (43 samples by ~19500 genes) 
-can be downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
+can be both downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
 
 #### Dependencies
 RAPToR has R package dependencies which users can choose to install manually from an R console:
@@ -69,10 +69,10 @@ vignette("RAPToR")
 
 ### How does it work ?
 
-The method works in a 2-step process. 
+The method works in a 2-step process: 
 
- 1. From a reference gene expression time series (several of which are included in associated data-packages, see below), a near-continous, **high-temporal-resolution reference** is built.
- 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
+ 1. A reference gene expression time-series is interpolated to build a near-continous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
+ 1. A **correlation profile** of each of your samples against this reference is dressed, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
 <img src="inst/cdoc/tool_overview.jpg" alt="tool_overview" width="90%"/>
@@ -103,6 +103,7 @@ We recommend you get our data-packages with pre-built references of common organ
 
 ### v1.1
 #### v1.1.6
+ - Updated README info
  - Included biocViews in `DESCRIPTION` to automatically install bioconductor dependencies (thanks @helenmiller16)
  - Removed deprecated pls-dependent functions
  - Fixed edge cases for 1-component reference building
