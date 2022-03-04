@@ -60,11 +60,12 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 `RAPToR` is a computational framework to estimate the real age of biological samples from gene expression. This is especially useful for fast-developing organisms -- such as *C. elegans* worms, flies, or zebrafish -- where many factors substantially impact developmental speed, and thus unintended developmental variation between samples could obscure or confound the effect of variables of interest.
 
-With `RAPToR` and the inferred age of your samples, you can 
- - precisely estimate perturbations effects on developmental timing, 
+With `RAPToR` and the inferred age of your samples, you can
+
+ - precisely estimate the effect of perturbations on developmental timing, 
  - increase power in differential expression analyses, 
  - estimate differential expression due to uncontrolled development and,
- - recover perturbation specific effects on gene expression even when the perturbation is completely confounded by development. 
+ - recover perturbation-specific effects on gene expression, even when the perturbation is completely confounded by development. 
 
 
 <br>
@@ -80,9 +81,9 @@ In gene expression data, unknown and unintended developmental variation among bi
 As many factors can influence growth speed, synchronizing samples is particularly challenging, but failing to do so can strongly impact gene expression.
 
 Aware of the problem, studies with large scale developmental profiling generally re-order or rank the samples post-profiling with methods that combine dimension-reduction (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
-Unfortunately, this is only feasible for experiments with hundreds of samples and/or time-series designs, which are not yet the general standard of expression profiling studies. 
+Unfortunately, this is only feasible for experiments with hundreds of samples and/or time-series designs, which the overwhelming majority of expression profiling studies are not. 
 
-The problem we are faced with is not limited to large scale experiments, why should we only address it in such scenarios ? 
+The problem we are faced with is not limited to large scale experiments, so why should we only address it in such scenarios ? 
 
 `RAPToR` provides a way to precisely determine the real age of *single samples* from their expression profile.
 
@@ -93,7 +94,7 @@ The problem we are faced with is not limited to large scale experiments, why sho
 The method works in a 2-step process. 
 
  1. A reference gene expression time-series is interpolated to build a near-continous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
- 1. A **correlation profile** of each of your samples against this reference is dressed, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
+ 1. A **correlation profile** against this reference is dressed for of each of your samples, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
 ![tool_overview](../inst/cdoc/tool_overview.jpg){width=90%}
@@ -101,7 +102,7 @@ The method works in a 2-step process.
 
 # What type of data can be used ?
 
-`RAPToR` allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
+`RAPToR` uses *gene expression profiles* to determine the age of your samples.
 This means that any method outputting information on gene expression on a large scale is appropriate : RNA-seq (preferably TPM), MicroArray...
 
 Note that the references provided in the data-packages are $log(X+1)$ of expression values, so applying this transformation to your data is important when comparing expression changes with the reference (but is not required for staging).  
@@ -117,12 +118,11 @@ Note that the references provided in the data-packages are $log(X+1)$ of express
 
 The main package (`RAPToR`) holds all the necessary functions to stage samples and build references.
 
-Since we aimed to provide a way to predict the age of samples easily, we pre-built several references for commonly used organism from available data in the literature.
+Since we aimed to provide an easy way to predict the age of samples, we pre-built several references for commonly used organisms from available data in the literature.
 In R package standards, these are voluminous datasets so the references are stored in separate "data-packages". 
 For example, `wormRef` holds the *C. elegans* references.
 
-You can see the available references of a data-package with the `list_refs()` function. 
-**Note that you must have the data-package installed for this**. 
+You can see the references available in a data-package with the `list_refs()` function (**you must have the data-package installed for this**). 
 [`wormRef` can be installed from this link.](https://github.com/LBMC/wormRef)
 
 ```{r list_refs}
@@ -135,17 +135,14 @@ You can also build your own reference data-packages following a few guidelines l
 
 # Usage example
 
-In this part, we'll be showcasing usage of `RAPToR` on two *C. elegans* time series datasets from the literature.
-Note that you will need the `wormRef` package installed to use its references ( [see here for installation](https://github.com/LBMC/RAPToR) ).
+In this part, we'll show how to stage two *C. elegans* time-series datasets using references from  `wormRef` (which you will need installed to use its references, [see here for installation](https://github.com/LBMC/RAPToR)).
 
- 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, hereafter called `dsaeschimann2017`.
- 1. A high-resolution time series of late larval development published by @hendriks2014extensive, hereafter called `dshendriks2014`
+ 1. A time-series of larval development in 4 different strains published by @aeschimann2017lin41, hereafter called `dsaeschimann2017`.
+ 1. A high-resolution time-series of late larval development published by @hendriks2014extensive, hereafter called `dshendriks2014`
 
 Both datasets are available on GEO 
-(
-[GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157), 
-[GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)
-).
+([GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157), 
+[GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)).
 
 
 
@@ -154,8 +151,7 @@ Both datasets are available on GEO
 library(RAPToR)
 ```
 
-As the code to create the `dsaeschimann2017` and `dshendriks2014` objects is lengthy and not the object of this vignette, you can find it [at the end of the document](#load_dsaeschimann2017_dshendriks2014).
-
+The code to create the `dsaeschimann2017` and `dshendriks2014` objects (downloading data) is lengthy and not the object of this vignette, you can find it [at the end of the document](#load_dsaeschimann2017_dshendriks2014).
 
 
 
@@ -209,7 +205,7 @@ head(dshendriks2014$p, n = 5)
 #> GSM1277122 contDevA_N2_25h    GSM1277122                26 hours  26
 ```
 
-We'll quantile-normalize and log the expression data.
+We first quantile-normalize and log the expression data.
 ```{r quantile_norm_log, eval = gen_figs}
 dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
 dsaeschimann2017$g <- log1p(dsaeschimann2017$g) # log1p(x) = log(x + 1)
@@ -219,37 +215,40 @@ dshendriks2014$g <- log1p(dshendriks2014$g)
 ```
 
 
-
-The only other transformation the data may need is to convert probe IDs or gene IDs to match those of the reference series. 
+You may also need to convert probe IDs or gene IDs of your data to match those of the reference series.
 For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
 
-To help with this conversion, gene ID reference tables should be included in the data-packages with common gene IDs (built directly from the `biomaRt`).
+We aggregate transcript-level data into gene-level expression in our references for a broader usage (since one can always compute gene-level expression from transcript expression, but not the other way around). RNASeq data should ideally be sum-aggregated at the count level, and other types of data -- such as microarray, or RNASeq TPM (if counts are unavailable) -- are mean-aggregated.
+
+To help with this conversion, gene ID reference tables are included in the data-packages with common gene IDs (built directly from [`biomaRt`](https://www.ensembl.org/index.html) queries).
+
 
 
 
 ## Choosing a reference dataset
 
-`RAPToR` estimates the developmental age of samples based on correlation with reference time series datasets. 
-This means you have to select the proper reference to run your samples against.
-By looking at reference list like above, or using the `plot_refs()` function, you can determine which reference is appropriate for your samples. 
-If we haven't built your favorite organism's references yet, you can take a look at [how to build your own reference](#building-your-own-references) for a quick-start guide or the [reference-building vignette](RAPToR-refbuilding.html) for a more in-depth explanation.
+`RAPToR` estimates the age of samples based on correlation with reference time-series. 
+This means you have to select the proper reference to compare your samples with. 
+You can determine which reference of a data-package is appropriate for your samples from the list with `list_refs()` like above, or by using the `plot_refs()` function.
 
-The chart below shows the reference datasets available in the `wormRef` data package, along with landmark developmental stages. 
+If we haven't built references for your favorite organism yet, you can take a look at [the *Building your own references* section](#building-your-own-references) in this vignette for a quick-start guide or [the dedicated reference-building vignette](RAPToR-refbuilding.html) for a more in-depth explanation.
+
+The chart below shows the references available in the `wormRef` data-package, along with landmark developmental stages. 
 
 ```{r plot_refs, fig.height=6, fig.width=9}
-(plot_refs("wormRef"))
+plot_refs("wormRef")
 ```
 
 
 
 ## Loading the reference
 
-To bypass the limitations of available time series' reolution and provide precise estimates, `RAPToR` interpolates on the dynamics of gene expression of the reference series.
-You can load a pre-built reference dataset with optimal parameters using the `prepare_refdata()` function.
+To increase the accuracy of age estimates beyond the temporal resolution of time-series profiling experiments, we interpolate on gene expression dynamics of the reference with respect to time.
+Pre-built references with optimal interpolation parameters can be loaded using the `prepare_refdata()` function.
 
-For our example, the `Cel_larval` dataset would be appropriate since our samples are from mid-larval to early young adult in both datasets.
+The `Cel_larval` reference would be appropriate for the two example datasets since the samples to stage are from mid-larval to early young adult.
 The `n.inter` parameter corresponds to the resolution of the interpolated reference. 
-In the interest of lightening the computational load you can choose smaller values, but aim over the 500s for optimal results.
+In the interest of lightening the computational load (each timepoint of the reference is compared to the samples) you can choose smaller values, but aim over 500 for optimal results.
 
 
 ```{r prep_ref, eval=gen_figs}
@@ -259,9 +258,9 @@ r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C).
 
 
-## Performing a simple age estimate
+## Age estimation
 
-All we need to do now is run the `ae()` function.
+All we need to do now is run the `ae()` (**a**ge **e**stimation) function.
 
 ```{r include=FALSE, eval=gen_figs}
 set.seed(1)
@@ -271,7 +270,7 @@ set.seed(1)
 ```{r ae_dsaeschimann2017, eval=gen_figs, results='hold'}
 ae_dsaeschimann2017 <- ae(samp = dsaeschimann2017$g,                         # input gene expression matrix
              refdata = r_larv$interpGE,            # reference gene expression matrix
-             ref.time_series = r_larv$time.series) # reference time series
+             ref.time_series = r_larv$time.series) # reference time-series
 #> Bootstrap set size is 6239
 #> Performing age estimation...
 #> Bootstrapping...
@@ -290,7 +289,7 @@ ae_dsaeschimann2017 <- ae(samp = dsaeschimann2017$g,                         # i
 ```{r ae_dshendriks2014, eval=gen_figs, results='hold'}
 ae_dshendriks2014 <- ae(samp = dshendriks2014$g,                         # input gene expression matrix
              refdata = r_larv$interpGE,            # reference gene expression matrix
-             ref.time_series = r_larv$time.series) # reference time series
+             ref.time_series = r_larv$time.series) # reference time-series
 #> Bootstrap set size is 6239
 #> Performing age estimation...
 #> Bootstrapping...
@@ -407,7 +406,7 @@ show_fig(expr = {
 
 
 ## Understanding the output
-The output of `ae()` is an `ae` object including various elements such as the age estimate and a confidence interval obtained through booststrapping (age estimate on random gene subsets).
+The output of `ae()` is an `ae` object with various elements, including age estimate and confidence intervals from booststrapping (age estimate on random gene subsets).
 
 <br>
 General information can be accessed via the `summary()` function.
@@ -440,7 +439,7 @@ summary(ae_dshendriks2014)
 
 
 <br>
-If you want to get the estimates and their confidence intervals, they are accessible through `$age.estimates`.
+Age estimates and their confidence intervals are accessible through `$age.estimates`.
 ```{r show_ae, eval = gen_figs}
 head(ae_dshendriks2014$age.estimates)
 #>                 age.estimate       lb       ub cor.score
@@ -461,7 +460,7 @@ The table holds the following :
 
 ## Plotting
 
-Estimates and confidence intervals can be displayed in the form of a dotchart with the default `plot()` function (as we did above).
+Estimates and confidence intervals can be displayed in the form of a 'dotchart' with the default `plot()` function (as we did above).
 
 The `ae` object also holds the correlation scores of the samples against the entire reference series and their confidence intervals accross the bootstrap. 
 You can also plot these correlation profiles with `plot_cor.ae()`
@@ -490,10 +489,10 @@ The sample's global estimate is also displayed below the interval.
 
 Note that [there is a vignette entirely dedicated to this process](RAPToR-refbuilding.html), so this section is just a broad overview.
 
-Interpolating on time series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
+Interpolating on time-series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
 
-To build your reference, you will require a time series of gene expression data on your favourite organism.
+To build your reference, you will require a time-series of gene expression data on your favourite organism.
 The `dsaeschimann2017` example dataset we loaded earlier will be used to illustrate the process.
 
 ## The gene expression interpolation model interface
@@ -501,7 +500,7 @@ The `dsaeschimann2017` example dataset we loaded earlier will be used to illustr
 Gene expression interpolation models (GEIM), are built with the `ge_im()` function.
 This function takes as input 3 key arguments : 
 
- - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
+ - `X` : the gene expression matrix of your time-series (genes as rows, samples as columns)
  - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
  - `formula` : the model formula. This should be a standard R formula using terms found in `p`, which may include elements (such as splines) from chosen model type (see below). **It should start with `X ~`**.
 
@@ -640,7 +639,7 @@ We have built our model, now we can have a look at the interpolation results.
 To do this, one can do two things : 
 
  - Check the model predictions against components (plots)
- - Stage the samples on their own interpolated data, or better (if possible) stage another time series on your reference for external validation.
+ - Stage the samples on their own interpolated data, or better (if possible) stage another time-series on your reference for external validation.
 
 We can do both with our example, the `dshendriks2014` dataset can be used for external validation.
 
