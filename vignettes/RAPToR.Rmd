@@ -76,13 +76,12 @@ Please cite our preprint (@bulteau2021raptor) if you use RAPToR in your research
 
 # Why use `RAPToR` ?
 
-Imprecise developmental staging is a known problem in transcriptomic analyses.
-Unknown and unintended developmental variation among samples can obscure and confound the effect of variables of interest in a study.
-For example, when large developmental timecourse datasets are produced, the samples are systematically re-ordered post-profiling.
-This is because we are unable to experimentally synchronize samples to a satisfactory degree.
+In gene expression data, unknown and unintended developmental variation among biological samples can obscure and confound the effect of variables of interest. 
+As many factors can influence growth speed, synchronizing samples is particularly challenging, but failing to do so can strongly impact gene expression.
 
-The methods used in the above scenario are usually a combination of a dimension-reduction analysis (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
-This can work when your experiment has hundreds of samples and/or happens to be a time series, but this is clearly not the general standard of current gene expression studies. 
+Aware of the problem, studies with large scale developmental profiling generally re-order or rank the samples post-profiling with methods that combine dimension-reduction (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
+Unfortunately, this is only feasible for experiments with hundreds of samples and/or time-series designs, which are not yet the general standard of expression profiling studies. 
+
 The problem we are faced with is not limited to large scale experiments, why should we only address it in such scenarios ? 
 
 `RAPToR` provides a way to precisely determine the real age of *single samples* from their expression profile.
@@ -93,18 +92,19 @@ The problem we are faced with is not limited to large scale experiments, why sho
 
 The method works in a 2-step process. 
 
- 1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
- 1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
+ 1. A reference gene expression time-series is interpolated to build a near-continous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
+ 1. A **correlation profile** of each of your samples against this reference is dressed, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
-![tool_overview](../inst/cdoc/tool_overview.png){width=90%}
+![tool_overview](../inst/cdoc/tool_overview.jpg){width=90%}
 </center>
 
 # What type of data can be used ?
 
-The `RAPToR` package allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
+`RAPToR` allows you to estimate the developmental age of individual samples from their *gene expression profiles*.
 This means that any method outputting information on gene expression on a large scale is appropriate : RNA-seq (preferably TPM), MicroArray...
-Note that the references provided in the data-packages are $log(X+1)$ of expression values, applying this transformation to your data may lead to better performance of the tool.  
+
+Note that the references provided in the data-packages are $log(X+1)$ of expression values, so applying this transformation to your data is important when comparing expression changes with the reference (but is not required for staging).  
 
 <div class="alert alert-danger">
   <strong>Warning :</strong><br/>
@@ -113,14 +113,13 @@ Note that the references provided in the data-packages are $log(X+1)$ of express
 
 
 
-# General structure of the tool
+# General structure of `RAPToR`
 
 The main package (`RAPToR`) holds all the necessary functions to stage samples and build references.
 
-We've aimed to provide a way to predict the age of samples easily and,
-since our method requires a reference to stage samples against, we've built several from available data in the literature.
-For R package standards, these are large datasets so the references are stored in separate "data-packages". 
-To give an example, `wormRef` holds the *C. elegans* references.
+Since we aimed to provide a way to predict the age of samples easily, we pre-built several references for commonly used organism from available data in the literature.
+In R package standards, these are voluminous datasets so the references are stored in separate "data-packages". 
+For example, `wormRef` holds the *C. elegans* references.
 
 You can see the available references of a data-package with the `list_refs()` function. 
 **Note that you must have the data-package installed for this**. 
@@ -130,13 +129,13 @@ You can see the available references of a data-package with the `list_refs()` fu
 list_refs("wormRef")
 ```
 
-The data-packages currently available are listed on the [README of the github repo](https://github.com/LBMC/RAPToR).
-You can also build your own reference data-packages following a few rules given in the [vignette on this topic](RAPToR-datapkgs.html).
+The data-packages currently available are listed in the [README of RAPToR's github repo](https://github.com/LBMC/RAPToR).
+You can also build your own reference data-packages following a few guidelines listed in the [vignette on this topic](RAPToR-datapkgs.html).
 
 
 # Usage example
 
-In this part, we'll be showcasing usage of the tool on two *C. elegans* time series datasets from the literature.
+In this part, we'll be showcasing usage of `RAPToR` on two *C. elegans* time series datasets from the literature.
 Note that you will need the `wormRef` package installed to use its references ( [see here for installation](https://github.com/LBMC/RAPToR) ).
 
  1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, hereafter called `dsaeschimann2017`.
@@ -155,7 +154,7 @@ Both datasets are available on GEO
 library(RAPToR)
 ```
 
-As the code to create the `dsaeschimann2017` and `dshendriks2014` objects is quite lengthy and is not the object of this vignette, you can find it [at the end of the document](#load_dsaeschimann2017_dshendriks2014).
+As the code to create the `dsaeschimann2017` and `dshendriks2014` objects is lengthy and not the object of this vignette, you can find it [at the end of the document](#load_dsaeschimann2017_dshendriks2014).
 
 
 
@@ -167,7 +166,7 @@ load("../inst/extdata/dshendriks2014.RData")
 
 
 
-Here is what our data looks like 
+Here is what the data looks like 
 ```{r head_dsaeschimann2017, eval = gen_figs}
 dsaeschimann2017$g[1:5,1:4]
 #>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
@@ -221,7 +220,7 @@ dshendriks2014$g <- log1p(dshendriks2014$g)
 
 
 
-The only other transformation the data may need is to convert its probe IDs or gene IDs to match the reference series'. 
+The only other transformation the data may need is to convert probe IDs or gene IDs to match those of the reference series. 
 For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
 
 To help with this conversion, gene ID reference tables should be included in the data-packages with common gene IDs (built directly from the `biomaRt`).
