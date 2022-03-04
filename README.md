@@ -2,11 +2,11 @@
 
 `RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict the developmental age of individual samples from their gene expression profiles. 
 
-We achieve this by staging samples on high-resolution references we build by exploiting existing developmental profiling time-series.
+We achieve this by staging samples on high-resolution references we build from existing developmental profiling time-series.
 Inferred age can then be used in multiple ways to 
 precisely estimate perturbations effects on developmental timing, 
 increase power in differential expression analyses, 
-estimate differential expression due to uncontrolled development and, 
+estimate differential expression due to uncontrolled development and 
 most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
 
 Please cite our preprint if you use RAPToR in your research:
@@ -18,7 +18,7 @@ Please cite our preprint if you use RAPToR in your research:
 ## Installation
 
 ### System requirements
-We have verified RAPToR works with R v3.6.3 and v4.1.1,
+We have verified RAPToR works with R v3.6.3, v4.1.1, and v4.1.2
 on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
 
 Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
@@ -26,8 +26,7 @@ For reference, the [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc
 can be downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
 
 #### Dependencies
-RAPToR has the following R package dependencies, which users can install from an R console:
-
+RAPToR has R package dependencies which users can choose to install manually from an R console:
 
 ```r
 # CRAN packages
@@ -43,7 +42,7 @@ We also recommend the installation of the following packages used in RAPToR vign
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(c("GEOquery", "biomaRt")
+BiocManager::install(c("GEOquery", "biomaRt"))
 ```
 
 
@@ -55,7 +54,7 @@ if (!requireNamespace("devtools", quietly = TRUE))
 devtools::install_github("LBMC/RAPToR", build_vignettes = T)
 ```
 
-Installation of the RAPToR package itself should take under 20 seconds.
+When dependencies are met, installation of RAPToR should take under 20 seconds.
 
 
 
@@ -72,7 +71,7 @@ vignette("RAPToR")
 
 The method works in a 2-step process. 
 
- 1. From a reference gene expression time series (several of which are included in associated data-packages), a near-continous, **high-temporal-resolution reference** is built.
+ 1. From a reference gene expression time series (several of which are included in associated data-packages, see below), a near-continous, **high-temporal-resolution reference** is built.
  1. A **correlation profile** of your samples against this reference is computed from the gene expression information, the peak of which corresponds to the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
