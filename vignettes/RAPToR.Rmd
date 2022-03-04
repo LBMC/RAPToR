@@ -406,7 +406,7 @@ show_fig(expr = {
 
 
 ## Understanding the output
-The output of `ae()` is an `ae` object with various elements, including age estimate and confidence intervals from booststrapping (age estimate on random gene subsets).
+The output of `ae()` is an `ae` object with various elements, including age estimate and confidence intervals from booststrapping (age estimates on random gene subsets).
 
 <br>
 General information can be accessed via the `summary()` function.
@@ -460,10 +460,10 @@ The table holds the following :
 
 ## Plotting
 
-Estimates and confidence intervals can be displayed in the form of a 'dotchart' with the default `plot()` function (as we did above).
+Estimates and confidence intervals can be displayed in the form of a 'dotchart' with the default `plot()` function (as done above).
 
-The `ae` object also holds the correlation scores of the samples against the entire reference series and their confidence intervals accross the bootstrap. 
-You can also plot these correlation profiles with `plot_cor.ae()`
+The `ae` object also keeps record of the correlation scores of samples against the full reference (also for bootstrap estimates). 
+These correlation profiles can be plotted with `plot_cor.ae()`
 
 ```{r plot_cor_print, eval = F}
 par(mfrow=c(2,2))
@@ -487,17 +487,17 @@ The sample's global estimate is also displayed below the interval.
 
 # Building your own references
 
-Note that [there is a vignette entirely dedicated to this process](RAPToR-refbuilding.html), so this section is just a broad overview.
+This section is just a broad overview, [there is a vignette entirely dedicated to reference-building](RAPToR-refbuilding.html).
 
-Interpolating on time-series data is the basis for building the high-temporal-resolution references we need for `RAPToR`.
-When using our pre-built references this is done through calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
+Interpolating on time-series expression data is the key to get the high-temporal-resolution references we need for `RAPToR`.
+When using our pre-built references this is done internally by calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
 
-To build your reference, you will require a time-series of gene expression data on your favourite organism.
+To build your reference, you will require a time-series of gene expression data for your favorite organism.
 The `dsaeschimann2017` example dataset we loaded earlier will be used to illustrate the process.
 
 ## The gene expression interpolation model interface
 
-Gene expression interpolation models (GEIM), are built with the `ge_im()` function.
+Gene expression interpolation models (GEIMs), are built with the `ge_im()` function.
 This function takes as input 3 key arguments : 
 
  - `X` : the gene expression matrix of your time-series (genes as rows, samples as columns)
