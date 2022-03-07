@@ -93,7 +93,7 @@ The problem we are faced with is not limited to large scale experiments, so why 
 
 The method works in a 2-step process. 
 
- 1. A reference gene expression time-series is interpolated to build a near-continous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
+ 1. A reference gene expression time-series is interpolated to build a near-continuous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
  1. A **correlation profile** against this reference is dressed for of each of your samples, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
@@ -328,9 +328,9 @@ show_fig(expr = {
 }, fig.width=12, fig.height=4)
 ```
 
-
-Since the staged nematode samples were all grown at 25$^\circ$C, and the reference time is on 20$^\circ$C development, 
-we can observe the well-known growth speed difference of 1.5 between *C. elegans* worms grown at these temperatures by fitting a simple linear model between chronological and estimated age.
+At 25$^\circ$C, *C. elegans* worms develop 1.5 times faster than worms at 20$^\circ$C.
+Since the worms we staged were grown at 25°C, but the reference -- and thus, the estimated age -- corresponds to 20$^\circ$C development,
+we can see this 1.5 factor by fitting a simple linear model between chronological and estimated age.
 
 
 ```{r lm_ds, eval = gen_figs}
