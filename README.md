@@ -71,7 +71,7 @@ vignette("RAPToR")
 
 The method works in a 2-step process: 
 
- 1. A reference gene expression time-series is interpolated to build a near-continous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
+ 1. A reference gene expression time-series is interpolated to build a near-continuous, **high-temporal-resolution reference** (a number of which are included in associated data-packages, see below).
  1. A **correlation profile** of each of your samples against this reference is dressed, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 <center>
@@ -103,10 +103,11 @@ We recommend you get our data-packages with pre-built references of common organ
 
 ### v1.1
 #### v1.1.6
- - Updated README info
- - Included biocViews in `DESCRIPTION` to automatically install bioconductor dependencies (thanks @helenmiller16)
- - Removed deprecated pls-dependent functions
- - Fixed edge cases for 1-component reference building
+ - Revised the main vignette.
+ - Updated README info.
+ - Included biocViews in `DESCRIPTION` to automatically install bioconductor dependencies (thanks @helenmiller16).
+ - Removed deprecated pls-dependent functions.
+ - Fixed edge cases for 1-component reference building.
 
 #### v1.1.5b
  - Added software, hardware, and runtime info to README. 
