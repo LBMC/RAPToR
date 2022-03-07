@@ -455,14 +455,14 @@ The table holds the following :
 
  - `age.estimate`, the global estimate for the sample (whole gene set).
  - `lb`, `ub`, the lower and upper bounds of the bootstrapped age estimates' confidence interval (Median Absolute Deviation).
- - `cor.score`, the correlation score of the global estimate.
+ - `cor.score`, the correlation score between the sample and reference at the age estimate.
 
 
 ## Plotting
 
 Estimates and confidence intervals can be displayed in the form of a 'dotchart' with the default `plot()` function (as done above).
 
-The `ae` object also keeps record of the correlation scores of samples against the full reference (also for bootstrap estimates). 
+The `ae` object also holds record of correlation scores of each samples with the full reference span (for bootstrap estimates as well). 
 These correlation profiles can be plotted with `plot_cor.ae()`
 
 ```{r plot_cor_print, eval = F}
@@ -475,8 +475,8 @@ show_fig(expr = {
   plot_cor.ae(ae_dshendriks2014, subset = c(1,4,9,11))
 }, fig.height=6, fig.width=12)
 ```
-The confidence interval of the estimates is represented with the red bars and the bootstrap correlation scores' 95% interval along the reference series are shown (as the black dotted lines). 
-The sample's global estimate is also displayed below the interval.
+The red bars correspond to the estimate confidence interval, and the 95% interval of bootstrap correlation with the reference is shown as black dotted lines. 
+The sample age estimate is displayed below the interval.
 
 <br>
 <br>
@@ -500,9 +500,9 @@ The `dsaeschimann2017` example dataset we loaded earlier will be used to illustr
 Gene expression interpolation models (GEIMs), are built with the `ge_im()` function.
 This function takes as input 3 key arguments : 
 
- - `X` : the gene expression matrix of your time-series (genes as rows, samples as columns)
- - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
- - `formula` : the model formula. This should be a standard R formula using terms found in `p`, which may include elements (such as splines) from chosen model type (see below). **It should start with `X ~`**.
+ - `X` : your time-series gene expression matrix (genes as rows, samples as columns)
+ - `p` : a dataframe of phenotypic data, samples as rows *in the same order as `X` columns*. This should include the age/time variable and any other covariate(s) you want to include in the model (*e.g* batch, strain)
+ - `formula` : the model formula. This should be a standard R formula using terms found in `p`, which may include elements (such as splines) from chosen model type (see below). **It must start with `X ~`**.
 
 For example, using the `dsaeschimann2017` dataset we could build the following model.
 ```{r model_dsaeschimann2017, eval = gen_figs}
@@ -512,7 +512,7 @@ m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p,
 
 
 ## About the models
-The strategy we put forward for predicting on such a large scale of output variables (genes), is to interpolate in a dimensionally reduced space. 
+In order to model such a large number of output variable (genes), our strategy is to project the data in a dimensionally-reduced space and interpolate there before re-projecting the data back to genes.
 We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
 
 Both PCA and ICA perform the same type of linear transformation on the data (they just optimize different criteria). We get the following :
@@ -520,25 +520,27 @@ Both PCA and ICA perform the same type of linear transformation on the data (the
 $$
 X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
 $$
-with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample loadings ($n$ samples by $c$ components). 
-$S$ is what's usually looked at when performing a PCA (or ICA) on gene expression data, to look at the samples in the component space. 
+with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample scores ($n$ samples by $c$ components). 
+When performing PCA (or ICA) on gene expression data, $S$ is what's usually plotted (e.g. PC1 vs. PC2) to see how samples are grouped in the component space. 
 
-@alter2000singular previously demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the dynamics of gene expression. 
+@alter2000singular demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the expression landscape and dynamics with a few components. 
 We essentially use the same property for a GEIM.
-We build a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
+We fit a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
 
 We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
 GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
 The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
-**If you are not familiar with the `mgcv` package or GLMs in R, I recommend you look at the documentation of their functions (especially of `s()` for GAMs) to understand what can be included in the formulas to tackle non-linear dynamics.**
+**If you are not familiar with the `mgcv` package or GLMs in R, we recommend you look at their function documentations (especially `s()` for GAMs) to understand what can be included in the formulas to handle non-linear dynamics.**
 
-Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on the components.
+Note that a single model formula is specified and applied to all the components, but the models are fitted independently on the components.
 
 
 ## Finding the appropriate model and parameters
+
 ### Model type
-The default GEIM is fitted using GAMs on PCA components, this is a robust choice when applying a smoothing spline to the data.
+
+The default GEIM is fitted using GAMs on PCA components, which is a robust choice when applying a smoothing spline to the data.
 PCA and ICA interpolation yield near-identical results in most scenarios.
 
 ### Parameter estimation
@@ -554,11 +556,12 @@ nc
 #> [1] 32
 ```
 
-Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+Note that this threshold must be set with respect to the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+One can also keep only components that have 'intelligible dynamics' with respect to time, defined as those where a model fit explains $\gt0.5$ of the deviance.
 
 <br>
 
-Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 
+Choosing from different splines (and/or parameters) can be done with Cross-Validation (CV) through the use of the `ge_imCV()` function. 
 The function inputs the `X`, `p` and a `formula_list` to test. 
 Other parameters on the CV itself can also be given (*e.g.* training set size).
 
@@ -609,16 +612,16 @@ show_fig(expr = {
 `ge_imCV()` computes various indices of model performance :
 the average Correlation Coefficient (`aCC`), the average Relative Error (`aRE`), Mean Squared Error (`MSE`) and average Root MSE (`aRMSE`). 
 These indices all compare model predictions and the true data. 
-The `ge_imCV()` function computes them on the validation set (CV Error) *and* on the training set (Model PerFormance).
+The `ge_imCV()` function computes them both on the validation set (CV Error) *and* on the training set (Model PerFormance).
 
 From the plots above, we can see the different splines perform similarly in this scenario, all could work. 
-We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error without much impact model performance. 
+We chose `ts` (a thin-plate regression spline), as it appears to minimize CV error without much impact model performance. 
 
 
 ## Predicting from the model
 
-The `geim` object returned by `ge_im()` has its predict method which can be used like for any R model.
-You can also specify if you want the predictions as components or as the full gene expression matrix.
+The `geim` object returned by `ge_im()` has its `predict()` method which can be used like for any R model.
+You can also specify if you want the predictions in component space or as the full gene expression matrix.
 
 On our `dsaeschimann2017` example :
 ```{r pred_dsaeschimann2017, eval = gen_figs}
@@ -628,20 +631,19 @@ ndat <- data.frame(age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p
                    strain = rep("N2", n.inter))
 
 # predict
-pred_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, ndat, as.c = TRUE)
+pred_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, ndat, as.c = TRUE) # in component space
 pred_dsaeschimann2017_ge <- predict(m_dsaeschimann2017, ndat)
 ```
 
 
 ## Checking/Validating the interpolation
 
-We have built our model, now we can have a look at the interpolation results.
-To do this, one can do two things : 
+After building our model, we can look at the interpolation results by: 
 
- - Check the model predictions against components (plots)
- - Stage the samples on their own interpolated data, or better (if possible) stage another time-series on your reference for external validation.
+ - Checking the model predictions against components (plots)
+ - Staging the samples on their own interpolated data, or better (if possible) stage another independent time-series on your reference for external validation.
 
-We can do both with our example, the `dshendriks2014` dataset can be used for external validation.
+We can do both with our example, using the `dshendriks2014` dataset for external validation.
 
 ```{r plot_pca_dsaeschimann2017, echo = F, fig.width=12, fig.height=6}
 show_fig(expr = {
@@ -711,60 +713,13 @@ show_fig(expr = {
 ```
 
 
-<!-- # Advanced usage -->
-
-<!-- ## If the bootstrap estimates 'jump around' -->
-
-<!-- In some cases, two different developmental time points of the reference can both be very closely correlated with a sample. -->
-<!-- This has the consequence that, with some random gene subsets, the bootstrap estimates will 'jump' between them and the confidence interval will be quite large. -->
-
-<!-- This can be due to different problems : -->
-
-<!--  - If the sample is bulk, there can be worms of an unexpected developmental stage contaminating it -->
-<!--  - The overlapping gene set between the sample and the reference may be missing key gene groups necessary to distinguish between larval states ; unlikely, unless  -->
-<!--  - The overlapping gene set is very small (less than a few thousand), which necessarily means that -->
-<!--  - The boostrap gene subset size is too small -->
-<!--  - Random gene subset selection can also in rare cases make the difference between larval stages ambiguous -->
-
-<!-- We can simulate the "small bootstrap set size" by messing with the `bootstrap.set_size` parameter. -->
-<!-- ```{r boot_jump, cache=quick_build} -->
-<!-- set.seed(5) # for reproducible results (get the same random gene subsets each time) -->
-
-<!-- ae_hend_boot <- estimate.worm_age(samp = geno.hendriks[, 4:6], # select a few samples  -->
-<!--                                   refdata = ref$interpol.gene_expr, -->
-<!--                                   ref.time_series = ref$time.series, -->
-<!--                                   bootstrap.set_size = 300, # make the bt subset size very small -->
-<!--                                   bootstrap.n = 50) # do more bt steps to be sure to get the issue -->
-<!-- ``` -->
-
-<!-- <!-- The samples with this problem are detected through the `IC.imbalance` criterion mentioned above (when >5), and marked in the summary by an asterisk. --> 
-<!-- <!-- ```{r sum_hen_boot} --> 
-<!-- <!-- summary(ae_hend_boot) --> 
-<!-- <!-- ``` --> 
-<!-- We can show the bootstrap estimates as swarms on the `ae` plot, allowing us to see their distribution along the reference time. -->
-<!-- ```{r pl_hen_boot, fig.height=3, fig.width=8} -->
-<!-- plot(ae_hend_boot, show.boot_estimates = TRUE, col.b = 'firebrick', xlim=c(20,40)) -->
-<!-- ``` -->
-
-<!-- You'll notice that most of our bootstrap estimates are still around the global estimate, and that a few have gone astray 10 hours back (*ie* on the previous molt/larval state, in our case). -->
-<!-- If you see this, increasing the bootstrap gene subset size should solve the issue (default is $n/3$, with $n$ the number of overlapping genes between sample and reference). -->
-
-
-
-
-
 <br>
-
-<!-- If you notice the bootstrap estimates are spread half and half, even with a large number of bootstrap steps (>=100), you may want to consider using a prior for these particular samples.  -->
-<!-- Be warned that using priors has a significant impact on the estimate. -->
-<!-- Also, in this scenario, it is possible your data may be a mix of two distinct larval states. -->
-
 
 
 # Using a prior
 
-In some cases, it may be appropriate to use a prior, helping with the estimate.
-In the `ae()` function, priors work by giving the parameters for gaussian distributions (for each sample). The correlation peaks are then ranked according to the prior's density at their respective time.
+When few genes are available for staging (e.g. for [tissue-specific staging](RAPToR-showcase.html#capturing-tissue-specific-development)), it may be appropriate to use a prior to help age estimation.
+In the `ae()` function, priors work by giving the parameters for gaussian distributions of time (for each sample). The correlation peaks are then ranked according to the prior's density.
 The correlation profile is unaffected by the prior, only the choice of the correlation peak is.
 
 **This implies that with a prior which is completely off, the estimate may also be wrong ; use with care.**
@@ -821,8 +776,7 @@ show_fig(expr = {
 ```
 
 
-
-As you can see, here the estimates are the same as without the prior. 
+As you can see, here the estimates are identical to those without priors. 
 
 
 <a name="load_dsaeschimann2017_dshendriks2014"></a>
