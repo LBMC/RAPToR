@@ -60,6 +60,7 @@ ge_im <- function(X, p, formula,
   } 
   
   class(m) <- "geim"
+  attr(m, "pdata") <- p
   attr(m, "formula") <- formula
   attr(m, "method") <- method
   attr(m, "dim_red") <- dim_red
