@@ -101,6 +101,8 @@ We recommend you get our data-packages with pre-built references of common organ
 
 ## Update info
 
+### v1.2
+
 ### v1.1
 #### v1.1.6
  - Revised the main vignette.
