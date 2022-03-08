@@ -8,7 +8,7 @@
 #' gene set \insertCite{storey2005significance}{RAPToR}.
 #' 
 #' @param X the gene expression matrix (genes as rows, samples as columns)
-#' @param p a dataframe with the pheno data used in the formula (samples as rows) e.g. time, covariates.
+#' @param p a dataframe with the phenotypic data used in the formula (samples as rows) e.g. time, covariates.
 #' @param formula the model formula, which must start with 'X ~'. See \code{\link[mgcv]{gam}}, \code{\link[stats]{glm}} or \code{\link[limma]{lmFit}} documentation for specifications.
 #' @param method the model to fit, one of c("gam", "glm", "limma").
 #' @param dim_red the dimension reduction method to use for interpolation, one of c("pca", "ica"), ignored if method is "limma".
@@ -26,7 +26,8 @@
 ge_im <- function(X, p, formula, 
                   method = c("gam", "glm", "limma"), 
                   dim_red = c("pca", "ica"), 
-                  nc = ncol(X), ...)
+                  nc = ncol(X), 
+                  ...)
 {
   method <- match.arg(method)
   if("limma" == method){
@@ -35,7 +36,7 @@ ge_im <- function(X, p, formula,
   } else {
     dim_red <- match.arg(dim_red)
   }
-  
+
   if("gam" == method){
     if("pca" == dim_red){
       m <- .model_gam_pca(X = X, p = p, formula = formula, nc = nc, ...)
