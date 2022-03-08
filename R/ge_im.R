@@ -4,7 +4,7 @@
 #' This can be done either with gam or glm models fit on the components of a PCA or ICA.
 #' It's also possible to have a linear model fit directly (per gene) on the gene expression data (uses limma).
 #' 
-#' Using components as "eigen genes" is not uncommon to find model parameters fitting the whole 
+#' We use components as "eigen genes" to find model parameters fitting the whole 
 #' gene set \insertCite{storey2005significance}{RAPToR}.
 #' 
 #' @param X the gene expression matrix (genes as rows, samples as columns)
