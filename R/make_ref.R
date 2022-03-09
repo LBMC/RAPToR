@@ -130,3 +130,56 @@ make_ref <- function(m,
   return(ref)
 }
 
+
+
+
+#' Print a ref object
+#' 
+#' Prints a \code{ref} object
+#' 
+#' @param x a \code{ref} object, as returned by \code{\link{make_ref}}.
+#' @param ... arguments passed on to \code{\link{print}}
+#' 
+#' @export
+#' 
+#' 
+print.ref <- function(x, ...){
+  
+  d <- dim(x$interpGE)
+  ts <- diff(x$time)
+  cat("RAPToR reference object\n---")
+  cat("\n interpGE:\t(",d[1], " x ", d[2],")",
+      "\n time:\t [", min(x$time), " - ", max(x$time), "]", attr(x, "t.unit"),", by",
+      ifelse(all(sapply(ts, all.equal, current=ts[1])), ts[1], "varying time"), "steps")
+  
+  md <- attr(x, "metadata")
+  if(1 == length(md) & md[[1]]==""){
+    cat("\n\n (no metadata)")
+  } else {
+  cat('\n\n Metadata\n\t\t', 
+      paste(sapply(seq_along(md), function(i) paste0(names(md)[i], ": ", md[[i]])),
+            collapse = "\n\t\t"),
+      sep = "")
+  }
+  
+  cat("\n\n GEIM:")
+  ats <- attr(x, "geim.params")
+  if(ats$method != "limma"){
+    cat("\n\t", casefold(ats$method, upper = T), "fit on", ats$nc,
+        casefold(ats$dim_red, upper = T), "components:")
+  } else {
+    cat("\n\t", casefold(ats$method, upper = T), " model fit on genes with:")
+  }
+  cat("\n\t", ats$formula)
+  # cov. levels
+  cl <- attr(x, "cov.level")
+  if(length(cl)>0){
+    
+    cat("\n\t with covariate levels", 
+        paste(sapply(seq_along(cl), 
+                     function(i) paste0(names(cl)[i], ": ", cl[[i]])),
+              collapse = ", "))
+  }
+ 
+  cat("\n---\n")
+}
