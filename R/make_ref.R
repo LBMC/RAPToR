@@ -88,7 +88,9 @@ make_ref <- function(m,
   }
   
   # t.unit param handling
-  
+  if(!is.character(t.unit)){
+    stop("t.unit must be a string")
+  }
   
   # make the new predictor dataframe
   ndat <- data.frame(time = ts)
