@@ -83,7 +83,7 @@ make_ref <- function(m,
     ts <- seq(min(t.var), max(t.var), by = by.inter)
     l <- length(ts)
   } else {
-    ts <- seq(min(t.var), max(t.var), by = n.inter)
+    ts <- seq(min(t.var), max(t.var), l = n.inter)
     l <- n.inter
   }
   
@@ -116,7 +116,7 @@ make_ref <- function(m,
               time = ts)
   
   # assign object class and attributes
-  class(ref, 'ref')
+  class(ref) <- 'ref'
   attr(ref, "t.unit") <- t.unit
   attr(ref, "metadata") <- metadata
   attr(ref, "formula") <- f
@@ -125,3 +125,6 @@ make_ref <- function(m,
   return(ref)
   
 }
+
+
+
