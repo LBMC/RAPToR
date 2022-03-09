@@ -142,9 +142,7 @@ make_ref <- function(m,
 #' 
 #' @export
 #' 
-#' 
 print.ref <- function(x, ...){
-  
   d <- dim(x$interpGE)
   ts <- diff(x$time)
   cat("RAPToR reference object\n---")
