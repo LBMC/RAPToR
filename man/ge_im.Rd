@@ -17,7 +17,7 @@ ge_im(
 \arguments{
 \item{X}{the gene expression matrix (genes as rows, samples as columns)}
 
-\item{p}{a dataframe with the pheno data used in the formula (samples as rows) e.g. time, covariates.}
+\item{p}{a dataframe with the phenotypic data used in the formula (samples as rows) e.g. time, covariates.}
 
 \item{formula}{the model formula, which must start with 'X ~'. See \code{\link[mgcv]{gam}}, \code{\link[stats]{glm}} or \code{\link[limma]{lmFit}} documentation for specifications.}
 
@@ -38,7 +38,7 @@ This can be done either with gam or glm models fit on the components of a PCA or
 It's also possible to have a linear model fit directly (per gene) on the gene expression data (uses limma).
 }
 \details{
-Using components as "eigen genes" is not uncommon to find model parameters fitting the whole
+We use components as "eigen genes" to find model parameters fitting the whole
 gene set \insertCite{storey2005significance}{RAPToR}.
 }
 \examples{
