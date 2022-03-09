@@ -115,16 +115,18 @@ make_ref <- function(m,
   ref <- list(interpGE = predict(m, ndat),
               time = ts)
   
+  # get geim params
+  gp <- c("formula", "method", "dim_red", "nc")
+  geim.params <- lapply(gp, attr, x=m)
+  names(geim.params) <- gp
+  
   # assign object class and attributes
   class(ref) <- 'ref'
   attr(ref, "t.unit") <- t.unit
   attr(ref, "metadata") <- metadata
-  attr(ref, "formula") <- f
+  attr(ref, "geim.params") <- geim.params
   attr(ref, "cov.level") <- cov.levels
   
   return(ref)
-  
 }
-
-
 
