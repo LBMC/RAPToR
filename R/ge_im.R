@@ -120,13 +120,13 @@ predict.geim <- function(object, newdata, as.c = FALSE, ...){
 print.geim <- function(x, ...){
   ats <- list(f = attr(x, "formula"), m = attr(x, "method"), 
               dr = attr(x, "dim_red"), nc = attr(x, "nc"))
-  cat("gene expression interpolation model \n---")
-  cat("\nformula:  ", ats$f)
-  cat("\nmethod:   ", ats$m)
+  cat("RAPToR Gene Expression Interpolation Model \n---")
   if(ats$m != "limma"){
-    
-    cat("\ndim_red:  ", ats$dr)
-    cat("\nnc:       ", ats$nc)
+    cat("\n\t", casefold(ats$m, upper = T), "fit on", ats$nc,
+        casefold(ats$dr, upper = T), "components:")
+  } else {
+    cat("\n\t", casefold(ats$m, upper = T), " model fit on genes with:")
   }
+  cat("\n\t", ats$f)
   cat("\n---\n")
 }
