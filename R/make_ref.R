@@ -154,9 +154,9 @@ print.ref <- function(x, ...){
   if(1 == length(md) & md[[1]]==""){
     cat("\n\n (no metadata)")
   } else {
-  cat('\n\n Metadata\n\t\t', 
+  cat('\n\n Metadata:\n\t', 
       paste(sapply(seq_along(md), function(i) paste0(names(md)[i], ": ", md[[i]])),
-            collapse = "\n\t\t"),
+            collapse = "\n\t"),
       sep = "")
   }
   
