@@ -31,7 +31,7 @@ make_ref <- function(m,
   f <- attr(m, "formula")
   vars <- mgcv::interpret.gam(as.formula(f))$pred.names
   
-  # extract time variable
+  # extract time variable (supposing it is the first and only numeric variable in the formula)
   ti <- which(sapply(vars, function(v) is.numeric(p[,v])))[1]
   t.var <- p[,vars[ti]]
   cvars <- vars[-ti]
@@ -89,7 +89,18 @@ make_ref <- function(m,
   
   # t.unit param handling
   if(!is.character(t.unit)){
-    stop("t.unit must be a string")
+    stop("t.unit must be a string.")
+  }
+  # metatdata param handling
+  if(0 != length(metadata)){
+    if(!is.list(metadata)){
+      stop("metadata must be given as a named list.")
+    }
+    if(is.null(names(metadata))){
+      names(metadata) <- rep("unnamed", length(metadata))
+    }
+  } else {
+    metadata <- list("no metatdata"="")
   }
   
   # make the new predictor dataframe
