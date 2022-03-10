@@ -36,6 +36,24 @@ ge_im <- function(X, p, formula,
   } else {
     dim_red <- match.arg(dim_red)
   }
+  
+  vars <- mgcv::interpret.gam(as.formula(formula))$pred.names
+  
+  # extract time variable (it must be the only numeric variable in the formula)
+  t.var <- which(sapply(vars, function(v) is.numeric(p[,v])))[1]
+  
+  # extract covariates
+  cvars <- vars[-t.var]
+  
+  # keep t.var name
+  t.var <- vars[t.var]
+  
+  # check that (potential) covariates are factors
+  if(length(cvars) > 0){
+    if(any(!sapply(cvars, function(v) is.factor(p[, v])))){
+      stop(paste0("Any specified covariate must be a factor (",paste(cvars, collapse = ", "), ")"))
+    }
+  }
 
   if("gam" == method){
     if("pca" == dim_red){
@@ -62,6 +80,7 @@ ge_im <- function(X, p, formula,
   class(m) <- "geim"
   attr(m, "pdata") <- p
   attr(m, "formula") <- formula
+  attr(m, "vars") <- list(t.var = t.var, cvars = cvars)
   attr(m, "method") <- method
   attr(m, "dim_red") <- dim_red
   attr(m, "nc") <- nc
