@@ -29,12 +29,10 @@ make_ref <- function(m,
 {
   p <- attr(m, "pdata")
   f <- attr(m, "formula")
-  vars <- mgcv::interpret.gam(as.formula(f))$pred.names
   
-  # extract time variable (supposing it is the first and only numeric variable in the formula)
-  ti <- which(sapply(vars, function(v) is.numeric(p[,v])))[1]
-  t.var <- p[,vars[ti]]
-  cvars <- vars[-ti]
+  t.var <- attr(m, "vars")$t.var # time variable
+  tv <- p[, t.var]
+  cvars <- attr(m, "vars")$cvars # covariates
   
   # cov.levels param handling
   if(length(cvars) > 0){ # there is a covariate
@@ -51,7 +49,7 @@ make_ref <- function(m,
       if(!is.list(cov.levels) | length(cov.levels) != length(cvars)){ # not all cov levels specified
         stop("Levels to predict for all the covariates must be specified as a named list (with variable names).")
       }
-      if(!all(sapply(seq_along(cvars), function(i) cov.levels[i] %in% levels(p[,vars[i]])))){
+      if(!all(sapply(seq_along(cvars), function(i) cov.levels[i] %in% levels(p[, cvars[i]])))){
         stop("A level of cov. levels does not match with factor levels in the data.")
       }
     }
@@ -61,18 +59,18 @@ make_ref <- function(m,
   
   # from & to param handling 
   if(!is.null(from)){
-    if(!is.numeric(from) | from < min(t.var)){
+    if(!is.numeric(from) | from < min(tv)){
       stop("'from' must be a numeric value within the reference time span.")
     }
   } else {
-    from <- min(t.var)
+    from <- min(tv)
   }
   if(!is.null(to)){
-    if(!is.numeric(to) | to > max(t.var)){
+    if(!is.numeric(to) | to > max(tv)){
       stop("'to' must be a numeric value within the reference time span.")
     }
   } else {
-    to <- max(t.var)
+    to <- max(tv)
   }
   
   # n/by.inter param handling
@@ -80,10 +78,10 @@ make_ref <- function(m,
     if(!is.numeric(by.inter)){
       stop("by.inter must be a single numeric value.")
     }
-    ts <- seq(min(t.var), max(t.var), by = by.inter)
+    ts <- seq(min(tv), max(tv), by = by.inter)
     l <- length(ts)
   } else {
-    ts <- seq(min(t.var), max(t.var), l = n.inter)
+    ts <- seq(min(tv), max(tv), l = n.inter)
     l <- n.inter
   }
   
@@ -105,7 +103,7 @@ make_ref <- function(m,
   
   # make the new predictor dataframe
   ndat <- data.frame(time = ts)
-  colnames(ndat)[1] <- vars[ti]
+  colnames(ndat)[1] <- t.var
   
   for(v in cvars){
     ndat[, v] <- factor(rep(cov.levels[[v]], l=l))
@@ -146,9 +144,10 @@ print.ref <- function(x, ...){
   d <- dim(x$interpGE)
   ts <- diff(x$time)
   cat("RAPToR reference object\n---")
-  cat("\n interpGE:\t(",d[1], " x ", d[2],")",
-      "\n time:\t [", min(x$time), " - ", max(x$time), "]", attr(x, "t.unit"),", by",
-      ifelse(all(sapply(ts, all.equal, current=ts[1])), ts[1], "varying time"), "steps")
+  cat("\n interpGE:\t( ",d[1], " x ", d[2]," )",
+      "\n time:\t [ ", min(x$time), " - ", max(x$time), " ] ", attr(x, "t.unit"),", by ",
+      ifelse(all(sapply(ts, all.equal, current=ts[1])), ts[1], "varying time"), " steps",
+      sep = "")
   
   md <- attr(x, "metadata")
   if(1 == length(md) & md[[1]]==""){

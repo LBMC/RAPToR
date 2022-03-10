@@ -1,31 +1,28 @@
 #' Age Estimate
 #' 
-#' This function estimates the developmental age of sample individuals based on 
-#' correlation with given reference data. 
+#' \code{ae} estimates the developmental age of input samples based on 
+#' correlation with the given reference data. 
 #' 
-#' The implemented bootstrap procedure re-estimates the age on random gene subsets
-#' of fixed size to evaluate the robustness of the estimate, given in the form of
+#' Confidence intervals for each estimate are computed from bootstrapping on genes and computing 
 #' the Median Absolute Deviation of the bootstrap age estimates to the global estimate. 
-#' 
-#' Using interpolated reference data gives more precise results.
 #' 
 #' A prior can be given to help with the estimate, in which case the peaks 
 #' of the correlation profiles will be scored according to a gaussian
 #' of the specified parameters.
 #' 
-#' @param samp the sample matrix, genes as rows, individuals as columns
-#' @param refdata the reference time series matrix, same format as \code{samp}
-#' @param ref.time_series the reference time series (\emph{e.g.} \code{interpol$time.series} if using interpolated reference data)
-#' @param nb.cores the number of cores on which to parallelize the process, defaults to 2.
-#' @param cor.method correlation method argument passed on to \code{\link{cor.gene_expr}}. Note that the Spearman coefficient performs much better than Pearson (while a bit slower).
-#' @param bootstrap.n the number of bootstrap steps. Should ideally be >5
-#' @param bootstrap.set_size the size of the random sub genesets for the bootstrap, defaults to ngenes/3 (ngenes being the number of \emph{overlapping} genes between sample and reference).
-#' @param prior a vector with an approximate development time of the samples, must be in the same units than \code{ref.time_series}. Vector is recycled if its length is smaller than the number of samples
-#' @param prior.params the std. deviation of the prior scoring distribution. \emph{Note that setting this value too low can cause a significant bias in the age estimation.}
-#' @param verbose boolean ; if TRUE, displays messages of the various steps of the method.
+#' @param samp sample matrix, genes as rows, individuals as columns
+#' @param refdata a reference object, as returned by \code{\link{make_ref}}, or a reference time series matrix in same format as \code{samp}
+#' @param ref.time_series ignored if a \code{ref} object is given to \code{refdata}, else the time values of the reference data specified)
+#' @param nb.cores number of cores for parallelism, defaults to 2.
+#' @param cor.method correlation method, one of "spearman" (default) or "pearson".
+#' @param bootstrap.n number of bootstraps. Defaults to 30, should be >5.
+#' @param bootstrap.set_size random gene set size for the bootstrap, defaults to n/3 (with n, the size of the sample-reference gene set \emph{overlap}).
+#' @param prior Approximate time values for each sample, in the time unit of the given reference. Values are recycled if less than the number of samples
+#' @param prior.params Standard deviation of the prior scoring distribution. \emph{Setting this value too low can cause a significant bias in the age estimation.}
+#' @param verbose if TRUE (default), displays progression messages.
 #' 
-#' @return an `ae` object, which is a list of the age estimates, the correlation matrix between sample and reference, 
-#' the reference time series as well as the bootstrap correlation matrices and age estimates.
+#' @return an `ae` object, with the age estimates, the correlation matrix between sample and reference, 
+#' the reference time series, and the bootstrap age estimates and correlation matrices.
 #' There are `plot`, `print` and `summary` methods for this object.
 #' 
 #' @export
@@ -37,16 +34,26 @@
 #' @importFrom stats quantile dnorm
 #' @importFrom pryr standardise_call
 #' 
-ae <- function(samp, refdata, ref.time_series,
+ae <- function(samp, refdata, ref.time_series = NULL,
                cor.method = "spearman", nb.cores = 2,
                bootstrap.n = 30, bootstrap.set_size = NULL,
                prior = NULL, prior.params = NULL,
                verbose = T)
 {
-  if(length(ref.time_series)!=ncol(refdata)){
-    stop("Reference data and time series don't match")
+  refinput <- "ref" == class(refdata) # input is a 'ref' object
+  if(refinput){ 
+    ref <- refdata
+    refdata <- ref$interpGE
+    ref.time_series <- ref$time
+  } else {
+    if(is.null(ref.time_series)){
+      stop("If refdata is not a ref object, ref.time_series must be specified.")
+    }
+    if(length(ref.time_series)!=ncol(refdata)){
+      stop("Reference data and time series don't match")
+    }
+    ref.time_series <- as.numeric(ref.time_series)
   }
-  ref.time_series <- as.numeric(ref.time_series)
   
   
   ncs <- ncol(samp)
@@ -248,6 +255,16 @@ ae <- function(samp, refdata, ref.time_series,
   res$call <- deparse(pryr::standardise_call(sys.call()))
   
   class(res) <- "ae"
+  
+  if(refinput){
+    attr(ae, "t.unit") <- attr(ref, "t.unit")
+    attr(ae, "refdat") <- list(metadata = attr(ref, "metadata"),
+                               geim.params = attr(ref, "geim.params"))
+  } else {
+    attr(ae, "t.unit") <- ""
+    attr(ae, "refdat") <- NA
+  }
+    
   return(res)
   
 }
