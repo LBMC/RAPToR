@@ -13,7 +13,6 @@
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @importFrom Rdpack reprompt
 #' 
@@ -67,7 +66,6 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' 
 #' @export
 #' 
-#' @eval interpol_example()
 #' 
 #' @importFrom Rdpack reprompt
 #' 
@@ -107,7 +105,7 @@ ref_compare <- function(X, ref, fac,
   lm_samp <-lm(log2(exp(t(ovl$samp)))~fac)
   lm_ref <-lm(log2(exp(t(ovl$ref)))~fac)
   
-  coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_samp))) 
+  coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_ref))) 
   
   fac_stats <- list(ae_avg = tapply(ae_values, fac, mean),
                     ae_sd = tapply(ae_values, fac, sd),
@@ -127,4 +125,75 @@ ref_compare <- function(X, ref, fac,
 
 
 
+#' Extract sample or reference log-fold changes from rcmp object.
+#' 
+#' Fetches the log2-fold change (logFC) values for a given group comparison in the samples or in the reference.
+#' 
+#' @param rc an rcmp object, as returned by \link{\code{ref_compare}}
+#' @param l,l0 sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{fac} respectively.
+#'
+#' @return a dataframe with sample and reference logFCs between groups.
+#' 
+#' @export
+#' 
+#' 
+#' @importFrom Rdpack reprompt
+#' 
+get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1]){
+  if("rcmp"!=class(rc)){
+    stop("rc must be an 'rcmp' object, as returned by ref_compare.")
+  }
+  ll <- levels(rc$fac)
+  if(!l%in%ll | !l0%in%ll){
+    stop("l and l0 must be levels of the group factor (fac).")
+  }
+  
+  if(ll[1] == l0){ # comparison with control, lm coefs are good as is.
+    # avg_l0 = beta_0
+    # lfc = beta_l 
+    lfc <- data.frame(
+      samp = rc$coefs$samp[, which(l == ll)],
+      ref = rc$coefs$ref[, which(l == ll)]
+    )
+  } else { # comparison between 2 non-control groups
+    # avg_l = beta_0 + beta_l 
+    # avg_l0 = beta_0 + beta_l0
+    # lfc = (beta_0 + beta_l) - (beta_0 + beta_l0) = beta_l - beta_l0
+    lfc <- data.frame(
+      samp = rc$coefs$samp[, which(l == ll)] - rc$coefs$samp[, which(l0 == ll)],
+      ref = rc$coefs$ref[, which(l == ll)] - rc$coefs$ref[, which(l0 == ll)]
+    )
+  }
+  return(lfc)
+}
 
+
+#' Print an rcmp object
+#' 
+#' Prints an \code{rcmp} object
+#' 
+#' @param x an \code{rcmp} object, as returned by \code{\link{ref_compare}}.
+#' @param ... arguments passed on to \code{\link{print}}
+#' 
+#' @export
+#' 
+#' 
+print.rcmp <- function(x, ...){
+  lfcs <- lapply(levels(x$fac)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$fac)[1])
+  rs <- unlist(lapply(lfcs, function(lfci) cor(lfci$samp, lfci$ref)))
+  ae_avg <- attr(x, "fac.stats")$ae_avg
+  df <- as.data.frame(cbind(#fac = levels(x$fac),,
+              ref.logFC.r = c(NA, rs),
+              ref.logFC.r2 = c(NA, rs^2),
+              ae.avg.dif = c(NA, ae_avg[-1] - ae_avg[1])
+              ))
+  rownames(df) <- sapply(seq_along(levels(x$fac)), function(i){
+    paste(levels(x$fac)[i], ifelse(1==i, " (ctrl, n=", " (n="), 
+          table(x$fac)[i] ,")", sep="")
+  })
+
+  cat("DE comparison with reference\n---\n")
+  print(round(df, 3), ...)
+  cat("---\n")
+  invisible(return(df))
+}
