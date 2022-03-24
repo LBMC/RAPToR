@@ -63,7 +63,7 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' @param ae_values age estimate values (used if ae_obj is NULL). 
 #' @param return.idx if TRUE (default) returns reference indices. If FALSE, returns corresponding reference expression matrix.
 #'
-#' @return an rcmp object
+#' @return an rcmp object.
 #' 
 #' @export
 #' 
@@ -107,12 +107,24 @@ ref_compare <- function(X, ref, fac,
   lm_samp <-lm(log2(exp(t(ovl$samp)))~fac)
   lm_ref <-lm(log2(exp(t(ovl$ref)))~fac)
   
-  ae_dif <- as.vector(lm(ae_values~fac)$coefficients[-1])
+  coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_samp))) 
   
+  fac_stats <- list(ae_avg = tapply(ae_values, fac, mean),
+                    ae_sd = tapply(ae_values, fac, sd),
+                    ae_range = as.data.frame(
+                      do.call(cbind, tapply(ae_values, fac, range)),
+                      row.names = c("min", "max")
+                      ))
   
-  res <- list(samp = lm_samp, ref = lm_ref, fac = fac, ae_dif=ae_dif)
+  res <- list(coefs = coefs, expr = ovl, fac = fac)
   class(res) <- "rcmp"
+  attr(res, "fac.stats") <- fac_stats
+  attr(res, "ref.info") <- list(t.unit = attr(ref, "t.unit"),
+                                metadata = attr(ref, "metadata"))
+
   return(res)
 }
+
+
 
 
