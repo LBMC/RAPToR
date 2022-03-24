@@ -257,12 +257,12 @@ ae <- function(samp, refdata, ref.time_series = NULL,
   class(res) <- "ae"
   
   if(refinput){
-    attr(ae, "t.unit") <- attr(ref, "t.unit")
-    attr(ae, "refdat") <- list(metadata = attr(ref, "metadata"),
+    attr(res, "t.unit") <- attr(ref, "t.unit")
+    attr(res, "refdat") <- list(metadata = attr(ref, "metadata"),
                                geim.params = attr(ref, "geim.params"))
   } else {
-    attr(ae, "t.unit") <- ""
-    attr(ae, "refdat") <- NA
+    attr(res, "t.unit") <- ""
+    attr(res, "refdat") <- NA
   }
     
   return(res)
@@ -292,9 +292,25 @@ ae <- function(samp, refdata, ref.time_series = NULL,
 #' @eval ae_example()
 #' 
 print.ae <- function(x, digits=3, ...){
-  cat("ae object\n\n")
-  cat("Call : \n")
+  cat("RAPToR ae object\n---\n")
+  cat("Call:  ")
   sapply(x$call, function(s){cat(paste0('\t',s,'\n'))})
+  
+  # time unit & reference metadata
+  md <- attr(x, 'refdat')$metadata
+  if(!is.na(md[1]) & !(1 == length(md) & md[[1]]=="")){
+    cat("Reference metadata:\n\t")
+    cat(paste(sapply(seq_along(md), function(i) paste0(names(md)[i], ": ", md[[i]])),
+                    collapse = "\n\t"),
+        sep = "")
+  }
+
+  t.unit <- attr(x, 't.unit')
+  if("" != t.unit){
+    cat("\n\nTime unit:", t.unit, "\n")
+  }
+    
+  # print sample table
   cat('\n')
   print(round(x$age.estimates, digits = digits), ...)
 }
@@ -309,7 +325,7 @@ print.ae <- function(x, digits=3, ...){
 #' @param digits the number of digits passed on to \code{\link{round}}
 #' @param ... ignored (needed to match the S3 standard)
 #' 
-#' @return a list holding a data frame of ordered age estimates and confidence intervals, the span of estimates and the range.
+#' @return a list with: a dataframe of ordered age estimates and confidence intervals, the span of age estimates estimates and the range.
 #' 
 #' @export
 #' 
@@ -318,30 +334,27 @@ print.ae <- function(x, digits=3, ...){
 summary.ae <- function(object, digits=3, ...){
   # rank the samples by age
   ord <- order(object$age.estimates[,1]) 
-  ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits)
-                   # ,w=sapply(object$age.estimates[ord,'IC.imbalance'],
-                   #          function(im){ifelse(im>5, '*','')})
-  )
-  # colnames(ae_tab)[4] <- ' '
+  ae_tab <-  cbind(round(object$age.estimates[ord,1:3], digits = digits))
   
-  bar <- paste0(rep('-', 50+digits*3), collapse = '')
+  bar <- "---" #paste0(rep('-', 50+digits*3), collapse = '')
   
-  # Display timespan of samples
+  # Display time span of samples
   mn <- as.numeric(min(object$age.estimates[,1], na.rm = T))
   mx <- as.numeric(max(object$age.estimates[,1], na.rm = T))
   
-  cat(paste0('\nSpan of samples : ',
-             round(mx-mn, digits = digits),
-             '\nRange of samples :  [ ', 
-             round(mn, digits = digits),' , ',round(mx, digits = digits),
+  t.unit <- attr(object, 't.unit')
+  if("" == t.unit){
+    t.unit <- "none specified"
+  }
+  
+  cat(paste0("\nAge estimate\n  Time unit:\t", t.unit,
+             '\n  Span:  \t', round(mx-mn, digits = digits),
+             '\n  Range:\t[ ', round(mn, digits = digits),' , ',
+             round(mx, digits = digits),
              ' ]',
              '\n', bar, '\n'))
   # Print the sample table
   print(ae_tab, quote = F, right = T)
-  cat(bar)
-  # if(any(ae_tab[,4]=='*'))
-  #   cat('\n\t* : Warning, estimate jumps around on bootstrap')
-  # 
   invisible(list(age.estimates=object$age.estimates[ord,1:3], span=c(mn,mx), range=mx-mn))
 }
 
