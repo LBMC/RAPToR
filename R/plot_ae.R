@@ -1,22 +1,21 @@
 #' Plot an ae object
 #' 
-#' Plots the age estimates along with bootstrap error bars using a dotchart.
+#' Plots age estimates of sample with bootstrap confidence interval as a dotchart.
 #' 
 #' @param x an `ae` object, as returned by \code{\link{ae}}.
-#' @param errbar.width the width of the error bars.
-#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
-#' @param col.p the color of the prior estimate marker.
-#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.
-#' @param col.b the color of the bootstrapped estimates.
 #' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
 #' @param subset an index vector of the samples to plot (defaults to all).
-#' @param color color parameter passed on to \code{\link{dotchart}}.
+#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.
+#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
+#' @param col, color color parameter passed on to \code{\link{dotchart}}.
+#' @param errbar.width the width of the error bars.
+#' @param col.b,col.p the color of the bootstrapped estimates and prior respectively.
 #' @param glob.above logical ; if TRUE, the global estimate is plotted above all else.
-#' @param pch the pch parameter passed on to \code{\link{dotchart}}.
+#' @param pch passed on to \code{\link{dotchart}}.
 #' @param cex sizing parameter applied to various elements of the plot.
 #' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
 #' @param xlab the x axis label, passed on to \code{\link{dotchart}}.
-#' @param l.pos the position of the legend when show.prior is \code{TRUE}, as passed on to \code{\link[graphics]{legend}}
+#' @param l.pos the position of the legend when show.prior is \code{TRUE}, passed on to \code{\link[graphics]{legend}}
 #' @param ... additional arguments passed on to \code{\link{dotchart}}.
 #' 
 #' @export
@@ -26,14 +25,13 @@
 #' @importFrom graphics plot dotchart points arrows legend
 #' @importFrom beeswarm swarmy
 #' 
-plot.ae <- function(x, errbar.width=0.1, 
-                    show.prior=F, col.p=1,
-                    show.boot_estimates=F, col.b=2,
-                    groups=NULL, subset=NULL,
-                    glob.above = F,
-                    color = par("fg"),
+plot.ae <- function(x, groups=NULL, subset=NULL,
+                    show.boot_estimates=F, show.prior=F, 
+                    color = par("fg"), col = color,
+                    col.b=2, col.p=1,
+                    errbar.width=0.1, glob.above = F,
                     pch=16, cex=1, xlim=NULL,
-                    xlab="Estimated ages", 
+                    xlab=NULL, 
                     l.pos='bottomright', ...)
 {
   if(!is.null(subset)){
@@ -117,6 +115,88 @@ plot.ae <- function(x, errbar.width=0.1,
 #' 
 #' Plots the correlation score curves from samples against the reference series.
 #' 
+#' @param ae_obj an \code{ae} object, as returned by \code{\link{ae}} 
+#' @param subset an index vector of the samples to plot (defaults to all)
+#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
+#' @param c.lwd line width for the correlation score curve
+#' @param bar.size size of the estimate confidence interval bars
+#' @param mx.col color of the age estimate bars
+#' @param col.p color of the prior bar
+#' @param xlab,ylab the x and y axis labels, passed on to \code{\link{plot}}
+#' @param ... additional arguments passed on to \code{\link{plot}}
+#' 
+#' @export
+#' 
+#' @eval ae_example()
+#' 
+#' @importFrom graphics plot points segments text polygon
+#' 
+plot_cor <- function (ae_obj, subset = 1:ncol(ae_obj$cors), 
+                         show.prior = F,
+                         c.lwd = 2, bar.size = 1, 
+                         mx.col = "firebrick", col.p = "royalblue", 
+                         xlab = NULL, ylab = NULL,
+                         ...) 
+{
+  pb <- sapply(subset, function(i) {
+    # set ylim values
+    if(!is.null(ae_obj$cors.95))
+      yl <- range(ae_obj$cors.95[,,i])
+    else yl <- range(ae_obj$cors[,i])
+    
+    if(is.null(xlab){
+      xlab <- paste0("Reference time, ", attr(ae_obj, "t.unit"))
+    }  
+    if(is.null(ylab)){
+      ylab <- "Corr. score"
+    }
+    # plot corr. curve
+    graphics::plot(ae_obj$ref.time_series, ae_obj$cors[,i], type = "l", 
+                   lwd = c.lwd, main = colnames(ae_obj$cors)[i], xlab = xlab,
+                   ylim = yl*c(1,1.025), ylab = ylab, ...)
+    
+    # if bootstrap cor 95 IC was returned, plot cor curve 95 IC & median
+    if(!is.null(ae_obj$cors.95))
+      sapply(1:3, function(j){
+        graphics::points(ae_obj$ref.time_series, ae_obj$cors.95[j,,i], 
+                         type = 'l', lwd=c(1,2,1)[j], lty=2)
+      })
+    
+    # get values for current sample
+    ae <- ae_obj$age.estimates[i, c("age.estimate", "cor.score", "lb", "ub")]
+    
+    # plot IC bars & band
+    seg.h <- ((yl[2]-yl[1])/10)*bar.size
+    xs <- c(ae[3], ae[4])
+    y0s <- rep(ae[2]-seg.h, 2)
+    y1s <- rep(ae[2]+seg.h, 2)
+    graphics::segments(xs, y0s, y1 = y1s, lwd=2.5, col = mx.col)
+    
+    yp <- c(y0s[1]+seg.h/2, y1s[1]-seg.h/2)
+    graphics::polygon(rep(xs, each=2), y=c(yp[1], yp[2], yp[2], yp[1]), 
+                      col=makeTransparent(mx.col, alpha = 150), border = NA)
+    
+    
+    # add estimate as text
+    graphics::text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
+    
+    
+    if (show.prior&!is.null(ae_obj$prior)) {
+      # show initial estimate 
+      init.est <- ae_obj$prior[i]
+      graphics::points(init.est, min(ae_obj$cors[, i]), pch = "|", 
+                       col = col.p, cex = bar.size)
+      graphics::text(init.est, min(ae_obj$cors[, i]), pos = 3, offset = 1, 
+                     labels = paste(round(init.est, 2), 
+                                    "\n(prior)", sep = ""))
+    }
+  })
+}
+
+#' (DEPRECATED) Plot an ae object
+#' 
+#' This function has been renamed. Please use \link{\code{plot_cor()}} instead. 
+#' 
 #' @param age.est an \code{ae} object, as returned by \code{\link{ae}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
 #' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
@@ -137,56 +217,15 @@ plot_cor.ae <- function (age.est, subset = 1:ncol(age.est$cors),
                          show.prior = F,
                          c.lwd = 2, bar.size = 1, 
                          mx.col = "firebrick", col.p = "royalblue", 
-                         xlab = "reference time",
+                         xlab = NULL,
                          ...) 
 {
-  pb <- sapply(subset, function(i) {
-    # set ylim values
-    if(!is.null(age.est$cors.95))
-      yl <- range(age.est$cors.95[,,i])
-    else yl <- range(age.est$cors[,i])
-    
-    # plot corr. curve
-    graphics::plot(age.est$ref.time_series, age.est$cors[,i], type = "l", 
-                   lwd = c.lwd, main = colnames(age.est$cors)[i], xlab = xlab,
-                   ylim = yl*c(1,1.025), ylab = "corr.score", ...)
-    
-    # if bootstrap cor 95 IC was returned, plot cor curve 95 IC & median
-    if(!is.null(age.est$cors.95))
-      sapply(1:3, function(j){
-        graphics::points(age.est$ref.time_series, age.est$cors.95[j,,i], 
-                         type = 'l', lwd=c(1,2,1)[j], lty=2)
-      })
-    
-    # get values for current sample
-    ae <- age.est$age.estimates[i, c("age.estimate", "cor.score", "lb", "ub")]
-    
-    # plot IC bars & band
-    seg.h <- ((yl[2]-yl[1])/10)*bar.size
-    xs <- c(ae[3], ae[4])
-    y0s <- rep(ae[2]-seg.h, 2)
-    y1s <- rep(ae[2]+seg.h, 2)
-    graphics::segments(xs, y0s, y1 = y1s, lwd=2.5, col = mx.col)
-    
-    yp <- c(y0s[1]+seg.h/2, y1s[1]-seg.h/2)
-    graphics::polygon(rep(xs, each=2), y=c(yp[1], yp[2], yp[2], yp[1]), 
-                      col=makeTransparent(mx.col, alpha = 150), border = NA)
-    
-    
-    # add estimate as text
-    graphics::text(ae[1],ae[2]-3*seg.h, labels = paste(round(ae[1], 2), sep = ""))
-    
-    
-    if (show.prior&!is.null(age.est$prior)) {
-      # show initial estimate 
-      init.est <- age.est$prior[i]
-      graphics::points(init.est, min(age.est$cors[, i]), pch = "|", 
-                       col = col.p, cex = bar.size)
-      graphics::text(init.est, min(age.est$cors[, i]), pos = 3, offset = 1, 
-                     labels = paste(round(init.est, 2), 
-                                    "\n(prior)", sep = ""))
-    }
-  })
+  warning("This function is now deprecated. Please use plot_cor() instead.")
+  RAPToR::plot_cor(ae_obj = age.est, subset = subset, 
+           show.prior = show.prior,
+           c.lwd = c.lwd, bar.size = bar.size, 
+           mx.col = mx.col, col.p = col.p, 
+           xlab = xlab, ...)
 }
 
 #' Make a color transparent
