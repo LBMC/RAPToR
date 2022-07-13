@@ -9,9 +9,9 @@ increase power in differential expression analyses,
 estimate differential expression due to uncontrolled development and 
 most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
 
-Please cite our preprint if you use RAPToR in your research:
+Please cite our paper if you use RAPToR in your research:
 
- - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* [doi: 10.1101/2021.09.07.459270](https://doi.org/10.1101/2021.09.07.459270)
+ - Bulteau, R., Francesconi, M. Real age prediction from the transcriptome with RAPToR. *Nat Methods* (2022). (https://doi.org/10.1038/s41592-022-01540-0)
 
 
 
