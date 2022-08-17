@@ -1,14 +1,13 @@
 #' Format the sample and reference data to match
 #'
-#' This function formats the sample and reference data to have a matching gene set.
-#' This removes genes that are not present in both datasets.
+#' This function keeps matching gene IDs between the sample and reference data, removing non-matching data.
 #' 
 #' @param samp the sample gene expression matrix with genes as rows and individuals as columns
 #' @param refdata the reference matrix, same format as `samp`
 #' @param na.rm if TRUE (default), rows with NA are removed
 #' @param verbose if TRUE (default), prints a summary of initial and resulting gene counts
 #'
-#' @return a list with matching `samp` and `refdata` as well as `inter.genes`, character vector with the matching gene IDs.
+#' @return a list with matching `samp` and `refdata` expression matrices as well as an `inter.genes` character vector with the matching gene IDs.
 #' 
 #' @export
 #' 
@@ -63,8 +62,8 @@ format_to_ref <- function(samp, refdata,
 
 #' Format/convert the sample gene IDs
 #'
-#' This function converts the gene IDs from given input and aggregates results 
-#' if necessary, for resulting IDs to be unique.
+#' This function converts the gene IDs from given input and aggregates IDs 
+#' if necessary for unique ID output (e.g multiple transcripts to a gene).
 #' 
 #' @param X the sample gene expression matrix with genes as rows and individuals as columns
 #' @param IDs A dataframe holding current IDs for `X` and target IDs 
