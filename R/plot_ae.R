@@ -1,91 +1,131 @@
 #' Plot an ae object
 #' 
-#' Plots age estimates of sample with bootstrap confidence interval as a dotchart.
+#' Plots age estimates of samples with bootstrap confidence intervals.
 #' 
 #' @param x an `ae` object, as returned by \code{\link{ae}}.
-#' @param groups a factor with sample categories, as passed on to \code{\link{dotchart}}.
+#' @param groups a factor with sample categories (e.g. treatment groups).
 #' @param subset an index vector of the samples to plot (defaults to all).
-#' @param show.boot_estimates logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.
-#' @param show.prior logical ; if TRUE, shows the input prior(s) on the plot.
-#' @param col, color color parameter passed on to \code{\link{dotchart}}.
-#' @param errbar.width the width of the error bars.
-#' @param col.b,col.p the color of the bootstrapped estimates and prior respectively.
-#' @param glob.above logical ; if TRUE, the global estimate is plotted above all else.
-#' @param pch passed on to \code{\link{dotchart}}.
-#' @param cex sizing parameter applied to various elements of the plot.
-#' @param xlim horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example
-#' @param xlab the x axis label, passed on to \code{\link{dotchart}}.
-#' @param l.pos the position of the legend when show.prior is \code{TRUE}, passed on to \code{\link[graphics]{legend}}
-#' @param ... additional arguments passed on to \code{\link{dotchart}}.
+#' @param show.boot_estimates logical ; if TRUE (default), shows individual bootstrap estimates as swarms.
+#' @param show.prior logical ; if TRUE, shows input prior(s) on the plot.
+#' @param col,color the estimate, confidence interval, and label color.
+#' @param col.b,col.p,col.l color of bootstrap estimates, priors, and background lines respectively.
+#' @param CIbar.width the width of the confidence interval bars.
+#' @param truncate_name whether to truncate displayed sample names from start, end, or not (default).
+#' @param sn_len number of characters to keep when truncating sample names.
+#' @param lmar left margin value, increase to fit sample names.
+#' @param glob.above logical ; if TRUE, the global estimate is overlayed above all else.
+#' @param pch,cex,xlim graphical parameters.
+#' @param xlab x axis label.
+#' @param main plot title.
+#' @param l.pos position of the legend when show.prior is \code{TRUE}, passed on to \code{\link[graphics]{legend}}
+#' @param ... additional arguments passed on to \code{\link{points}}.
 #' 
 #' @export
 #' 
 #' @eval ae_example()
 #' 
-#' @importFrom graphics plot dotchart points arrows legend
+#' @importFrom graphics arrows axis box legend plot points title   
 #' @importFrom beeswarm swarmy
 #' 
-plot.ae <- function(x, groups=NULL, subset=NULL,
-                    show.boot_estimates=F, show.prior=F, 
-                    color = par("fg"), col = color,
-                    col.b=2, col.p=1,
-                    errbar.width=0.1, glob.above = F,
-                    pch=16, cex=1, xlim=NULL,
-                    xlab=NULL, 
-                    l.pos='bottomright', ...)
+function(x, groups=NULL, subset=NULL,
+         show.boot_estimates=T, show.prior=F, 
+         col = par("fg"), color = col,
+         col.b=2, col.p=1, col.l='gray',
+         pch=16, cex=1,
+         truncate_name=c("none", "end", "start"), 
+         sn_len = 10, lmar=10,
+         xlim=NULL, xlab=NULL, main=NULL,
+         CIbar.width=0.1, glob.above = F,
+         l.pos='bottomright', ...)
 {
-  if(!is.null(subset)){
-    # subset the data to plot
-    x$age.estimates <- x$age.estimates[subset,,drop=F]
-    x$prior <- x$prior[subset]
-    x$boots <- x$boots[,subset, ,drop=F]
-    if(!is.null(groups)){
-      groups <- droplevels(groups[subset])
-    }
+  op <- par("mar", "fg")
+  on.exit(par(op))
+  
+  # subset the data to plot
+  subset <- c(na.omit(subset))
+  if(is.null(subset)){
+    subset <- 1L:nrow(x$age.estimates)
+  } else if(!identical(subset, unique(subset))| any(subset==0) | length(subset)==0){
+    stop("subset must be a vector of unique and valid indices.")
   }
-  err.inf <- x$age.estimates[,2]
-  err.sup <- x$age.estimates[,3]
-  n <- nrow(x$age.estimates)
+  
+  a.e <- x$age.estimates[subset,,drop=F]
+  prior <- x$prior[subset]
+  
+  if(!is.null(groups)){
+    groups <- droplevels(groups[subset])
+  }
+  
+  ci.inf <- a.e[,2]
+  ci.sup <- a.e[,3]
+  n <- nrow(a.e)
+  truncate_name <- match.arg(truncate_name)
   
   if(is.null(xlim)){
-    xlim <- range(c(err.inf, err.sup, x$prior))
+    xlim <- range(c(ci.inf, ci.sup, prior))
+  }
+  if(is.null(xlab)){
+    xlab <- paste0("Reference time, ", attr(x, "t.unit"))
   }
   
-  dc <- graphics::dotchart(x$age.estimates[,1], labels = rownames(x$age.estimates),
-                           xlab=xlab, groups = groups,
-                           xlim=xlim, color = color,
-                           pch=pch, cex=cex,
-                           ...)
-  
-  # Adjusting Y positions of error bars to dotchart layout
+  # adjust Y positions to group layout
   y <- 1L:n
   o <- y
   
   if(!is.null(groups)){
     o <- sort.list(as.numeric(groups), decreasing = TRUE)
-    err.inf <- err.inf[o]
-    err.sup <- err.sup[o]
+    ci.inf <- ci.inf[o]
+    ci.sup <- ci.sup[o]
     groups <- groups[o]
     offset <- cumsum(c(0, diff(as.numeric(groups)) != 0))
     y <- 1L:n + 2 * offset
   }
   color <- rep(color, n)[o]
   
-  # plot error bars
-  arrows(err.sup, y,
-         err.inf, y,
-         angle=90, code=3, length=errbar.width, 
-         col = color)
+  # prepare plot window
+  par(mar=c(op$mar[1], lmar, op$mar[3:4]))
+  graphics::plot.new()
+  graphics::plot.window(xlim = xlim, ylim = range(0.5, y+1))
+  graphics::axis(1)
+  graphics::abline(h=y, lty = "dotted", col = 'gray')
+  
+  # plot ae
+  graphics::points(a.e[o,1], y, 
+                   col=color, pch=pch, cex=cex, ...)
+  
+  # manage sample/group labels
+  nms <- rownames(a.e)
+  if(truncate_name == "start"){
+    nms <- strtrim(nms, sn_len)
+  }
+  if(truncate_name == "end"){
+    nms <- substr(nms, nchar(nms) - (sn_len-1), nchar(nms))
+  }
+  mtext(nms[o], side = 2, line=1, at=y, adj = 1, col = color, las=1)
+  
+  # group labels
+  if(!is.null(groups)){
+    lvg <- levels(groups)
+    ylvg <-  rev(cumsum(rev(tapply(groups, groups, length)) + 2) - 1)
+    mtext(text = lvg, side = 2, at = ylvg, line = lmar*.75, las=1, font=2, adj = 1)
+  }
+  
+  
+  # plot confidence intervals
+  graphics::arrows(ci.sup, y,
+                   ci.inf, y,
+                   angle=90, code=3, length=CIbar.width, 
+                   col = color)
   
   # adding individual bootstrap estimates as swarms
   if(show.boot_estimates){
-    nboot <- dim(x$boots)[3]
-    xs <- x$boots[1,o,]
+    boots <- x$boots[,subset,,drop=F]
+    nboot <- dim(boots)[3]
+    xs <- rbind(boots[1,o,])
     col.b <- rep(col.b, n)
     col.b <- col.b[o]
     invisible(
       sapply(1:n, function(i){
-        
         yi <- rep(y[i], nboot)
         sw <- beeswarm::swarmy(xs[i,], yi, cex=.08*cex)
         graphics::points(sw, pch=16, cex=.3*cex, col=col.b[i])
@@ -93,9 +133,9 @@ plot.ae <- function(x, groups=NULL, subset=NULL,
     )
   }
   
-  # adding initial estimate to plot
+  # adding prior to plot
   if(show.prior){
-    inis <- x$prior[o]
+    inis <- prior[o]
     col.p <- rep(col.p, n)
     col.p <- col.p[o]
     graphics::points(inis, y, lwd=2, cex=cex*1.1, col=col.p)
@@ -104,10 +144,12 @@ plot.ae <- function(x, groups=NULL, subset=NULL,
   }
   
   if(glob.above){
-    graphics::points(x$age.estimates[o,1], y, cex=cex, pch=16, col = color, ...)
+    graphics::points(a.e[o,1], y, cex=cex, pch=pch, col = color, ...)
   }
+  
+  graphics::box()
+  graphics::title(xlab=xlab, main=main)
 }
-
 
 
 
@@ -144,7 +186,7 @@ plot_cor <- function (ae_obj, subset = 1:ncol(ae_obj$cors),
       yl <- range(ae_obj$cors.95[,,i])
     else yl <- range(ae_obj$cors[,i])
     
-    if(is.null(xlab){
+    if(is.null(xlab)){
       xlab <- paste0("Reference time, ", attr(ae_obj, "t.unit"))
     }  
     if(is.null(ylab)){
