@@ -11,7 +11,7 @@
 #' @param t.unit an optional string specifying the time unit and t-zero, e.g "h past egg-laying".
 #' @param metadata an optional named list with reference metadata (e.g. organism, tissue).
 #'
-#' @return a '\code{ref}' object to use with ae() for age estimation.
+#' @return a '\code{ref}' object to use with \code{\link{ae()}} for age estimation.
 #' 
 #' @export
 #' 
@@ -24,7 +24,7 @@ make_ref <- function(m,
                      from = NULL, to = NULL,
                      cov.levels = NULL,
                      n.inter = 500, by.inter = NULL,
-                     t.unit = "",
+                     t.unit = "no unit specified",
                      metadata = list())
 {
   p <- attr(m, "pdata")
