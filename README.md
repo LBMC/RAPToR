@@ -102,6 +102,21 @@ We recommend you get our data-packages with pre-built references of common organ
 ## Update info
 
 ### v1.2
+ - Introduced a reference (`ref`) object and corresponding `make_ref()` and print functions. `ref` objects
+   - make reference-building more direct, from a `geim` object,
+   - simplify the age estimation call (now simply `ae(samp, ref)`),
+   - store reference metadata (such as the reference time unit) to use in subsequent plotting/printing.
+ - Updated documentation, vignettes, and vignette sections related to reference-building with the new procedure.
+ - Updated `ae` object printing to include reference metadata when available.
+ - Rewrote `ae` plotting function to
+  - display bootstrap estimates by default.
+  - include reference time units when available.
+  - fix `ae` plotting graphics bug (larger first plot with overlayed and missing elements) when displaying multiple plots side by side.
+  - add sample label control (truncate, adjust margin space)
+  - cover more parameter edge cases
+ - Updated `geim` printing to include reference metadata.
+ - Renamed `plot_cor.ae()` to `plot_cor()`. 
+ - Added `ref_compare()` to compare log-fold-changes between sample groups to a reference and quantify the impact of development on differential expression analysis. Also included print and plot functions for logFC comparison. 
 
 ### v1.1
 #### v1.1.6
