@@ -27,7 +27,7 @@
 #' @importFrom graphics arrows axis box legend plot points title   
 #' @importFrom beeswarm swarmy
 #' 
-function(x, groups=NULL, subset=NULL,
+plot.ae <- function(x, groups=NULL, subset=NULL,
          show.boot_estimates=T, show.prior=F, 
          col = par("fg"), color = col,
          col.b=2, col.p=1, col.l='gray',
