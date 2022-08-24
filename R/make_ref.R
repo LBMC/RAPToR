@@ -6,8 +6,8 @@
 #' @param m a geim model object (as returned by \code{\link{ge_im}}).
 #' @param from,to start/end of the interpolation (defaults to first and last time points) 
 #' @param cov.levels a named list with potential model covariate levels (e.g batch, strain) to predict as (defaults to first level).
-#' @param n.inter interpolation resolution, as in seq(start, end, length.out = n.inter). One of \code{n.inter} or \code{by.inter} must be specified.
-#' @param by.inter interpolation resolution, as in seq(start, end, by = by.inter). One of \code{n.inter} or \code{by.inter} must be specified.
+#' @param n.inter interpolation resolution, as in \code{seq(start, end, length.out = n.inter)}. One of \code{n.inter} or \code{by.inter} must be specified.
+#' @param by.inter interpolation resolution, as in \code{seq(start, end, by = by.inter)}. One of \code{n.inter} or \code{by.inter} must be specified.
 #' @param t.unit an optional string specifying the time unit and t-zero, e.g "h past egg-laying".
 #' @param metadata an optional named list with reference metadata (e.g. organism, tissue).
 #'
@@ -27,35 +27,13 @@ make_ref <- function(m,
                      t.unit = "no unit specified",
                      metadata = list())
 {
-  p <- attr(m, "pdata")
-  f <- attr(m, "formula")
+  cov.levels <- .cov_check(m, cov.levels) # param check 
   
+  p <- attr(m, "pdata")
   t.var <- attr(m, "vars")$t.var # time variable
   tv <- p[, t.var]
   cvars <- attr(m, "vars")$cvars # covariates
   
-  # cov.levels param handling
-  if(length(cvars) > 0){ # there is a covariate
-    if(is.null(cov.levels)){ # no specified level
-      cov.levels <- lapply(cvars, function(i) levels(p[, i])[1]) # get 1st level of each covariate
-      names(cov.levels) <- cvars
-      wl <- paste(sapply(seq_along(cvars), 
-                          function(i) paste0("\n\t", cvars[i], ": ", cov.levels[[i]])), 
-                   collapse = "")
-      wl <- paste0("No covariate level specified: using first level for interpolation.\n",
-                   "  Model formula:\n\t", as.character(f), "\n  Covariate level(s) used:", wl)
-      warning(wl)
-    } else{
-      if(!is.list(cov.levels) | length(cov.levels) != length(cvars)){ # not all cov levels specified
-        stop("Levels to predict for all the covariates must be specified as a named list (with variable names).")
-      }
-      if(!all(sapply(seq_along(cvars), function(i) cov.levels[i] %in% levels(p[, cvars[i]])))){
-        stop("A level of cov. levels does not match with factor levels in the data.")
-      }
-    }
-  } else {
-    cov.levels <- list() # no covariate, no cov.levels.
-  }
   
   # from & to param handling 
   if(!is.null(from)){
@@ -89,7 +67,7 @@ make_ref <- function(m,
   if(!is.character(t.unit)){
     stop("t.unit must be a string.")
   }
-  # metatdata param handling
+  # metadata param handling
   if(0 != length(metadata)){
     if(!is.list(metadata)){
       stop("metadata must be given as a named list.")
@@ -123,7 +101,7 @@ make_ref <- function(m,
   attr(ref, "t.unit") <- t.unit
   attr(ref, "metadata") <- metadata
   attr(ref, "geim.params") <- geim.params
-  attr(ref, "cov.level") <- cov.levels
+  attr(ref, "cov.levels") <- cov.levels
   
   return(ref)
 }
@@ -169,7 +147,7 @@ print.ref <- function(x, ...){
   }
   cat("\n\t", ats$formula)
   # cov. levels
-  cl <- attr(x, "cov.level")
+  cl <- attr(x, "cov.levels")
   if(length(cl)>0){
     
     cat("\n\t with covariate levels", 
@@ -179,4 +157,35 @@ print.ref <- function(x, ...){
   }
  
   cat("\n---\n")
+}
+
+
+.cov_check <- function(m, cov.levels){
+  p <- attr(m, "pdata")
+  f <- attr(m, "formula")
+  cvars <- attr(m, "vars")$cvars # covariates
+
+  # cov.levels param handling
+  if(length(cvars) > 0){ # there is a covariate
+    if(is.null(cov.levels)){ # no specified level
+      cov.levels <- lapply(cvars, function(i) levels(p[, i])[1]) # get 1st level of each covariate
+      names(cov.levels) <- cvars
+      wl <- paste(sapply(seq_along(cvars), 
+                         function(i) paste0("\n\t", cvars[i], ": ", cov.levels[[i]])), 
+                  collapse = "")
+      wl <- paste0("No covariate level specified: using first level for interpolation.\n",
+                   "  Model formula:\n\t", as.character(f), "\n  Covariate level(s) used:", wl)
+      warning(wl)
+    } else{
+      if(!is.list(cov.levels) | length(cov.levels) != length(cvars)){ # not all cov levels specified
+        stop("Levels to predict for all the covariates must be specified as a named list (with variable names).")
+      }
+      if(!all(sapply(seq_along(cvars), function(i) cov.levels[i] %in% levels(p[, cvars[i]])))){
+        stop("A level of 'cov.levels' does not match with factor levels in the data.")
+      }
+    }
+  } else {
+    cov.levels <- list() # no covariate, no cov.levels.
+  }
+  return(cov.levels)
 }
