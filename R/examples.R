@@ -78,3 +78,46 @@ plot(ae_X, groups = p$cov)
 
 return(strsplit(ex, split = "\n")[[1]])
 }
+
+
+rc_example <- function(){
+  ex <- "
+@examples
+\\donttest{
+requireNamespace('wormRef', quietly = TRUE)
+
+# get sample gene expression data
+X <- wormRef::Cel_larval$g[,1:9]
+
+# get reference
+ref <- prepare_refdata(ref = 'Cel_larval', datapkg = 'wormRef' , n.inter = 200)
+
+# define groups
+fac <- factor(c('a', 'a', 'b', 
+                'a', 'b', 'b',
+                'c', 'c', 'c'))
+
+# estimate sample age
+ae_X <- ae(X, ref)
+
+# compare group diff. expr. with matching reference
+rc <- ref_compare(X, ref, fac, ae_X)
+print(rc)
+
+# get sample and reference (ie. development) logFCs between groups
+lfc_a_vs_b <- get_logFC(rc)
+lfc_a_vs_c <- get_logFC(rc, l = 'c')
+lfc_b_vs_c <- get_logFC(rc, l0='b', l = 'c')
+
+# plot sample vs. reference logFCs
+par(mfrow = c(2,2))
+plot(ae_X, groups = fac)
+plot(lfc_a_vs_b, main = 'a vs. b logFC')
+plot(lfc_a_vs_c, main = 'a vs. c logFC')
+plot(lfc_b_vs_c, main = 'b vs. c logFC')
+
+}
+" 
+
+return(strsplit(ex, split = "\n")[[1]])
+}
