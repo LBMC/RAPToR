@@ -11,7 +11,7 @@ make_ref(
   cov.levels = NULL,
   n.inter = 500,
   by.inter = NULL,
-  t.unit = "",
+  t.unit = "no unit specified",
   metadata = list()
 )
 }
@@ -22,16 +22,16 @@ make_ref(
 
 \item{cov.levels}{a named list with potential model covariate levels (e.g batch, strain) to predict as (defaults to first level).}
 
-\item{n.inter}{interpolation resolution, as in seq(start, end, length.out = n.inter). One of \code{n.inter} or \code{by.inter} must be specified.}
+\item{n.inter}{interpolation resolution, as in \code{seq(start, end, length.out = n.inter)}. One of \code{n.inter} or \code{by.inter} must be specified.}
 
-\item{by.inter}{interpolation resolution, as in seq(start, end, by = by.inter). One of \code{n.inter} or \code{by.inter} must be specified.}
+\item{by.inter}{interpolation resolution, as in \code{seq(start, end, by = by.inter)}. One of \code{n.inter} or \code{by.inter} must be specified.}
 
 \item{t.unit}{an optional string specifying the time unit and t-zero, e.g "h past egg-laying".}
 
 \item{metadata}{an optional named list with reference metadata (e.g. organism, tissue).}
 }
 \value{
-a '\code{ref}' object to use with ae() for age estimation.
+a '\code{ref}' object to use with \code{\link{ae()}} for age estimation.
 }
 \description{
 Make a reference object from a geim model
@@ -62,29 +62,22 @@ cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
 # check results
 plot(cvres, names.arrange = 4) # lowest pred error with 'ds' spline
 
-# build model & interpolation data
+# build model & make reference
 m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = \'ds\') + cov', nc = nc)
-n.inter = 100
-ndat <- data.frame(age = seq(min(p$age), max(p$age), l = n.inter),
-                   cov = rep(p$cov[1], n.inter))
 
-# check interpolation on pca components
-pred_pca <- predict(m, ndat, as.c = T)
+ref <- make_ref(m, cov.levels = list('cov'='O.20'), n.inter = 100, 
+                t.unit='h past egg-laying (20C)')
 
+# check model interpolation on pca components
 par(mfrow = c(2,2))
-invisible(sapply(seq_len(nc), function(i){
-  plot(p$age, pca$rotation[, i], xlab = 'age', ylab = 'PC', main = paste0('PC',i),
-       lwd = (p$cov == p$cov[1]) + 1)
-  points(ndat$age, pred_pca[, i], type = 'l', lwd = 2)
-}))
+plot(m, ref, ncs=1:4) # showing first 4 PCs
 
-# get interpolated GE matrix, as a reference
-r_X <- list(interpGE = predict(m, ndat), time.series = ndat$age)
 
 # test
-ae_X <- ae(X, r_X$interpGE, r_X$time.series)
-par(mfrow = c(1,1))
+ae_X <- ae(X, ref)
+par(mfrow = c(1,2))
 plot(p$age, ae_X$age.estimates[,1])
+plot(ae_X, groups = p$cov)
 
 
 }

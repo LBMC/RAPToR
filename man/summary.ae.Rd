@@ -14,7 +14,7 @@
 \item{...}{ignored (needed to match the S3 standard)}
 }
 \value{
-a list holding a data frame of ordered age estimates and confidence intervals, the span of estimates and the range.
+a list with: a dataframe of ordered age estimates and confidence intervals, the span of age estimates estimates and the range.
 }
 \description{
 Prints a summary of the \code{age.estimates} dataframe of an \code{ae} object
@@ -30,14 +30,12 @@ samp <- wormRef::Cel_larval$g[,13:15]
 r_larv <- prepare_refdata(ref = 'Cel_larval', datapkg = 'wormRef' , n.inter = 200)
 
 # perform age estimate
-ae_test <- ae(samp = samp, 
-              refdata = r_larv$interpGE, 
-              ref.time_series = r_larv$time.series)
+ae_test <- ae(samp, r_larv)
 
 # check output
 summary(ae_test)
-plot(ae_test, show.boot_estimates = TRUE) # plot all sample estimates
-plot_cor.ae(ae_test) # plot individual correlation profiles of samples
+plot(ae_test) # plot all sample estimates
+plot_cor(ae_test) # plot individual correlation profiles of samples
 
 # get results
 ae_test$age.estimates

@@ -6,19 +6,25 @@
 \usage{
 \method{plot}{ae}(
   x,
-  errbar.width = 0.1,
-  show.prior = F,
-  col.p = 1,
-  show.boot_estimates = F,
-  col.b = 2,
   groups = NULL,
   subset = NULL,
-  glob.above = F,
-  color = par("fg"),
+  show.boot_estimates = T,
+  show.prior = F,
+  col = par("fg"),
+  color = col,
+  col.b = 2,
+  col.p = 1,
+  col.l = "gray",
   pch = 16,
   cex = 1,
+  truncate_name = c("none", "end", "start"),
+  sn_len = 10,
+  lmar = 10,
   xlim = NULL,
-  xlab = "Estimated ages",
+  xlab = NULL,
+  main = NULL,
+  CIbar.width = 0.1,
+  glob.above = F,
   l.pos = "bottomright",
   ...
 )
@@ -26,38 +32,40 @@
 \arguments{
 \item{x}{an \code{ae} object, as returned by \code{\link{ae}}.}
 
-\item{errbar.width}{the width of the error bars.}
-
-\item{show.prior}{logical ; if TRUE, shows the input prior(s) on the plot.}
-
-\item{col.p}{the color of the prior estimate marker.}
-
-\item{show.boot_estimates}{logical ; if TRUE, shows the individual bootstrapped estimates on the plot as swarms.}
-
-\item{col.b}{the color of the bootstrapped estimates.}
-
-\item{groups}{a factor with sample categories, as passed on to \code{\link{dotchart}}.}
+\item{groups}{a factor with sample categories (e.g. treatment groups).}
 
 \item{subset}{an index vector of the samples to plot (defaults to all).}
 
-\item{glob.above}{logical ; if TRUE, the global estimate is plotted above all else.}
+\item{show.boot_estimates}{logical ; if TRUE (default), shows individual bootstrap estimates as swarms.}
 
-\item{color}{color parameter passed on to \code{\link{dotchart}}.}
+\item{show.prior}{logical ; if TRUE, shows input prior(s) on the plot.}
 
-\item{pch}{the pch parameter passed on to \code{\link{dotchart}}.}
+\item{col, color}{the estimate, confidence interval, and label color.}
 
-\item{cex}{sizing parameter applied to various elements of the plot.}
+\item{col.b, col.p, col.l}{color of bootstrap estimates, priors, and background lines respectively.}
 
-\item{xlim}{horizontal range for the plot, see \code{\link[graphics]{plot.window}}, for example}
+\item{pch, cex, xlim}{graphical parameters.}
 
-\item{xlab}{the x axis label, passed on to \code{\link{dotchart}}.}
+\item{truncate_name}{whether to truncate displayed sample names from start, end, or not (default).}
 
-\item{l.pos}{the position of the legend when show.prior is \code{TRUE}, as passed on to \code{\link[graphics]{legend}}}
+\item{sn_len}{number of characters to keep when truncating sample names.}
 
-\item{...}{additional arguments passed on to \code{\link{dotchart}}.}
+\item{lmar}{left margin value, increase to fit sample names.}
+
+\item{xlab}{x axis label.}
+
+\item{main}{plot title.}
+
+\item{CIbar.width}{the width of the confidence interval bars.}
+
+\item{glob.above}{logical ; if TRUE, the global estimate is overlayed above all else.}
+
+\item{l.pos}{position of the legend when show.prior is \code{TRUE}, passed on to \code{\link[graphics]{legend}}}
+
+\item{...}{additional arguments passed on to \code{\link{points}}.}
 }
 \description{
-Plots the age estimates along with bootstrap error bars using a dotchart.
+Plots age estimates of samples with bootstrap confidence intervals.
 }
 \examples{
 \donttest{
@@ -70,14 +78,12 @@ samp <- wormRef::Cel_larval$g[,13:15]
 r_larv <- prepare_refdata(ref = 'Cel_larval', datapkg = 'wormRef' , n.inter = 200)
 
 # perform age estimate
-ae_test <- ae(samp = samp, 
-              refdata = r_larv$interpGE, 
-              ref.time_series = r_larv$time.series)
+ae_test <- ae(samp, r_larv)
 
 # check output
 summary(ae_test)
-plot(ae_test, show.boot_estimates = TRUE) # plot all sample estimates
-plot_cor.ae(ae_test) # plot individual correlation profiles of samples
+plot(ae_test) # plot all sample estimates
+plot_cor(ae_test) # plot individual correlation profiles of samples
 
 # get results
 ae_test$age.estimates

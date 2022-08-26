@@ -67,29 +67,22 @@ cvres <- ge_imCV(X = scale(X), p = p, formula_list = flist,
 # check results
 plot(cvres, names.arrange = 4) # lowest pred error with 'ds' spline
 
-# build model & interpolation data
+# build model & make reference
 m <- ge_im(X = X, p = p, formula = 'X ~ s(age, bs = \'ds\') + cov', nc = nc)
-n.inter = 100
-ndat <- data.frame(age = seq(min(p$age), max(p$age), l = n.inter),
-                   cov = rep(p$cov[1], n.inter))
 
-# check interpolation on pca components
-pred_pca <- predict(m, ndat, as.c = T)
+ref <- make_ref(m, cov.levels = list('cov'='O.20'), n.inter = 100, 
+                t.unit='h past egg-laying (20C)')
 
+# check model interpolation on pca components
 par(mfrow = c(2,2))
-invisible(sapply(seq_len(nc), function(i){
-  plot(p$age, pca$rotation[, i], xlab = 'age', ylab = 'PC', main = paste0('PC',i),
-       lwd = (p$cov == p$cov[1]) + 1)
-  points(ndat$age, pred_pca[, i], type = 'l', lwd = 2)
-}))
+plot(m, ref, ncs=1:4) # showing first 4 PCs
 
-# get interpolated GE matrix, as a reference
-r_X <- list(interpGE = predict(m, ndat), time.series = ndat$age)
 
 # test
-ae_X <- ae(X, r_X$interpGE, r_X$time.series)
-par(mfrow = c(1,1))
+ae_X <- ae(X, ref)
+par(mfrow = c(1,2))
 plot(p$age, ae_X$age.estimates[,1])
+plot(ae_X, groups = p$cov)
 
 
 }

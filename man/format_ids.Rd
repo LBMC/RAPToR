@@ -21,8 +21,8 @@ format_ids(X, IDs, from = 1, to = 2, aggr.fun = mean, verbose = TRUE)
 a gene expression matrix, with new IDs as rownames
 }
 \description{
-This function converts the gene IDs from given input and aggregates results
-if necessary, for resulting IDs to be unique.
+This function converts the gene IDs from given input and aggregates IDs
+if necessary for unique ID output (e.g multiple transcripts to a gene).
 }
 \examples{
 # make dummy data
