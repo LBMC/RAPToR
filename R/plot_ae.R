@@ -13,6 +13,7 @@
 #' @param truncate_name whether to truncate displayed sample names from start, end, or not (default).
 #' @param sn_len number of characters to keep when truncating sample names.
 #' @param lmar left margin value, increase to fit sample names.
+#' @param g.line position of the group names (margin line).
 #' @param glob.above logical ; if TRUE, the global estimate is overlayed above all else.
 #' @param pch,cex,xlim graphical parameters.
 #' @param xlab x axis label.
@@ -33,7 +34,7 @@ plot.ae <- function(x, groups=NULL, subset=NULL,
          col.b=2, col.p=1, col.l='gray',
          pch=16, cex=1,
          truncate_name=c("none", "end", "start"), 
-         sn_len = 10, lmar=10,
+         sn_len = 10, lmar=10, g.line=lmar*.75,
          xlim=NULL, xlab=NULL, main=NULL,
          CIbar.width=0.1, glob.above = F,
          l.pos='bottomright', ...)
@@ -107,7 +108,7 @@ plot.ae <- function(x, groups=NULL, subset=NULL,
   if(!is.null(groups)){
     lvg <- levels(groups)
     ylvg <-  rev(cumsum(rev(tapply(groups, groups, length)) + 2) - 1)
-    mtext(text = lvg, side = 2, at = ylvg, line = lmar*.75, las=1, font=2, adj = 1)
+    mtext(text = lvg, side = 2, at = ylvg, line = g.line, las=1, font=2, adj = 1)
   }
   
   
