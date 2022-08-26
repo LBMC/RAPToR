@@ -52,6 +52,9 @@ make_ref <- function(m,
   }
   
   # n/by.inter param handling
+  if(is.null(by.inter) & is.null(n.inter)){
+    stop("one of n.inter or by.inter must be specified")
+  }
   if(!is.null(by.inter)){
     if(!is.numeric(by.inter)){
       stop("by.inter must be a single numeric value.")
