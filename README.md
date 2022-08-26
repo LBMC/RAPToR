@@ -114,9 +114,11 @@ We recommend you get our data-packages with pre-built references of common organ
   - fix `ae` plotting graphics bug (larger first plot with overlayed and missing elements) when displaying multiple plots side by side.
   - add sample label control (truncate, adjust margin space)
   - cover more parameter edge cases
- - Updated `geim` printing to include reference metadata.
+ - Updated `geim` printing to include reference metadata when available.
+ - Added functions to compare log-fold-changes between sample groups to a reference and quantify the impact of development on differential expression analysis. 
+  - `ref_compare()` gets matching reference time points to the samples and compares logFCs between given sample groups, and between matching reference time points (giving an estimate of development logFCs between groups)
+  - `get_logFC()` extracts sample and reference logFCs between specified groups from the output of `ref_compare()`.
  - Renamed `plot_cor.ae()` to `plot_cor()`. 
- - Added `ref_compare()` to compare log-fold-changes between sample groups to a reference and quantify the impact of development on differential expression analysis. Also included print and plot functions for logFC comparison. 
 
 ### v1.1
 #### v1.1.6
