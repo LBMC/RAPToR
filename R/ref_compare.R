@@ -68,6 +68,7 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' 
 #' 
 #' @importFrom Rdpack reprompt
+#' @importFrom stats lm
 #' 
 ref_compare <- function(X, ref, fac, 
                         ae_obj=NULL, ae_values=NULL){
@@ -102,8 +103,8 @@ ref_compare <- function(X, ref, fac,
   
   ovl <- RAPToR::format_to_ref(X, RAPToR::get_refTP(ref, ae_values = ae_values, return.idx = F), verbose = F)
   
-  lm_samp <-lm(log2(exp(t(ovl$samp)))~fac)
-  lm_ref <-lm(log2(exp(t(ovl$ref)))~fac)
+  lm_samp <- stats::lm(log2(exp(t(ovl$samp)))~fac)
+  lm_ref <-stats::lm(log2(exp(t(ovl$ref)))~fac)
   
   coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_ref))) 
   
@@ -131,6 +132,7 @@ ref_compare <- function(X, ref, fac,
 #' 
 #' @param rc an rcmp object, as returned by \link{\code{ref_compare}}
 #' @param l,l0 sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{fac} respectively.
+#' @param verbose if TRUE (default), prints warnings and selected factor levels.
 #'
 #' @return a dataframe with sample and reference logFCs between groups.
 #' 
@@ -139,13 +141,17 @@ ref_compare <- function(X, ref, fac,
 #' 
 #' @importFrom Rdpack reprompt
 #' 
-get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1]){
+get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1], 
+                      verbose=T){
   if("rcmp"!=class(rc)){
     stop("rc must be an 'rcmp' object, as returned by ref_compare.")
   }
   ll <- levels(rc$fac)
   if(!l%in%ll | !l0%in%ll){
     stop("l and l0 must be levels of the group factor (fac).")
+  }
+  if(verbose){
+    message(paste0("Comparing ",l0, " vs. ", l))
   }
   
   if(ll[1] == l0){ # comparison with control, lm coefs are good as is.
@@ -175,11 +181,13 @@ get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1]){
 #' @param x an \code{rcmp} object, as returned by \code{\link{ref_compare}}.
 #' @param ... arguments passed on to \code{\link{print}}
 #' 
+#' @return invisibly returns a dataframe wiht the displayed info. 
+#' 
 #' @export
 #' 
 #' 
 print.rcmp <- function(x, ...){
-  lfcs <- lapply(levels(x$fac)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$fac)[1])
+  lfcs <- lapply(levels(x$fac)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$fac)[1], verbose=F)
   rs <- unlist(lapply(lfcs, function(lfci) cor(lfci$samp, lfci$ref)))
   ae_avg <- attr(x, "fac.stats")$ae_avg
   df <- as.data.frame(cbind(#fac = levels(x$fac),,
