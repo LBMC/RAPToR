@@ -13,6 +13,8 @@
 #' 
 #' @export
 #' 
+#' @eval rc_example()
+#' 
 #' 
 #' @importFrom Rdpack reprompt
 #' 
@@ -66,6 +68,7 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' 
 #' @export
 #' 
+#' @eval rc_example()
 #' 
 #' @importFrom Rdpack reprompt
 #' @importFrom stats lm
@@ -138,6 +141,7 @@ ref_compare <- function(X, ref, fac,
 #' 
 #' @export
 #' 
+#' @eval rc_example()
 #' 
 #' @importFrom Rdpack reprompt
 #' 
@@ -203,5 +207,5 @@ print.rcmp <- function(x, ...){
   cat("DE comparison with reference\n---\n")
   print(round(df, 3), ...)
   cat("---\n")
-  invisible(return(df))
+  return(invisible(df))
 }
