@@ -154,7 +154,9 @@ print.geim <- function(x, ...){
 
 #' Plot a GEIM object
 #' 
-#' Plots geim interpolation on components.
+#' Plots geim interpolation on components. 
+#' Interpolation metadata (such as time units, inteprolation resolution or covariates) 
+#' can be specified through an existing \code{ref} object, or directly to this function.
 #' 
 #' @param x a `geim` object, as returned by \code{\link{ge_im}}.
 #' @param ref a \code{ref} object, as returned by \code{\link{make_ref}}.
@@ -179,7 +181,7 @@ print.geim <- function(x, ...){
 plot.geim <- function(x, ref=NULL, ncs=NULL, 
                       n.inter=NULL, by.inter=NULL, cov.levels=NULL, t.unit=NULL, 
                       col=NULL, col.i='red', 
-                      show.legend=T, l.pos='topleft', show.stats=T,...){
+                      show.legend=T, l.pos='topleft', show.stats=T, ...){
   p <- attr(x, "pdata")
   t.var <- attr(x, "vars")$t.var # time variable
   tv <- p[, t.var]
@@ -198,7 +200,7 @@ plot.geim <- function(x, ref=NULL, ncs=NULL,
       stop("'ref' must be a ref object.")
     }
     ts <- ref$time
-    cov.levels <- ifelse(is.null(cov.levels), attr(ref, "cov.level"))
+    cov.levels <- if(is.null(cov.levels)) attr(ref, "cov.levels") else .cov_check(x, cov.levels)
     t.unit <- ifelse(is.null(t.unit), attr(ref, "t.unit"))
     
   } else {
@@ -227,7 +229,7 @@ plot.geim <- function(x, ref=NULL, ncs=NULL,
   colnames(ndat)[1] <- t.var
   for(v in cvars){
     ndat[, v] <- factor(rep(cov.levels[[v]], l=l))
-    fit_dat[ (p[,v] != cov.levels[v])] <- F # unused for prediction
+    fit_dat[ (p[,v] != cov.levels[[v]])] <- F # unused for prediction
   }
   
   if(dr == "pca"){
@@ -263,31 +265,31 @@ plot.geim <- function(x, ref=NULL, ncs=NULL,
   invisible(sapply(ncs, function(i){
     yli <- ifelse(show.stats, paste0(yl, i, ' (', round(100*m_stats[i, "component.var.exp"], 2) , '%)'), paste0(yl, i))
     graphics::plot(tv, y0df[,i], 
-         ylab = yli, xlab = xl, 
-         lwd=2, col = col, ...)
+                   ylab = yli, xlab = xl, 
+                   lwd=2, col = col, ...)
     graphics::points(ts, y1df[,i], type='l', lwd=2, col = col.i)
     if(i==ncs[1] & show.legend){
       if(user_col){
         graphics::legend(l.pos, bty='n', legend=c("data", "model fit"), 
-               lty=c(NA, 1), lwd=c(2,3), 
-               col = c(col[1], col.i),
-               pch=c(1, NA))
+                         lty=c(NA, 1), lwd=c(2,3), 
+                         col = c(col[1], col.i),
+                         pch=c(1, NA))
       } else if(all(fit_dat)){
         graphics::legend(l.pos, bty='n', legend=c("data", "model fit"), 
-               lty=c(NA, 1), lwd=c(2,3), 
-               col = c(col[1], col.i),
-               pch=c(1, NA))
+                         lty=c(NA, 1), lwd=c(2,3), 
+                         col = c(col[1], col.i),
+                         pch=c(1, NA))
       } else {
         graphics::legend(l.pos, bty='n', legend=c("data (all)", "data (selected cov.)", "model fit"), 
-               lty=c(NA, NA,1), lwd=c(2,2,3), col = c(unique(col), col.i),
-               pch=c(1, 1, NA))
+                         lty=c(NA, NA,1), lwd=c(2,2,3), col = c(col[!fit_dat][1], col[fit_dat][1] , col.i),
+                         pch=c(1, 1, NA))
       }
     }
     if(show.stats){
       graphics::mtext(paste0("DE = ", round(m_stats[i,"deviance.expl"], 4)), side = 3, adj = 0,
-            at=par("usr")[1], line = 0, cex = .75)
+                      at=par("usr")[1], line = 0, cex = .75)
       graphics::mtext(paste0("RE = ", round(m_stats[i,"relative.err"], 4)), side = 3, adj = 1,
-            at=par("usr")[2], line = 0, cex = .75)
+                      at=par("usr")[2], line = 0, cex = .75)
     }
     
   }))
