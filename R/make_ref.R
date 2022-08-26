@@ -59,10 +59,10 @@ make_ref <- function(m,
     if(!is.numeric(by.inter)){
       stop("by.inter must be a single numeric value.")
     }
-    ts <- seq(min(tv), max(tv), by = by.inter)
+    ts <- seq(from, to, by = by.inter)
     l <- length(ts)
   } else {
-    ts <- seq(min(tv), max(tv), l = n.inter)
+    ts <- seq(from, to, l = n.inter)
     l <- n.inter
   }
   
