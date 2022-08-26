@@ -180,7 +180,7 @@ print.ref <- function(x, ...){
       if(!is.list(cov.levels) | length(cov.levels) != length(cvars)){ # not all cov levels specified
         stop("Levels to predict for all the covariates must be specified as a named list (with variable names).")
       }
-      if(!all(sapply(seq_along(cvars), function(i) cov.levels[i] %in% levels(p[, cvars[i]])))){
+      if(!all(sapply(seq_along(cvars), function(i) cov.levels[[i]] %in% levels(p[, cvars[i]])))){
         stop("A level of 'cov.levels' does not match with factor levels in the data.")
       }
     }
