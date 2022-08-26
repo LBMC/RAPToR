@@ -70,9 +70,9 @@ With `RAPToR` and the inferred age of your samples, you can
 
 <br>
 
-Please cite our preprint (@bulteau2021raptor) if you use RAPToR in your research:
+Please cite our paper (@bulteau2022real) if you use RAPToR in your research:
 
- - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* [doi: 10.1101/2021.09.07.459270](https://doi.org/10.1101/2021.09.07.459270)
+ - Bulteau, R., Francesconi, M. Real age prediction from the transcriptome with RAPToR. *Nat Methods* (2022). (https://doi.org/10.1038/s41592-022-01540-0)
 
 
 # Why use `RAPToR` ?
@@ -247,8 +247,8 @@ To increase the accuracy of age estimates beyond the temporal resolution of time
 Pre-built references with optimal interpolation parameters can be loaded using the `prepare_refdata()` function.
 
 The `Cel_larval` reference would be appropriate for the two example datasets since the samples to stage are from mid-larval to early young adult.
-The `n.inter` parameter corresponds to the resolution of the interpolated reference. 
-In the interest of lightening the computational load (each timepoint of the reference is compared to the samples) you can choose smaller values, but aim over 500 for optimal results.
+The interpolation resolution is given through either `n.inter` (number of interpolated points) or `by.inter` (interpolation step in reference time units). 
+In the interest of lightening the computational load (each interpolated timepoint is compared to the samples) you can choose smaller `n.inter` or larger `by.inter` values. We find having `n.inter` > 500 gets the most out of interpolation.
 
 
 ```{r prep_ref, eval=gen_figs}
@@ -256,6 +256,26 @@ r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 ```
 
 Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C).
+
+```{r show_ref}
+r_larv
+#> RAPToR reference object
+#> ---
+#>  interpGE:	( 18718 x 600 )
+#>  time:	 [ 0 - 55.00455 ] h past egg-laying (20C), by 0.0918273 steps
+#> 
+#>  Metadata:
+#> 	organism: C. elegans
+#> 	profiling: whole-organism, bulk
+#> 	technology: RNAseq
+#> 
+#>  GEIM:
+#> 	 GAM fit on 40 PCA components:
+#> 	 X ~ s(age, bs = 'ds') + cov
+#> 	 with covariate levels cov: O.20
+#> ---
+```
+
 
 
 ## Age estimation
@@ -268,9 +288,8 @@ set.seed(1)
 
 
 ```{r ae_dsaeschimann2017, eval=gen_figs, results='hold'}
-ae_dsaeschimann2017 <- ae(samp = dsaeschimann2017$g,                         # input gene expression matrix
-             refdata = r_larv$interpGE,            # reference gene expression matrix
-             ref.time_series = r_larv$time.series) # reference time-series
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g,      # input gene expression matrix
+                          r_larv)                  # reference object
 #> Bootstrap set size is 6239
 #> Performing age estimation...
 #> Bootstrapping...
@@ -287,9 +306,8 @@ ae_dsaeschimann2017 <- ae(samp = dsaeschimann2017$g,                         # i
 ```
 
 ```{r ae_dshendriks2014, eval=gen_figs, results='hold'}
-ae_dshendriks2014 <- ae(samp = dshendriks2014$g,                         # input gene expression matrix
-             refdata = r_larv$interpGE,            # reference gene expression matrix
-             ref.time_series = r_larv$time.series) # reference time-series
+ae_dshendriks2014 <- ae(samp = dshendriks2014$g,      # input gene expression matrix
+                        r_larv)                       # reference object
 #> Bootstrap set size is 6239
 #> Performing age estimation...
 #> Bootstrapping...
@@ -309,22 +327,22 @@ Let's look at the results.
 
 
 ```{r plot_ae1_print, eval = F}
-plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain, show.boot_estimates = T)
+plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain, lmar = 15, g.line = 5)
 ```
 
 ```{r plot_ae1, echo = F, fig.width=12, fig.height=7}
 show_fig(expr = {
-  plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain, show.boot_estimates = T)
+  plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain, lmar = 15, g.line = 5)
 }, fig.width=12, fig.height=7)
 ```
 
 
 ```{r plot_ae2_print, eval = F}
-plot(ae_dshendriks2014, show.boot_estimates = T)
+plot(ae_dshendriks2014)
 ```
 ```{r plot_ae2, echo = F, fig.width=12, fig.height=4}
 show_fig(expr = {
-  plot(ae_dshendriks2014, show.boot_estimates = T)
+  plot(ae_dshendriks2014)
 }, fig.width=12, fig.height=4)
 ```
 
@@ -412,10 +430,11 @@ The output of `ae()` is an `ae` object with various elements, including age esti
 General information can be accessed via the `summary()` function.
 ```{r summ_ae, eval = gen_figs}
 summary(ae_dshendriks2014)
-#> 
-#> Span of samples : 23.324
-#> Range of samples :  [ 31.68 , 55.005 ]
-#> -----------------------------------------------------------
+#> Age estimate
+#>   Time unit:	h past egg-laying (20C)
+#>   Span:  	23.324
+#>   Range:	[ 31.68 , 55.005 ]
+#>---
 #>                 age.estimate     lb     ub
 #> contDevA_N2_21h       31.680 31.498 31.862
 #> contDevA_N2_22h       33.150 32.968 33.332
@@ -463,16 +482,16 @@ The table holds the following :
 Estimates and confidence intervals can be displayed in the form of a 'dotchart' with the default `plot()` function (as done above).
 
 The `ae` object also holds record of correlation scores of each samples with the full reference span (for bootstrap estimates as well). 
-These correlation profiles can be plotted with `plot_cor.ae()`
+These correlation profiles can be plotted with `plot_cor()`
 
 ```{r plot_cor_print, eval = F}
 par(mfrow=c(2,2))
-plot_cor.ae(ae_dshendriks2014, subset = c(1,4,9,11))
+plot_cor(ae_dshendriks2014, subset = c(1,4,9,11))
 ```
 ```{r plot_cor, echo = F, fig.height=6, fig.width=12, fig.align='center'}
 show_fig(expr = {
   par(mfrow=c(2,2))
-  plot_cor.ae(ae_dshendriks2014, subset = c(1,4,9,11))
+  plot_cor(ae_dshendriks2014, subset = c(1,4,9,11))
 }, fig.height=6, fig.width=12)
 ```
 The red bars correspond to the estimate confidence interval, and the 95% interval of bootstrap correlation with the reference is shown as black dotted lines. 
@@ -598,7 +617,7 @@ cv_dsaeschimann2017 <- ge_imCV(X = dsaeschimann2017$g, p = dsaeschimann2017$p, f
 ```
 
 ```{r plot_cv_dsaeschimann2017_print, eval = F}
-plot(cv_dsaeschimann2017, names = paste0("bs = ", k), outline = F,
+plot(cv_dsaeschimann2017, names = paste0("bs = ", smooth_methods), outline = F,
      swarmargs = list(cex = .8))
 ```
 ```{r plot_cv_dsaeschimann2017, echo = F, fig.width=12, fig.height=8, fig.align='center'}
@@ -618,46 +637,54 @@ From the plots above, we can see the different splines perform similarly in this
 We chose `ts` (a thin-plate regression spline), as it appears to minimize CV error without much impact model performance. 
 
 
-## Predicting from the model
+## Building a reference object from a model
 
-The `geim` object returned by `ge_im()` has its `predict()` method which can be used like for any R model.
-You can also specify if you want the predictions in component space or as the full gene expression matrix.
+A `ref` object can be built from a GEIM using `make_ref()`.
 
 On our `dsaeschimann2017` example :
 ```{r pred_dsaeschimann2017, eval = gen_figs}
-# setup new data
-n.inter <- 100
-ndat <- data.frame(age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p$age),  l = n.inter), 
-                   strain = rep("N2", n.inter))
+r_dsaeschimann2017 <- make_ref(m = m_dsaeschimann2017,
+                               n.inter = 100,                    # interpolation resolution
+                               t.unit = "h past egg-laying",     # time unit
+                               cov.levels = list("strain" = "N2"), # covariate levels to use for interpolation
+                               metadata = list("organism" = "C. elegans", # any metadata
+                                               "profiling" = "whole-organism, bulk",
+                                               "technology" = "RNAseq")) 
 
-# predict
-pred_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, ndat, as.c = TRUE) # in component space
-pred_dsaeschimann2017_ge <- predict(m_dsaeschimann2017, ndat)
 ```
 
 
 ## Checking/Validating the interpolation
 
-After building our model, we can look at the interpolation results by: 
+After building our reference, we can check interpolation results by: 
 
- - Checking the model predictions against components (plots)
+ - Observing the model predictions against components (plots)
  - Staging the samples on their own interpolated data, or better (if possible) stage another independent time-series on your reference for external validation.
 
 We can do both with our example, using the `dshendriks2014` dataset for external validation.
+
+Plotting the model with the reference object (or equivalent metadata) displays component interpolation, with deviance explained (DE) and relative error (RE) for each component. The fit values are also returned by the plot function
+```{r plot_pca_dsaeschimann2017, eval=F}
+par(mfrow = c(2,4))
+fit_vals <- plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=1:8, col = dsaeschimann2017$p$strain, col.i = 'royalblue')
+
+head(fit_vals)
+#>    component.var.exp        r2 deviance.expl relative.err
+#> PC1           0.68673 0.9972253     0.9972253    0.1658575
+#> PC2           0.09546 0.9230361     0.9230361    0.3898380
+#> PC3           0.08096 0.8783276     0.8783276    1.2464485
+#> PC4           0.03242 0.9249808     0.9249808    5.3703222
+#> PC5           0.01875 0.8510695     0.8510695    1.6352080
+#> PC6           0.01274 0.9249475     0.9249475    2.9281560
+```
 
 ```{r plot_pca_dsaeschimann2017, echo = F, fig.width=12, fig.height=6}
 show_fig(expr = {
   
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
-      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
-      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
-             type = 'l', lty = 2)
-    })
-    points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
+    suppressWarnings(plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=i, col.i = 'royalblue',
+                          col = dsaeschimann2017$p$strain, show.legend = F))
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
              pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
@@ -666,19 +693,13 @@ show_fig(expr = {
 ```
 
 ```{r ae_dsaeschimann2017_test_print, eval = F}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_dsaeschimann2017_ge, time.series = ndat$age)
-
-ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
-ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
 ```
 
 ```{r ae_dsaeschimann2017_test, include = F, eval = gen_figs}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_dsaeschimann2017_ge, time.series = ndat$age)
-
-ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
-ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017, bootstrap.n = 1)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017, bootstrap.n = 1)
 ```
 
 
@@ -737,11 +758,10 @@ On our `dshendriks2014` example, we can use ajusted known chronological ages for
 ```{r hend_prior, eval = gen_figs}
 priors <- dshendriks2014$p$age * 1.6 - 5 # rough approximation based on our previous lm
 
-ae_dshendriks2014_prior <- ae(samp = dshendriks2014$g,
-                   refdata = r_larv$interpGE,
-                   ref.time_series = r_larv$time.series,
-                   prior = priors,
-                   prior.params = 10)
+ae_dshendriks2014_prior <- ae(samp = dshendriks2014$g, 
+                              r_larv,
+                              prior = priors,
+                              prior.params = 10)
 #>                 nb.genes
 #> refdata            18718
 #> samp               19595
@@ -753,13 +773,13 @@ ae_dshendriks2014_prior <- ae(samp = dshendriks2014$g,
 #>  Computing correlations...
 #>  Performing age estimation...
 #> Computing summary statistics...
-#> Warning in ae(samp = dshendriks2014$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series, : Some estimates come near the edges of the reference.
+#> Warning Warning: Some estimates come near the edges of the reference.
 #> If possible, stage those on a different reference for confirmation.
 ```
 
 
 ```{r plot_ae_prior_print, eval=F}
-plot(ae_dshendriks2014_prior, main="Age estimates with priors on dshendriks2014", show.boot_estimates = T,
+plot(ae_dshendriks2014_prior, main="Age estimates with priors on dshendriks2014",
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
 
 all(ae_dshendriks2014_prior$age.estimates[,1]==ae_dshendriks2014$age.estimates[,1])
@@ -768,7 +788,7 @@ all(ae_dshendriks2014_prior$age.estimates[,1]==ae_dshendriks2014$age.estimates[,
 ```{r plot_ae_prior, echo = F, fig.height=5, fig.width=9, fig.align='center'}
 show_fig(expr = {
   
-  plot(ae_dshendriks2014_prior, main="Age estimates with priors on dshendriks2014", show.boot_estimates = T,
+  plot(ae_dshendriks2014_prior, main="Age estimates with priors on dshendriks2014",
        show.prior = T, col.p = 'red', l.pos = 'bottomright')
   
   all(ae_dshendriks2014_prior$age.estimates[,1]==ae_dshendriks2014$age.estimates[,1])
