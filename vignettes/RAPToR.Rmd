@@ -65,7 +65,7 @@ With `RAPToR` and the inferred age of your samples, you can
  - precisely estimate the effect of perturbations on developmental timing, 
  - increase power in differential expression analyses, 
  - estimate differential expression due to uncontrolled development and,
- - recover perturbation-specific effects on gene expression, even when the perturbation is completely confounded by development. 
+ - recover perturbation-specific effects on gene expression even when the perturbation is completely confounded by development. 
 
 
 <br>
@@ -257,7 +257,7 @@ r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
 
 Note that age estimates will be given in the time unit and scale of the chosen reference (here, hours post-hatching at 20$^\circ$C).
 
-```{r show_ref}
+```{r show_ref, eval=gen_figs}
 r_larv
 #> RAPToR reference object
 #> ---
@@ -297,7 +297,7 @@ ae_dsaeschimann2017 <- ae(dsaeschimann2017$g,      # input gene expression matri
 #>  Computing correlations...
 #>  Performing age estimation...
 #> Computing summary statistics...
-#> Warning in ae(samp = dsaeschimann2017$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series): Some estimates come near the edges of the reference.
+#> Warning in ae(dsaeschimann2017$g, r_larv): Some estimates come near the edges of the reference.
 #> If possible, stage those on a different reference for confirmation.
 #>                 nb.genes
 #> refdata            18718
@@ -315,7 +315,7 @@ ae_dshendriks2014 <- ae(samp = dshendriks2014$g,      # input gene expression ma
 #>  Computing correlations...
 #>  Performing age estimation...
 #> Computing summary statistics...
-#> Warning in ae(samp = dshendriks2014$g, refdata = r_larv$interpGE, ref.time_series = r_larv$time.series): Some estimates come near the edges of the reference.
+#> Warning in ae(samp = dshendriks2014$g, r_larv): Some estimates come near the edges of the reference.
 #> If possible, stage those on a different reference for confirmation.
 #>                 nb.genes
 #> refdata            18718
@@ -353,46 +353,16 @@ we can see this 1.5 factor by fitting a simple linear model between chronologica
 
 ```{r lm_ds, eval = gen_figs}
 lm_dsaeschimann2017 <- lm(ae_dsaeschimann2017$age.estimates[,1] ~ dsaeschimann2017$p$age)
-summary(lm_dsaeschimann2017)
-#> 
-#> Call:
-#> lm(formula = ae_dsaeschimann2017$age.estimates[, 1] ~ dsaeschimann2017$p$age)
-#> 
-#> Residuals:
-#>      Min       1Q   Median       3Q      Max 
-#> -2.06673 -0.64196  0.07043  0.59626  1.90407 
-#> 
-#> Coefficients:
+summary(lm_dsaeschimann2017)$coefficients
 #>                        Estimate Std. Error t value Pr(>|t|)    
 #> (Intercept)            -4.04996    0.66919  -6.052 3.65e-07 ***
 #> dsaeschimann2017$p$age  1.50404    0.02352  63.950  < 2e-16 ***
-#> ---
-#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-#> 
-#> Residual standard error: 0.9576 on 41 degrees of freedom
-#> Multiple R-squared:  0.9901, Adjusted R-squared:  0.9898 
-#> F-statistic:  4090 on 1 and 41 DF,  p-value: < 2.2e-16
 
 lm_dshendriks2014 <- lm(ae_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age)
-summary(lm_dshendriks2014)
-#> 
-#> Call:
-#> lm(formula = ae_dshendriks2014$age.estimates[, 1] ~ dshendriks2014$p$age)
-#> 
-#> Residuals:
-#>     Min      1Q  Median      3Q     Max 
-#> -0.7566 -0.2409 -0.1657  0.1468  0.8074 
-#> 
-#> Coefficients:
+summary(lm_dshendriks2014)$coefficients
 #>                      Estimate Std. Error t value Pr(>|t|)    
 #> (Intercept)          -2.77413    0.74278  -3.735  0.00222 ** 
 #> dshendriks2014$p$age  1.55958    0.02488  62.692  < 2e-16 ***
-#> ---
-#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-#> 
-#> Residual standard error: 0.4587 on 14 degrees of freedom
-#> Multiple R-squared:  0.9965, Adjusted R-squared:  0.9962 
-#> F-statistic:  3930 on 1 and 14 DF,  p-value: < 2.2e-16
 ```
 
 ```{r plot_compae, echo=F, fig.height=6, fig.width=12}
@@ -430,6 +400,7 @@ The output of `ae()` is an `ae` object with various elements, including age esti
 General information can be accessed via the `summary()` function.
 ```{r summ_ae, eval = gen_figs}
 summary(ae_dshendriks2014)
+#>
 #> Age estimate
 #>   Time unit:	h past egg-laying (20C)
 #>   Span:  	23.324
@@ -511,19 +482,19 @@ This section is just a broad overview, [there is a vignette entirely dedicated t
 Interpolating on time-series expression data is the key to get the high-temporal-resolution references we need for `RAPToR`.
 When using our pre-built references this is done internally by calling the `prepare_refdata()` function, but what's going on behind the scenes uses the functions described below. 
 
-To build your reference, you will require a time-series of gene expression data for your favorite organism.
-The `dsaeschimann2017` example dataset we loaded earlier will be used to illustrate the process.
+To build a reference, you will require a time-series of gene expression data for your favorite organism.
+We will use the `dsaeschimann2017` dataset loaded to illustrate the process.
 
 ## The gene expression interpolation model interface
 
-Gene expression interpolation models (GEIMs), are built with the `ge_im()` function.
+Gene expression interpolation models (GEIMs) are built with the `ge_im()` function.
 This function takes as input 3 key arguments : 
 
  - `X` : your time-series gene expression matrix (genes as rows, samples as columns)
  - `p` : a dataframe of phenotypic data, samples as rows *in the same order as `X` columns*. This should include the age/time variable and any other covariate(s) you want to include in the model (*e.g* batch, strain)
  - `formula` : the model formula. This should be a standard R formula using terms found in `p`, which may include elements (such as splines) from chosen model type (see below). **It must start with `X ~`**.
 
-For example, using the `dsaeschimann2017` dataset we could build the following model.
+For example, using `dsaeschimann2017`, we build the following model:
 ```{r model_dsaeschimann2017, eval = gen_figs}
 m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, 
                             formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
@@ -531,8 +502,8 @@ m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p,
 
 
 ## About the models
-In order to model such a large number of output variable (genes), our strategy is to project the data in a dimensionally-reduced space and interpolate there before re-projecting the data back to genes.
-We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
+In order to model a large number of output variable (genes), our strategy is to project the data in a dimensionally-reduced space and interpolate there before re-projecting the data back to genes.
+We do this with Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
 
 Both PCA and ICA perform the same type of linear transformation on the data (they just optimize different criteria). We get the following :
 
@@ -543,30 +514,30 @@ with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ gen
 When performing PCA (or ICA) on gene expression data, $S$ is what's usually plotted (e.g. PC1 vs. PC2) to see how samples are grouped in the component space. 
 
 @alter2000singular demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the expression landscape and dynamics with a few components. 
-We essentially use the same property for a GEIM.
+We use this property through GEIMs.
 We fit a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
 
 We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
 GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
 The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
-**If you are not familiar with the `mgcv` package or GLMs in R, we recommend you look at their function documentations (especially `s()` for GAMs) to understand what can be included in the formulas to handle non-linear dynamics.**
+**If you are unfamiliar with the `mgcv` package or GLMs in R, we recommend you look at their function documentations (especially `s()` for GAMs) to understand what terms can be included in the formulas to handle non-linear dynamics.**
 
-Note that a single model formula is specified and applied to all the components, but the models are fitted independently on the components.
+Note that a single model formula is specified and applied to all the components, but models are fitted independently on the components.
 
 
 ## Finding the appropriate model and parameters
 
 ### Model type
 
-The default GEIM is fitted using GAMs on PCA components, which is a robust choice when applying a smoothing spline to the data.
-PCA and ICA interpolation yield near-identical results in most scenarios.
+Our default GEIM is fitting GAMs on PCA components, which is a robust choice when applying a smoothing spline to the data.
+PCA and ICA interpolation usually yield near-identical results.
 
 ### Parameter estimation
 
 The number of components to use for the interpolation is by default set to the number of samples.
-However, we recommend to set a cutoff on explained variance of PCA components to select it. 
-For example, on the `dsaeschimann2017` dataset, we set the threshold at $99\%$ :
+However, we recommend setting a cutoff on explained variance of PCA components. 
+For example, on the `dsaeschimann2017` dataset, we set a threshold at $99\%$ :
 
 ```{r pca_dsaeschimann2017, eval = gen_figs}
 pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), center = TRUE, scale = FALSE, rank = 25)
@@ -576,7 +547,7 @@ nc
 ```
 
 Note that this threshold must be set with respect to the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
-One can also keep only components that have 'intelligible dynamics' with respect to time, defined as those where a model fit explains $\gt0.5$ of the deviance.
+One can also keep only components that have 'intelligible dynamics' with respect to time, defined as those where a model fit explains $\gt0.5$ of the deviance (noisy components with no dynamics have poor fits).
 
 <br>
 
@@ -592,7 +563,7 @@ set.seed(2)
 
 ```{r cv_dsaeschimann2017, eval = gen_figs, results='markup'}
 smooth_methods <- c("tp", "ts", "cr", "ps")
-flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain")) #, k=", k, ", fx=TRUE
+flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
 flist
 #> [[1]]
 #> [1] "X ~ s(age, bs = 'tp') + strain"
@@ -639,7 +610,7 @@ We chose `ts` (a thin-plate regression spline), as it appears to minimize CV err
 
 ## Building a reference object from a model
 
-A `ref` object can be built from a GEIM using `make_ref()`.
+A `ref` object can be built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata.
 
 On our `dsaeschimann2017` example :
 ```{r pred_dsaeschimann2017, eval = gen_figs}
@@ -656,15 +627,16 @@ r_dsaeschimann2017 <- make_ref(m = m_dsaeschimann2017,
 
 ## Checking/Validating the interpolation
 
-After building our reference, we can check interpolation results by: 
+After building a reference, we can check interpolation results by: 
 
  - Observing the model predictions against components (plots)
  - Staging the samples on their own interpolated data, or better (if possible) stage another independent time-series on your reference for external validation.
 
 We can do both with our example, using the `dshendriks2014` dataset for external validation.
 
-Plotting the model with the reference object (or equivalent metadata) displays component interpolation, with deviance explained (DE) and relative error (RE) for each component. The fit values are also returned by the plot function
-```{r plot_pca_dsaeschimann2017, eval=F}
+Plotting the model with the reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component. The fit values are also returned by the plot function.
+
+```{r plot_pca_dsaeschimann2017_print, eval=F}
 par(mfrow = c(2,4))
 fit_vals <- plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=1:8, col = dsaeschimann2017$p$strain, col.i = 'royalblue')
 
@@ -692,6 +664,8 @@ show_fig(expr = {
 }, fig.width=12, fig.height=6)
 ```
 
+Of note, we are predicting model values as `N2` (lightblue). While all strains are shown on the plots, some model parameters depend on the selected `N2` strain. 
+
 ```{r ae_dsaeschimann2017_test_print, eval = F}
 ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
 ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
@@ -708,7 +682,7 @@ show_fig(expr = {
   par(mfrow = c(1,2))
   rg <- range(c(ae_test_dsaeschimann2017$age.estimates[,1], dsaeschimann2017$p$age))
   plot(ae_test_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
+       xlab = "Chronological age", ylab = "Estimated age (r_aeschimann2017)", 
        xlim = rg, ylim = rg,
        main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
   invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
@@ -723,7 +697,7 @@ show_fig(expr = {
   
   rg <- range(c(ae_test_dshendriks2014$age.estimates[,1], dshendriks2014$p$age))
   plot(ae_test_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
+       xlab = "Chronological age", ylab = "Estimated age (r_aeschimann2017)", 
        xlim = rg, ylim = rg,
        main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
   points(ae_test_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
@@ -773,7 +747,7 @@ ae_dshendriks2014_prior <- ae(samp = dshendriks2014$g,
 #>  Computing correlations...
 #>  Performing age estimation...
 #> Computing summary statistics...
-#> Warning Warning: Some estimates come near the edges of the reference.
+#> Warning: Some estimates come near the edges of the reference.
 #> If possible, stage those on a different reference for confirmation.
 ```
 
@@ -796,7 +770,7 @@ show_fig(expr = {
 ```
 
 
-As you can see, here the estimates are identical to those without priors. 
+As expected, here the estimates are identical to those without priors. 
 
 
 <a name="load_dsaeschimann2017_dshendriks2014"></a>
