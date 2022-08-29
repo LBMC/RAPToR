@@ -116,7 +116,7 @@ We recommend you get our data-packages with pre-built references of common organ
   - cover more parameter edge cases
  - Updated `geim` printing to include reference metadata when available.
  - Added functions to compare log-fold-changes between sample groups to a reference and quantify the impact of development on differential expression analysis. 
-  - `ref_compare()` gets matching reference time points to the samples and compares logFCs between given sample groups, and between matching reference time points (giving an estimate of development logFCs between groups)
+  - `ref_compare()` gets matching reference time points to the samples and compares logFCs between given sample groups, and between matching reference time points (giving an estimate of development logFCs between groups).
   - `get_logFC()` extracts sample and reference logFCs between specified groups from the output of `ref_compare()`.
  - Renamed `plot_cor.ae()` to `plot_cor()`. 
 
