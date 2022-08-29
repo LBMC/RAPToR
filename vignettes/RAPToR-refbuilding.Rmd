@@ -76,11 +76,11 @@ This vignette is specifically focused on building references needed to stage sam
 For a more general use of the package, [see the `"RAPToR"` vignette](RAPToR.html).
 
 
-Building references is one of the key aspects of `RAPToR`. 
-An appropriate reference is needed to stage samples, and since they are re-usable we believe they are worth the trouble to set up.
+Building references is one of the key aspects of `RAPToR`, as an appropriate reference is needed to stage samples.
+References are broadly usable once built, so they are worth the trouble to set up.
 
-Throughout this vignette, you will see the general workflow of building a reference from the selection of an appropriate dataset, to choosing and validating a model for interpolation. 
-In the midst of the explanations, examples will be given using the same `dsaeschimann2017` and `dshendriks2014` datasets as in the general usage vignette ( [you can check out how these were built at the end of the vignette](#code-gen_dsaeschimann2017-dshendriks2014) ).
+Throughout this vignette, you will see the general workflow of building a reference from the selection of an appropriate dataset, to validating a model for interpolation. 
+In the midst of the explanations, examples will be given using the same `dsaeschimann2017` and `dshendriks2014` datasets as in the general usage vignette ( [the code to load these can be found at the end of the vignette](#code-gen_dsaeschimann2017-dshendriks2014) ).
 
 Finally, a few more examples of reference building on different datasets will be included at the end of this document.
 
@@ -91,35 +91,35 @@ I hope this material will be sufficient for your reference-building needs.
 
 ## Selecting / Preparing a dataset
 
-Without a transcriptomic timecourse dataset spanning the developmental stages of your samples' organism, I'm afraid there's not much we can do for you ! 
-Thankfully, these time-series experiments are (increasingly) numerous in the literature and most model organisms will have some kind of dataset we can use. 
-You may also have your own time-series data on hand.
+Without a transcriptomic time-series spanning the developmental stages of your samples' organism, I'm afraid there's not much we can do! 
+Thankfully, these time-series experiments are (increasingly) numerous in the literature and most model organisms will have some kind of data we can use. 
+You may also make (or already have) your own time-series on hand.
 
 ### Databases
-There are a few databases you can download datasets from. 
+There are a few databases you can download data from. 
 The most well-known are the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
 
 Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts).
 
 ### What to look out for
-Several points of the experimental design should be kept in mind when selecting a dataset for a reference.
+Several points of the experimental design should be kept in mind when selecting data for a reference.
 
    * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a higher-resolution experiment with one batch to build a reference.
-   * ***Is the timepoint sampling even ?*** Transcriptomic profiling is expensive. Time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling.  However, if a dataset's sampling respects dynamic ranges, you can still use it for reference building with a trick using ranks.
-   * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the samples to stage fit within, it is enough).
-   * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for whole-organism profiling. Even if you have to stage tissue-specific samples, a good quality reference should still allow you to get accurate estimates, perhaps restraining the geneset used for staging.
-   * ***What's the profiling technology ?*** RNA-seq is much, *much* cleaner than MicroArray data. Sometimes, you just have to make do. When using RNA-seq counts, apply some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately.
+   * ***Is the time point sampling even ?*** Profiling is expensive, so time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling (better for spline fitting).  However, if a dataset's sampling respects dynamic ranges, you can still use it for interpolation as-is, or interpolate with a trick using ranks.
+   * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the reference spans the age range of samples to stage, it is enough).
+   * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for profiling that matches your sample type. Whole-organism reference for whole-organism samples, dissected tissue/organ reference for similar samples.
+   * ***What's the profiling technology ?*** RNAseq is much, *much* cleaner than microarray data, but sometimes you just have to make do. There is no trouble staging RNAseq samples on microarray references and vice-versa. RNAseq counts should have some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately across samples.
    
    
 ### ID formatting
 
-One of the plagues of bioinformatics is the large and fast-changing set of IDs for genes, transcripts, etc.
+Bioinformatics is a field plagued by diverse and fast-changing sets of IDs for genes, transcripts, etc.
 When you build a reference, you should always convert it to IDs that are **conventional and stable**.
 We like to use the organism-specific IDs (*e.g*, Wormbase for *C. elegans* : `WBGene00016153`, Flybase for *Drosophila* : `FBgn0010583`).
 
-The [ensembl biomart](https://www.ensembl.org/info/data/biomart/index.html) or its associated R package [`biomaRt`](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) are a very useful ressource to get gene, transcript or probe ID lists for conversion.
+The [ensembl biomart](https://www.ensembl.org/info/data/biomart/index.html) or its associated R package [`biomaRt`](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) are a very useful resource to get gene, transcript or probe ID lists for conversion.
 
-Below is a code snippet with an example getting gene IDs for drosophila with `biomaRt`.
+Below is a code snippet to get gene IDs for drosophila with `biomaRt`.
 
 ```{r biomart_example, eval = F}
 requireNamespace("biomaRt", quietly = TRUE)
@@ -136,15 +136,15 @@ droso_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id",
 
 head(droso_genes)
 #>   ensembl_gene_id ensembl_transcript_id external_gene_name flybase_gene_id
-#> 1     FBgn0053882           FBtr0091886      His2B:CG33882     FBgn0053882
-#> 2     FBgn0035648           FBtr0113148            CG13288     FBgn0035648
-#> 3     FBgn0035648           FBtr0331563            CG13288     FBgn0035648
-#> 4     FBgn0032726           FBtr0342927            CG10621     FBgn0032726
-#> 5     FBgn0032726           FBtr0342926            CG10621     FBgn0032726
-#> 6     FBgn0032726           FBtr0081191            CG10621     FBgn0032726
+#> 1     FBgn0015380           FBtr0330209                drl     FBgn0015380
+#> 2     FBgn0015380           FBtr0081195                drl     FBgn0015380
+#> 3     FBgn0010356           FBtr0088240               Taf5     FBgn0010356
+#> 4     FBgn0266023           FBtr0343232     lncRNA:CR44788     FBgn0266023
+#> 5     FBgn0250732           FBtr0091512               gfzf     FBgn0250732
+#> 6     FBgn0250732           FBtr0334671               gfzf     FBgn0250732
 ```
 
-When multiple probe or transcript IDs match a single gene ID, we usually go for mean-aggregation of expression values. 
+When multiple probe or transcript IDs match a single gene ID, we usually sum-aggregate counts and mean-aggregate other expression values (microarray or already-processed RNAseq as TPMs). 
 This is taken care of with the `format_ids()` function.
 
 
@@ -153,10 +153,10 @@ This is taken care of with the `format_ids()` function.
 It's common practice to normalize expression datasets (*e.g.* to account for technical bias).
 You may deal with many different profiling technologies when building references, and may join multiple datasets together for a reference.
 
-To stay as consistent as possible, we apply quantile-normalization on our datasets regardless of its source.
-For this, we use the `normalizeBetweenArrays()` function of the [`limma`](https://bioconductor.org/packages/release/bioc/html/limma.html) package.
+To stay as consistent as possible, we apply quantile-normalization on our datasets regardless of source or type.
+For this, we use the `normalizeBetweenArrays()` function from [`limma`](https://bioconductor.org/packages/release/bioc/html/limma.html).
 
-We also apply a $log(X + 1)$.
+We also log-transform the data with $log(X + 1)$.
 
 ```{r quantile_norm_log, eval = gen_figs}
 dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
@@ -169,7 +169,7 @@ dshendriks2014$g <- log1p(dshendriks2014$g)
 
 ## Observing the data
 
-It's usually a good practice to take a look at what's inside your data before doing anything else to it.
+It's good practice to take a look at what's inside your variables before anything else.
 
 ```{r obs_head, results='markup', eval=gen_figs}
 dsaeschimann2017$g[1:5,1:4]
@@ -197,7 +197,7 @@ head(dsaeschimann2017$p, n = 5)
 
 
 ### Correlation
-With our time series data, we can look at correlation heatmaps or boxplots of the samples to catch potential ouliers and observe the clear correlation between samples of similar development.
+With time series data, correlation heatmaps or boxplots of the sample-sample correlation can reveal outliers, and also shows the clear correlation between samples of similar development.
 
 ```{r obs_data_corr, eval = gen_figs}
 cor_dsaeschimann2017 <- cor(dsaeschimann2017$g, method = "spearman")
@@ -255,9 +255,9 @@ legend(23,.86, fill = 1:4, legend = c("let-7", "lin-41", "let-7/lin-41", "N2"), 
 
 
 ### Plotting components
-You can also plot components (PCA or ICA) with respect to time, to get an idea of the dynamics.
+Plotting components (PCA or ICA) with respect to time is a good way to display general dynamics in the data.
 For PCA, we want to perform a non-scaled, centered PCA. 
-Centering must be done gene-wise, not sample-wise (hence the matrix rotation below).
+Centering is done gene-wise, not sample-wise (hence the matrix rotation below).
 
 ```{r obs_prcomp, eval = gen_figs}
 pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), rank = 25,
@@ -308,12 +308,12 @@ sapply(seq_len(8), function(i){
 ```
 ##### {}
 
-In this data, we see that between different strains, we get very consistent dynamics. 
-Also, PC2 and PC3 capture an oscillatory dynamic which is characteristic of the molting processes of *C. elegans* larval development.
+In this *C. elegans* larval development data, we see very consistent dynamics between different strains. 
+Also, PC2 and PC3 capture an oscillatory dynamic which is characteristic of the developmental molts of *C. elegans*.
 
 
 ### Plotting random genes
-Another approach can be to look at a few random genes. You get a first hand look at the noise in your data.
+Another approach is to plot a few random genes, which gives a first hand look at the noise in the data.
 
 ##### {.tabset}
 ###### Plots
@@ -340,7 +340,7 @@ show_fig(expr = {
 
 ###### Code
 ```{r plot_rdgn_print, eval = F}
-set.seed(10)
+set.seed(10) # for reproducibility
 gtp <- sample(nrow(dsaeschimann2017$g), size = 4)
 
 par(mfrow = c(1,4))
@@ -370,50 +370,49 @@ sapply(gtp, function(i){
 <br>
 <br>
 
-# The gene expression interpolation model
+# The gene expression interpolation model (GEIM)
 
-To increase the resolution of our time series, we are faced with a very unbalanced regression problem.
-We essentially want to predict tens of thousands of dependent variables (genes) with our few independent variables (time, batch, ...).
-
-We refer to the gene expression interpolation model as GEIM in the following text. 
+Increasing the resolution of a profiling time series is a very unbalanced regression problem.
+We want to predict tens of thousands of dependent variables (genes) with a few independent variables (time, batch, ...).
 
 
 ## About the model
 
-The principal strategy we put forward for predicting on such a large scale of output variables, is to interpolate in a dimensionally reduced space. 
-We propose to do this on Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
+In order to model a large number of output variable (genes), our strategy is to project the data in a dimensionally-reduced space and interpolate there before re-projecting the data back to genes.
+We do this with Principal Components or Independant Components ( [Independant Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) ).
 
-Both PCA and ICA perform the same type of linear transformation on the data, they just maximize a different criteria. 
-PCA maximizes the variance of each component and ICA their independance. We get the following :
+Both PCA and ICA perform the same type of linear transformation on the data (they just optimize different criteria). We get the following :
 
 $$
 X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
 $$
 with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample loadings ($n$ samples by $c$ components). 
-$S$ is what's usually looked at when performing a PCA (or ICA) on gene expression data, to look at the samples in the component space. It's what we plotted in the section on observing data, for instance. 
+When performing PCA (or ICA) on gene expression data, $S$ is what's usually plotted (e.g. PC1 vs. PC2) to see how samples are grouped in the component space. 
+It's what we plotted earlier in the section on observing data, for instance. 
 
-@alter2000singular previously demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the dynamics of gene expression. 
-We essentially use the same property for a GEIM.
-We build a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
+@alter2000singular demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the expression landscape and dynamics with a few components. 
+We use this property through GEIMs.
+We fit a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
 
 We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
 GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
+The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
-As you'll see in the next section, a standard R formula will be specifed to the model.
-This formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs. 
-With GLMs, you can also use splines from the `splines` core package, such as `ns()` for natural cubic splines.
+As you'll see in the next section, a standard R formula will be specified for the model.
+This formula can include all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function of `mgcv` for GAMs. 
+GLMs can also use splines from the `splines` core package, such as `ns()` for natural cubic splines.
 
 
 ## The GEIM interface
 
-GEIMs, are built with the `ge_im()` function, which outputs a `geim` object.
+Gene Expression Interpolation Models (GEIMs), are built with the `ge_im()` function, which outputs a `geim` object.
 This function takes as input 3 key arguments : 
 
- - `X` : the gene expression matrix of your time series (genes as rows, samples as columns)
- - `p` : a dataframe of pheno data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
- - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It should start with `X ~`**.
+ - `X` : the gene expression matrix of your time-series (genes as rows, samples as columns)
+ - `p` : a dataframe of phenotypic data, samples as rows. This should include the age/time variable and any other covariates you want to include in the model (*e.g* batch, strain)
+ - `formula` : the model formula. This should be a standard R formula, using terms found in `p`. **It must start with `X ~`**.
  
-Another important argument is the number of components used for the interpolation, `nc`.
+Another important argument is the **n**umber of **c**omponents to interpolate on, `nc`.
 
 For example, using the `dsaeschimann2017` dataset we could build the following model.
 ```{r model_dsaeschimann2017, eval = gen_figs}
@@ -421,17 +420,17 @@ m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p,
                             formula = "X ~ s(age, bs = 'ts') + strain", nc = 32)
 ```
 
-Note that a single model formula is specified and applied to all the components, but the models are fitted independantly on each component.
+Note that a single model formula is specified and applied to all the components, but models are fitted independently on the components.
 
-Feel free to have a look at the documentation of the function for additionnal parameters `?ge_im()`.
+Additional parameters are detailed in the documentation of the function `?ge_im()`.
 
-To get model predictions, you simply use the `predict()` function, like for any standard R model.
+Model predictions can be generated with the `predict()` function, as for any standard R model.
 <!-- **Note that predictions correspond to a scaled version of `X` because of the dimension reduction procedure.** -->
 
 
 ## Finding the appropriate model and parameters
 ### Model type
-There are 5 types of GEIM you can fit with the `ge_im()` function.
+There are 5 types of GEIMs:
 
 * A GAM on PCA components (`method = "gam", dim_red = "pca"`) (default)
 * A GLM on PCA components (`method = "glm", dim_red = "pca"`)
@@ -439,26 +438,26 @@ There are 5 types of GEIM you can fit with the `ge_im()` function.
 * A GLM on ICA components (`method = "glm", dim_red = "ica"`)
 * A gene-by-gene linear model directly on the gene expression matrix (`method = "limma"`)
 
-The default option is a robust choice when applying a smoothing spline to the data.
+Our default GEIM is fitting GAMs on PCA components, which is a robust choice when applying a smoothing spline to the data.
 
-Using PCA or ICA components yields near-identical results in most scenarios. 
+PCA and ICA interpolation usually yield near-identical results.
 ICA tends to outperform PCA when the data is very noisy. 
-This is by design since ICA essentially performs signal extraction.
+This is by design, since ICA essentially performs signal extraction.
 It is however slower, especially if `nc` is large.
 
-The last option (`"limma"`) corresponds to a solution that makes no effort to reduce the dimensionality of the problem (the `dim_red` and `nc` arguments are ignored). 
+The last option (`"limma"`) corresponds to a solution that makes no effort to reduce the dimensionality of the problem (`dim_red` and `nc` arguments are ignored). 
 As a result, there is no information loss or bias introduced by dimension reduction. 
 This approach is however very sensitive to noise.
-The model is fit with the `lmFit()` function of the `limma` package (hence the name).
+A model is fit with the `lmFit()` function of the `limma` package (hence the option name).
 
 
-Note that when using GAMs, there is by definition no interaction possible between terms. 
-It is possible to include a `by` argument to the `s()` function, but this essentialy corresponds to separate fits on the levels of the specified factor/variable.
+Note that when using GAMs, there can be no interaction between terms (by definition). 
+It is possible to include a `by` argument to the `s()` function, which essentially corresponds to separate model fits on each level of the specified group variable (an thus requires enough data to do so).
 
 ### Model performance
 
-One can use a number of criteria to evaluate model performance. 
-We provide the `mperf()` function to compute the indices described below by inputing the data and the model predictions. 
+Model performance can be evaluated through multiple criteria. 
+The `mperf()` function computes the indices described below, when given the data and model predictions. 
 
 In the formulas below, $X$ corresponds to the input gene expression matrix ($m$ genes as rows, $n$ samples as columns), $\hat{X}$ to the model predictions. $x_i$ corresponds to row $i$ of matrix $X$ and $x_i^{(j)}$ to sample $j$ of that row. 
 This notation is derived from the general regression problem, where $X^T$ corresponds to the set of $m$ dependant variable to predict.
@@ -487,24 +486,24 @@ $$
 aRMSE = \frac{1}{m}\sum^{m}_{i=1}{RMSE} = \frac{1}{m} \sum^{m}_{i=1} \sqrt{\cfrac{\sum^{n}_{j=1} (x_i^{(j)} - \hat{x}_i^{(j)} )^2}{n}}
 $$
 
-Note that these indices are computed and averaged *with respect to variables, not observations*. 
-You can either get the overall (averaged) index or the value per gene with the `global` parameter.
+Note that these indices are computed and averaged *with respect to variables (genes), not observations*. 
+`mperf()` outputs either the overall (averaged) index, or values per-gene (`global` parameter).
 
 
 ```{r mperf_dsaeschimann2017, results='markup', eval = gen_figs}
 g_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T)
 g_mp
 #> $aCC
-#> [1] 0.7977299
+#> [1] 0.770524
 #> 
 #> $aRE
-#> [1] 0.1301014
+#> [1] 0.6624728
 #> 
 #> $MSE
-#> [1] 0.01431891
+#> [1] 975.6601
 #> 
 #> $aRMSE
-#> [1] 0.1196617
+#> [1] 31.23556
 ng_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T, global = F)
 ng_mp <- lapply(ng_mp, na.omit) # remove NAs (eg. 0 variance genes)
 ng_mp$aRE <- ng_mp$aRE[ng_mp$aRE < Inf] # remove Inf values (/0)
@@ -562,9 +561,8 @@ sapply(names(ng_mp), function(idx){
 
 ### Number of components 
 
-The number of components to use for the interpolation is by default set to the number of samples.
-However, we recommend to set a cutoff on explained variance of PCA components to select it. 
-You can do this (on PCA explained variance) even if you choose to use ICA for interpolation.
+By default, the number of components to interpolate is set to the number of samples.
+However, we recommend setting a cutoff on explained variance of PCA (or ICA) components. 
 
 For example, on the `dsaeschimann2017` dataset, we set the threshold at $99\%$ :
 
@@ -578,7 +576,7 @@ Note that this threshold must be set in accordance with the noise in the data. F
 
 You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
 
-In a very noisy dataset, you may have to keep very few components ($<5$) for the interpolation.
+In very noisy data, you may have to keep very few components ($<5$) for the interpolation.
 
 
 ### Comparing formulas
