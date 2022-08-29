@@ -20,6 +20,7 @@
   truncate_name = c("none", "end", "start"),
   sn_len = 10,
   lmar = 10,
+  g.line = lmar * 0.75,
   xlim = NULL,
   xlab = NULL,
   main = NULL,
@@ -51,6 +52,8 @@
 \item{sn_len}{number of characters to keep when truncating sample names.}
 
 \item{lmar}{left margin value, increase to fit sample names.}
+
+\item{g.line}{position of the group names (margin line).}
 
 \item{xlab}{x axis label.}
 
