@@ -72,11 +72,11 @@ transp <- function(col, a=.5){
 
 # Preamble
 
-This vignette is specifically focused on building references needed to stage samples with `RAPToR`.
+This vignette is specifically focused on building references, that are needed to stage samples with `RAPToR`.
 For a more general use of the package, [see the `"RAPToR"` vignette](RAPToR.html).
 
 
-Building references is one of the key aspects of `RAPToR`, as an appropriate reference is needed to stage samples.
+Building references is one of the key aspects of `RAPToR`, as a sample needs an appropriate reference to be staged.
 References are broadly usable once built, so they are worth the trouble to set up.
 
 Throughout this vignette, you will see the general workflow of building a reference from the selection of an appropriate dataset, to validating a model for interpolation. 
@@ -84,7 +84,7 @@ In the midst of the explanations, examples will be given using the same `dsaesch
 
 Finally, a few more examples of reference building on different datasets will be included at the end of this document.
 
-I hope this material will be sufficient for your reference-building needs. 
+I hope this material will cover your reference-building needs. 
 
 
 # The data
@@ -99,7 +99,7 @@ You may also make (or already have) your own time-series on hand.
 There are a few databases you can download data from. 
 The most well-known are the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
 
-Both of these databases have APIs to get their data from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts).
+Both of these databases have APIs to get their data directly from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts). 
 
 ### What to look out for
 Several points of the experimental design should be kept in mind when selecting data for a reference.
@@ -386,12 +386,12 @@ Both PCA and ICA perform the same type of linear transformation on the data (the
 $$
 X_{(m\times n)} = G_{(m\times c)}S^{T}_{(n\times c)}
 $$
-with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample loadings ($n$ samples by $c$ components). 
+with $X$, the matrix of $m$ genes by $n$ samples, $G$ the gene loadings ($m$ genes by $c$ components) and $S^T$ the sample scores ($n$ samples by $c$ components). 
 When performing PCA (or ICA) on gene expression data, $S$ is what's usually plotted (e.g. PC1 vs. PC2) to see how samples are grouped in the component space. 
 It's what we plotted earlier in the section on observing data, for instance. 
 
 @alter2000singular demonstrated that singular value decomposition of gene expression data can be taken as "eigengenes", giving a global picture of the expression landscape and dynamics with a few components. 
-We use this property through GEIMs.
+GEIMs use this property.
 We fit a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
 
 We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
