@@ -45,22 +45,22 @@ This is a good practice for several reasons.
  1. The data may never be used. Why have users download data they won't need ?
  1. CRAN standards limit package size to 5MB (documentation included). A large dataset is better off when separated from methods and functions that may need it.
  
-Hadley Wickam gives thourough advice on organizing data in packages in his [*R packages* book](http://r-pkgs.had.co.nz/data.html).
+Hadley Wickam gives thorough advice on organizing data in packages in his [*R packages* book](http://r-pkgs.had.co.nz/data.html).
 
 
 # RAPToR data-packages
 
 `RAPToR` relies on references to operate. 
 These references sometimes being tedious to build, we want to give access to pre-built references for users, which can be quite large.
-Here, a reference corresponds to a pre-processed gene expression dataset, and its optimal interpolation parameters.
+Here, a reference corresponds to a pre-processed gene expression dataset, its optimal interpolation parameters, and some metadata.
 
 To avoid overcharging the end user, we split references to data-packages.
-Their data is then used through the interface from `RAPToR` described below.
+The data is then used through the `RAPToR` interface described below.
 
 ## References
 The references are stored as `.RData` objects. 
 You can put as many as you like in one data-package (I try to keep one data-package per organism).
-These objects should include everything needed to construct the interpolated reference (*e.g.* gene expression matrix, pheno data, model formula and parameters).
+These objects should include everything needed to construct the interpolated reference (*e.g.* gene expression matrix, phenotypic data, model formula and parameters).
 
 Being consistent, clear and concise with naming can help users (or even you !) find their way around your references.
 For example, `wormRef` references are named with an organism code `Cel` (*C. elegans*) followed by the developmental period covered by the reference *e.g.* `larval`.
@@ -82,6 +82,14 @@ A list with
    * `$ method = "gam"`
    * `$ dim_red = "pca"`
    * `$ nc = 40`
+ * `$ t.unit = "h past egg-laying (20C)"` the time unit.
+ * `$ cov.levels` A named list with covariate levels to interpolate as.
+   *`$ cov = "O.20"`
+ * `$ metadata` A named list with any extra metadata
+   * `$ organism = "C. elegans"`
+   * `$ profiling = "whole-organism, bulk"`
+   * `$ technology = "RNAseq"`
+
 
 
 **Document the references.** It is standard practice to document data.
@@ -97,33 +105,45 @@ The following objects are **necessary** for the interface to work.
 ### `.prepref_` functions
 
 The `.prepref_` functions (note the "dot") are the key of this interface : they **prep**are the **ref**erence for the user.
-They are functions that must respect the naming convention `.prepref_ref_name()` (*e.g.* `.prepref_Cel_larval()`) *and* take `n.inter` as argument.
+They are functions that must respect the naming convention `.prepref_ref_name()` (*e.g.* `.prepref_Cel_larval()`) *and* take `n.inter` or `by.inter` as arguments.
 
 These are the backbone called by `prepare_refdata()` when fetching a reference.
-The functions must output the interpolated reference, with the specified `n.inter`.
-Typically, this means building the GEIM model, setting up the newdata to predict and returning predictions. 
+The functions must output the reference `ref` object, with the specified parameters.
+This means building the GEIM model, and calling `make_ref()` with the appropriate parameters and metadata. 
 
-As an example, the code of `.prepref_Cel_larval()` is shown below.
+We have made a [function factory](https://adv-r.hadley.nz/function-factories.html) to generate these functions. 
+It inputs the reference data object described above, and returns the corresponding prepref function. 
 ```{r prepref, eval = F}
-.prepref_Cel_larval <- function (n.inter) {
-  
-  # build model
-  m <- RAPToR::ge_im(X = wormRef::Cel_larval$g, p = wormRef::Cel_larval$p, 
-                     formula = wormRef::Cel_larval$geim_params$formula, 
-                     method = wormRef::Cel_larval$geim_params$method, 
-                     dim_red = wormRef::Cel_larval$geim_params$dim_red, 
-                     nc = wormRef::Cel_larval$geim_params$nc)
-  
-  # setup predict data with n.inter
-  ndat <- data.frame(age = seq(min(wormRef::Cel_larval$p$age), 
-                               max(wormRef::Cel_larval$p$age), l = n.inter), 
-                     cov = rep(wormRef::Cel_larval$p$cov[1], n.inter))
-  # return interpolated reference
-  return(list(interpGE = predict(m, ndat), time.series = ndat$age))
+.prepref_skel <- function(data, from=NULL, to=NULL){
+  # .prepref function factory
+  f <- function(n.inter=NULL, by.inter=NULL){
+    m <- RAPToR::ge_im(
+      X = data$g,
+      p = data$p,
+      formula = data$geim_params$formula,
+      method = data$geim_params$method,
+      dim_red = data$geim_params$dim_red,
+      nc = data$geim_params$nc
+    )
+    return(RAPToR::make_ref(m, 
+                            n.inter = n.inter,
+                            by.inter = by.inter,
+                            from = from, 
+                            to = to,
+                            t.unit = data$t.unit,
+                            cov.levels = data$cov.levels,
+                            metadata = data$metadata)
+    )
+  }
+  return(f)
 }
 ```
 
+To make `.prepref_Cel_larval()`, we simply have to do include the following code in the data-package, along with the function factory.
 
+```{r prepref_larv, eval=F}
+.prepref_Cel_larval <- .prepref_skel(wormRef::Cel_larval)
+```
 
 
 ### `ref_list` object
@@ -145,7 +165,7 @@ This one is optional, but very useful to guide users to the correct reference fo
 Including a `.plot_refs()` function (note the “dot”) in the data-package will allow it to be called by the `plot_refs(datapkg)` function.
 
 ```{r plot_ref, fig.width = 8, fig.height=6, out.width="75%"}
-(plot_refs(datapkg = "wormRef"))
+plot_refs(datapkg = "wormRef")
 ```
 
 ### Other objects
