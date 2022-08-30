@@ -8,7 +8,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
+gen_figs <- F
 figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
@@ -47,11 +47,12 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 ### The data
 
-We are using two *Drosophila melanogaster*  embryonic development time series datasets. 
-The dataset used to build the reference was chosen with a very low time resolution on purpose to display the effectiveness of interpolating on gene expression data
+Here, we use two *Drosophila melanogaster* embryo development time-series. 
 
-1. A time series Drosophila embryonic development, part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. This is the dataset used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
- 1. A high-resolution time series of embryonic development published by @levin2016mid, called `dslevin2016dmel`. This is the dataset used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+1. An embryo development time-series, part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. This is the data used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
+ 1. A high-resolution time-series of single embryos published by @levin2016mid, called `dslevin2016dmel`. This data is used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+
+Of note, the reference data has a low time resolution, which displays the effectiveness of gene expression interpolation.
 
 #### {.tabset}
 Code to generate `dsgraveley2011` and `dslevin2016dmel` :
@@ -196,70 +197,46 @@ as.data.frame(mp_dsgraveley2011, row.names = "")
 
 ```{r ex2_mf_print}
 #>        aCC       aRE         MSE      aRMSE
-#>  0.9400184  0.389298 0.009916307 0.09958065
+#>  0.9400274  0.4040618 0.009908293 0.09954041
 ```
 
 
 #### Validation
 
-##### Predict
+##### Build ref object
+
 
 ```{r ex2_vd_c1, results='markup', eval = gen_figs}
-# setup newdat
-n.inter <- 100 # nb of new timepoints
-newdat <- data.frame(
-  age = seq(min(dsgraveley2011$p$age), max(dsgraveley2011$p$age), l = n.inter)
-  )
-head(newdat)
-#>         age
-#> 1 0.0000000
-#> 2 0.2222222
-#> 3 0.4444444
-#> 4 0.6666667
-#> 5 0.8888889
-#> 6 1.1111111
-
-
-# predict 
-pred_m_dsgraveley2011 <- predict(m_dsgraveley2011, newdata = newdat)
-pred_m_dsgraveley2011_comp <- predict(m_dsgraveley2011, newdata = newdat, as.c = TRUE)
+r_dsgraveley2011 <- make_ref(m = m_dsgraveley2011,
+                             n.inter = 100,                    # interpolation resolution
+                             t.unit = "h past egg-laying",     # time unit
+                             metadata = list("organism" = "D. melanogaster", # any metadata
+                                             "profiling" = "whole-organism, bulk",
+                                             "technology" = "RNAseq")) 
 ```
 
 ##### Plot component predictions
 
 ```{r ex2_vd_c2, echo = F, fig.width=12, fig.height=6}
 show_fig(expr = {
-  par(mfrow = c(2,4))
-  invisible(sapply(seq_len(8), function(i){
-    plot(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], lwd = 2,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
   
-    points(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], type = 'l', lty = 2)
-    points(newdat$age, pred_m_dsgraveley2011_comp[, i], col = "royalblue", type = 'l', lwd = 3)
-    if(i == 1)
-      legend("topleft", bty = 'n', legend = c("dsgraveley2011", "pred"),
-             pch = c(1, NA), lty = c(NA, 1), col = c(1, "royalblue"), lwd = c(3,4))
-  }))
+  par(mfrow = c(2,4))
+  plot(m_dsgraveley2011, r_dsgraveley2011, col.i = 'royalblue')
+
 }, fig.width=12, fig.height=6)
 ```
 
-##### Build reference & stage samples
+##### Stage samples
 
 ```{r ex2_vd_c3, eval = F}
-# make a 'reference object' 
-r_dsgraveley2011 <- list(interpGE = pred_m_dsgraveley2011, time.series = newdat$age)
-
-ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series)
-ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series)
+ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011)
+ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011)
 ```
 
 ```{r ex2_vd_c3bis, include = F, eval = gen_figs}
-# make a 'reference object' 
-r_dsgraveley2011 <- list(interpGE = pred_m_dsgraveley2011, time.series = newdat$age)
-
 # speed up w/ no bootstrap
-ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series, bootstrap.n = 1)
-ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011$interpGE, r_dsgraveley2011$time.series, bootstrap.n = 1)
+ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011, bootstrap.n = 1)
+ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011, bootstrap.n = 1)
 ```
 
 
@@ -289,8 +266,10 @@ show_fig(expr = {
 ```
 
 
-Notice here, that our validation dataset's estimates appear quite noisy.
-However, if we look at the dynamics of the `dslevin2016dmel` data, we'll see that the chronological age specified for the samples is erroneous.
+We notice here that our validation data age estimates vary from chronological age.
+However, this is due to the single-embryo nature of the data. 
+Indeed, inter-individual variability is shown clearly, where it would otherwise be averaged out in bulk data.
+Furthermore, if we look at the dynamics of the `dslevin2016dmel` data, we'll see that chronological age specified for the samples is erroneous, as reflected by noisy expression dynamics.
 
 ```{r ex2_vd_c5, eval=gen_figs}
 pca_dslevin2016dmel <- stats::prcomp(t(dslevin2016dmel$g), rank = 20,
@@ -316,4 +295,4 @@ show_fig(expr = {
 }, fig.height=12, fig.width=12)
 ```
 
-This demonstrates the difficulty of producing high-resolution time series due to developmental asynchronicity between the samples.
+This demonstrates a difficulty of producing high-resolution time series due to developmental asynchronicity between samples.
