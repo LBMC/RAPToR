@@ -50,7 +50,7 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 **The data of this example is used for the *in-text* examples throughout the reference-building vignette.**
 
-We are using two *C. elegans* RNAseq time-series:
+Here, we use two *C. elegans* RNAseq time-series:
 
  1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, `dsaeschimann2017`. This is the data we use to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
  1. A high-resolution time series of late larval development published by @hendriks2014extensive, `dshendriks2014`. This data is used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
