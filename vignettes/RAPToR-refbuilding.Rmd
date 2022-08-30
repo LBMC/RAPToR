@@ -107,7 +107,7 @@ Several points of the experimental design should be kept in mind when selecting 
    * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in your data are not noise. I would choose a sparser time-course with replicates over a higher-resolution experiment with one batch to build a reference.
    * ***Is the time point sampling even ?*** Profiling is expensive, so time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). For our purpose, we ideally want even sampling (better for spline fitting).  However, if a dataset's sampling respects dynamic ranges, you can still use it for interpolation as-is, or interpolate with a trick using ranks.
    * ***What's the developmental range ?*** The bigger, the better ! (Though as long as the reference spans the age range of samples to stage, it is enough).
-   * ***Is the profiling done on whole-organism or specific parts ?*** You should aim for profiling that matches your sample type. Whole-organism reference for whole-organism samples, dissected tissue/organ reference for similar samples.
+   * ***Is the profiling done on whole-organism or dissected parts ?*** You should aim for profiling that matches your sample type. Whole-organism reference for whole-organism samples, dissected tissue/organ reference for similar samples. Dissected tissue (or single-cell) samples are often sparser than whole-organism for biological and technical reasons. To account for this, we recommend to filter out genes with median $log(TPM+1)\lt0.5$ across reference samples. 
    * ***What's the profiling technology ?*** RNAseq is much, *much* cleaner than microarray data, but sometimes you just have to make do. There is no trouble staging RNAseq samples on microarray references and vice-versa. RNAseq counts should have some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately across samples.
    
    
@@ -425,7 +425,6 @@ Note that a single model formula is specified and applied to all the components,
 Additional parameters are detailed in the documentation of the function `?ge_im()`.
 
 Model predictions can be generated with the `predict()` function, as for any standard R model.
-<!-- **Note that predictions correspond to a scaled version of `X` because of the dimension reduction procedure.** -->
 
 
 ## Finding the appropriate model and parameters
@@ -452,7 +451,7 @@ A model is fit with the `lmFit()` function of the `limma` package (hence the opt
 
 
 Note that when using GAMs, there can be no interaction between terms (by definition). 
-It is possible to include a `by` argument to the `s()` function, which essentially corresponds to separate model fits on each level of the specified group variable (an thus requires enough data to do so).
+It is possible to include a `by` argument to the `s()` function, which essentially corresponds to separate model fits on each level of the specified group variable (and thus requires enough data to do so).
 
 ### Model performance
 
@@ -494,16 +493,16 @@ Note that these indices are computed and averaged *with respect to variables (ge
 g_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T)
 g_mp
 #> $aCC
-#> [1] 0.770524
+#> [1] 0.7977299
 #> 
 #> $aRE
-#> [1] 0.6624728
+#> [1] 0.1301014
 #> 
 #> $MSE
-#> [1] 975.6601
+#> [1] 0.01431891
 #> 
 #> $aRMSE
-#> [1] 31.23556
+#> [1] 0.1196617
 ng_mp <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T, global = F)
 ng_mp <- lapply(ng_mp, na.omit) # remove NAs (eg. 0 variance genes)
 ng_mp$aRE <- ng_mp$aRE[ng_mp$aRE < Inf] # remove Inf values (/0)
@@ -572,24 +571,25 @@ nc
 #> [1] 32
 ```
 
-Note that this threshold must be set in accordance with the noise in the data. For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful dynamics ?
+This threshold must be set in accordance with the noise in the data. 
+For example, in very noisy data, would you consider that $99\%$ of the variance in the dataset corresponds to meaningful information ?
 
-You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age.
+You can also define `nc` by plotting your components and stopping after the components stop capturing meaningful variation (dynamics) with respect to time/age. We define components with 'intelligible dynamics' with respect to time as those where a model fit explains $\gt0.5$ of the deviance (noisy components with no dynamics have poor fits).
 
 In very noisy data, you may have to keep very few components ($<5$) for the interpolation.
 
 
 ### Comparing formulas
 
-Choosing from different splines (and/or parameters) can be done with cross-validation (CV) through the use of the `ge_imCV()` function. 
-The function inputs the `X`, `p` and a `formula_list` to test. 
+Choosing from different splines (and/or parameters) can be done with cross-validation (CV).
+The `ge_imCV()` function inputs the `X`, `p` and a `formula_list` to test. 
 Other parameters on the CV itself can also be given (*e.g.* training set size).
 
 The default training/validation set ratio is `cv.s = 0.8`, so $80\%$ of the data is used to build the model. 
 When including (factor) covariates in the model, the training set is built such that all groups are proportionately represented in the training set (based on terms of the first formula in the list).
 The number of repeats to do for the CV is defined by `cv.n`.
 
-Note that the model type (GAM/GLM, PCA/ICA) is fixed for all formulas in one call of `ge_imCV()`.
+The model type (GAM/GLM and PCA/ICA) is fixed for all formulas in one call of `ge_imCV()`.
 
 `ge_imCV()` computes the indices of model performance with `mperf()`, excluding `aCC` due to computing time. 
 Indices are computed on the validation set (CV Error) *and* on the training set (Model PerFormance).
@@ -637,19 +637,19 @@ show_fig(expr = {
 }, fig.width=9, fig.height=8)
 ```
 
-From the plots above, we can see the different splines perform similarly in this scenario, all could work. 
-We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error without much impact model performance. 
+From the plots above, we can see the different splines perform similarly. All could work. 
+We chose `ts` (a thin-plate regression spline), as it seems to minimize CV error without much impact on model performance. 
 
 
-You can also specify extra spline parameters for a fit. 
-With `s()`, you can give the spline's basis dimension (~= number of knots) to use with the `k` parameter. 
+Extra spline parameters can also be specified to the model. 
+With `s()`, you can give the spline's basis dimension ($\simeq$ number of knots) to use with the `k` parameter. 
 By default, the spline is a *penalized spline*, so it will not necessarily use `k` knots, but it will stay below that value. 
-In our experience, this is not really necessary as the parameter estimation done with `gam()` is usually sufficient.
+In our experience, the parameter estimation done by `gam()` is usually sufficient and rarely requires tweaking.
 
-To force a spline with `k` basis dimension, you must also set `fx = TRUE` (note this fits a spline of dimension `k` on *all* components, whereas the penalized spline will adjust). 
-You can look at the `s()` or `choose.k` documentation for further information.
+By setting `fx = TRUE`, a spline with `k` basis dimension is forced. Note this fits a spline of dimension `k` on *all* components, whereas the penalized spline will adjust. 
+The `s()` or `choose.k` documentation gives further information.
 
-Below is an example with the `dsaeschimann2017` data.
+Below are examples of spline parameter tweaking with the `dsaeschimann2017` data.
 
 ```{r cv_dsaeschimann2017_k, eval = gen_figs}
 ks <- c(4,6,8,10)
@@ -707,15 +707,29 @@ show_fig(expr = {
 ```
 
 
-## Predicting new timepoints
+## Building a Reference object 
 
-The entire reason we need GEIMs is to interpolate. 
-We want a higher precision time series to stage samples.
+## Building a reference object from a model
 
-To do this, as for any R model, we will use the `predict()` function.
-We first need to set up the new data to predict from. 
+A `ref` object can be built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata.
+
+On our `dsaeschimann2017` example :
+```{r pred_dsaeschimann2017, eval = gen_figs}
+r_dsaeschimann2017 <- make_ref(m = m_dsaeschimann2017,
+                               n.inter = 100,                    # interpolation resolution
+                               t.unit = "h past egg-laying",     # time unit
+                               cov.levels = list("strain" = "N2"), # covariate levels to use for interpolation
+                               metadata = list("organism" = "C. elegans", # any metadata
+                                               "profiling" = "whole-organism, bulk",
+                                               "technology" = "RNAseq")) 
+
+```
+
+
+As any R model, GEIMs also have a `predict()` function, which can used to manually output predictions either in component space or at the gene level. Doing so manually instead of through `make_ref()` can be useful for a deeper look at the model.
 
 ```{r ndat_mdsaeschimann2017, results='markup', eval = gen_figs}
+# first generate the new predictor data
 n.inter <- 100 # nb of new timepoints
 newdat <- data.frame(
   age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p$age), l = n.inter),
@@ -730,33 +744,34 @@ head(newdat)
 #> 5 18.80808     N2
 #> 6 19.01010     N2
 
-# predict 
+# predict at gene level
 pred_m_dsaeschimann2017 <- predict(m_dsaeschimann2017, newdata = newdat)
-```
-
-You can choose to output the predictions directly as the full gene expression matrix (default) or as components.
-Predictions as components with the `as.c = TRUE` option can be useful when checking the interpolation (see the next section).
-
-```{r pred_mdsaeschimann2017_comp, eval = gen_figs}
+# predict at component level
 pred_m_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, newdata = newdat, as.c = TRUE)
-```
 
+```
 
 ## Validating / Checking model predictions
 
-We have built our model and predicted new data, now we can have a look at the interpolation results. 
-To do this, one can do two things.
+After building a reference, we can check interpolation results by: 
+
+ - Observing the model predictions against components (plots)
+ - Staging the samples on their own interpolated data, or better (if possible) stage another independent time-series on your reference for external validation.
+
 
 ### Checking model predictions against components
-Checking model predictions against components allows you to see immediately if some dynamics get mishandled by the model. 
+Checking predictions against components allows you to immediately see if some dynamics get mishandled by the model. 
 
 Don't hope for perfect fits ! 
-It's perfectly acceptable to have slight offsets. 
+It's acceptable to have slight offsets. 
+
 You may also notice some noisy components get "flattened", with a null model fitted. 
-These have little impact on the results as they usually correspond to a minuscule part of total variance. 
-They also sometimes actually get rid of some unwanted variation.
- 
-On the `dsaeschimann2017` dataset, the predictions of the first few components are plotted below.
+These components can be left in or removed as they generally have little to no impact on interpolation at the gene level (representing a minuscule part of total variance in the data). 
+This sometimes actually gets rid of unwanted variation.
+
+Plotting a model and a reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component. This information is also returned by the plot function.
+
+Predictions of the first few components from `dsaeschimann2017` are plotted below.
 
 ##### {.tabset}
 ###### Plots
@@ -764,17 +779,11 @@ On the `dsaeschimann2017` dataset, the predictions of the first few components a
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
-      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
-      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
-             type = 'l', lty = 2)
-    })
-    points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    suppressWarnings(plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=i, col.i = 'royalblue',
+                          col = dsaeschimann2017$p$strain, show.legend = F))
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
-             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
+             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
   }))
 }, fig.width=12, fig.height=6)
 ```
@@ -782,31 +791,22 @@ show_fig(expr = {
 ###### Code
 ```{r plot_pca_dsaeschimann2017_print, eval=F}
 par(mfrow = c(2,4))
-invisible(
-sapply(seq_len(8), function(i){
-  plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
-       xlab = "age", ylab = "PC", main = paste0("PC", i))
-  
-  # connect the dots
-  sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
-    s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
-    points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
-           type = 'l', lty = 2)
-  })
-  
-  # add model prediction
-  points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
-  
-  if(i == 1)
-    legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
-           pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
-})
-)
+fit_vals <- plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=1:8, col = dsaeschimann2017$p$strain, col.i = 'royalblue')
+
+head(fit_vals)
+#>    component.var.exp        r2 deviance.expl relative.err
+#> PC1           0.68673 0.9972253     0.9972253    0.1658575
+#> PC2           0.09546 0.9230361     0.9230361    0.3898380
+#> PC3           0.08096 0.8783276     0.8783276    1.2464485
+#> PC4           0.03242 0.9249808     0.9249808    5.3703222
+#> PC5           0.01875 0.8510695     0.8510695    1.6352080
+#> PC6           0.01274 0.9249475     0.9249475    2.9281560
 ```
 ##### {}
+Of note, we are predicting model values as `N2` (lightblue). While all strains are shown on the plots above, some model parameters depend on the selected `N2` strain. 
 
- 
-The interpolation should translates well back on the full expression matrix :
+
+The interpolation should translate well on the full expression matrix :
 
 ##### {.tabset}
 ###### Plots
@@ -821,7 +821,7 @@ show_fig(expr = {
       points(dsaeschimann2017$p$age[s], dsaeschimann2017$g[i,s], col = l, 
              type = 'l', lty = 2)
     })
-    points(newdat$age, pred_m_dsaeschimann2017[i, ], col = "royalblue", type = 'l', lwd = 3)
+    points(r_dsaeschimann2017$time, r_dsaeschimann2017$interpGE[i, ], col = "royalblue", type = 'l', lwd = 3)
     if(i == gtp[4])
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
@@ -833,7 +833,7 @@ show_fig(expr = {
 ```{r plot_rd_genes_pred_print, eval = F}
 par(mfrow = c(1,4))
 invisible(
-sapply(gtp, function(i){ # gtp is from the earlier gene plots
+sapply(gtp, function(i){ # gtp is from the earlier random ^gene plots
   plot(dsaeschimann2017$p$age, dsaeschimann2017$g[i,], lwd = 2, col = dsaeschimann2017$p$strain,
        xlab = "age", ylab = "GExpr", main = rownames(dsaeschimann2017$g)[i])
   
@@ -845,7 +845,7 @@ sapply(gtp, function(i){ # gtp is from the earlier gene plots
   })
   
   # add model prediction
-  points(newdat$age, pred_m_dsaeschimann2017[i, ], col = "royalblue", type = 'l', lwd = 3)
+  points(r_dsaeschimann2017$time, r_dsaeschimann2017$interpGE[i, ], col = "royalblue", type = 'l', lwd = 3)
   
   if(i == gtp[4])
     legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2"),
@@ -858,29 +858,21 @@ sapply(gtp, function(i){ # gtp is from the earlier gene plots
 
 ### Staging samples
 
-Testing your reference on its final purpose is a good practice.
+Staging the samples used to build the reference on their interpolated version is a good first test.
 
-A first test is to stage the samples you used to build the reference on their own interpolated reference.
+Then, staging another time-series from the literature on your reference is the best validation, if such data exists.
+This external validation confirms the interpolated dynamics indeed correspond to development processes and not a dataset-specific effect (which is unlikely, but not impossible).
 
-Finally, the best validation is to stage another time series from the literature on your reference if such data exists.
-This provides external validation, confirming the dynamics you interpolated on indeed correspond to development processes and not a specific effect of the dataset (which is unlikely, but not impossible).
-
-We can do this with our example, and the `dshendriks2014` dataset can be used for external validation.
+For our example, we can use the `dshendriks2014` dataset for external validation.
 
 ```{r ae_dsaeschimann2017_test_print, eval = F}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
-
-ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
-ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
 ```
 
 ```{r ae_dsaeschimann2017_test, include = F, eval = gen_figs}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
-
-ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
-ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
+ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017, bootstrap.n = 1)
+ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017, bootstrap.n = 1)
 ```
 
 ##### {.tabset}
