@@ -396,10 +396,9 @@ We fit a model on the columns of $S^T$ (eigengenes), predict in the component sp
 
 We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
 GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
-The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
 As you'll see in the next section, a standard R formula will be specified for the model.
-This formula can include all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function of `mgcv` for GAMs. 
+This formula can include any tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function of `mgcv` for GAMs. 
 GLMs can also use splines from the `splines` core package, such as `ns()` for natural cubic splines.
 
 
