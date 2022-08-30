@@ -48,12 +48,12 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 ### The data
 
-**The datasets in this example are those used for all the *in-text* examples throughout the reference-building vignette.**
+**The data of this example is used for the *in-text* examples throughout the reference-building vignette.**
 
-We are using the two *C. elegans* time series datasets. 
+We are using two *C. elegans* RNAseq time-series:
 
- 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, called `dsaeschimann2017`. This is the dataset used to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
- 1. A high-resolution time series of late larval development published by @hendriks2014extensive, called `dshendriks2014`. This is the dataset used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
+ 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, `dsaeschimann2017`. This is the data we use to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
+ 1. A high-resolution time series of late larval development published by @hendriks2014extensive, `dshendriks2014`. This data is used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
 
 #### {.tabset}
 
@@ -179,7 +179,6 @@ show_fig(expr = {
       points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
              type = 'l', lty = 2)
     })
-    # points(ndat$age, pred_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 2)
     if(i == 1)
       legend("topleft", bty = 'n', legend = strain_legend,
              pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
@@ -219,27 +218,16 @@ as.data.frame(mp_dsaeschimann2017, row.names = "")
 
 #### Validation
 
-##### Predict
+##### Build ref object
 
 ```{r ex1_vd_c1, results='markup', eval = gen_figs}
-# setup newdat
-n.inter <- 100 # nb of new timepoints
-newdat <- data.frame(
-  age = seq(min(dsaeschimann2017$p$age), max(dsaeschimann2017$p$age), l = n.inter),
-  strain = rep("N2", n.inter) # we want to predict as N2 
-  )
-head(newdat)
-#>        age strain
-#> 1 18.00000     N2
-#> 2 18.20202     N2
-#> 3 18.40404     N2
-#> 4 18.60606     N2
-#> 5 18.80808     N2
-#> 6 19.01010     N2
-
-# predict 
-pred_m_dsaeschimann2017 <- predict(m_dsaeschimann2017, newdata = newdat)
-pred_m_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, newdata = newdat, as.c = TRUE)
+r_dsaeschimann2017 <- make_ref(m = m_dsaeschimann2017,
+                               n.inter = 100,                    # interpolation resolution
+                               t.unit = "h past egg-laying",     # time unit
+                               cov.levels = list("strain" = "N2"), # covariate levels to use for interpolation
+                               metadata = list("organism" = "C. elegans", # any metadata
+                                               "profiling" = "whole-organism, bulk",
+                                               "technology" = "RNAseq")) 
 ```
 
 ##### Plot component predictions
@@ -248,38 +236,26 @@ pred_m_dsaeschimann2017_comp <- predict(m_dsaeschimann2017, newdata = newdat, as
 show_fig(expr = {
   par(mfrow = c(2,4))
   invisible(sapply(seq_len(8), function(i){
-    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
-      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
-      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
-             type = 'l', lty = 2)
-    })
-    points(newdat$age, pred_m_dsaeschimann2017_comp[, i], col = "royalblue", type = 'l', lwd = 3)
+    suppressWarnings(plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=i, col.i = 'royalblue',
+                          col = dsaeschimann2017$p$strain, show.legend = F))
     if(i == 1)
       legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
-             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = c(rep(3,4),4))
+             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
   }))
 }, fig.width=12, fig.height=6)
 ```
 
-##### Build reference & stage samples
+##### Stage samples
 
 ```{r ex1_vd_c3, eval = F}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
-
-ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
-ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series)
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
+ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
 ```
 
 ```{r ex1_vd_c3bis, include = F, eval = gen_figs}
-# make a 'reference object' 
-r_dsaeschimann2017 <- list(interpGE = pred_m_dsaeschimann2017, time.series = newdat$age)
-
 # speed up w/ no bootstrap
-ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
-ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017$interpGE, r_dsaeschimann2017$time.series, bootstrap.n = 1)
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017, bootstrap.n = 1)
+ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017, bootstrap.n = 1)
 ```
 
 
