@@ -8,7 +8,7 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
+gen_figs <- F
 figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
 if(!file.exists(figpath)){
   dir.create(figpath)
@@ -48,15 +48,15 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 
 ### The data
 
-We are using two *Danio rerio* (zebrafish) embryonic development time series datasets. 
-The dataset used to build the reference has uneven time sampling, as can often be the case.
+Here, we use two *Danio rerio* (zebrafish) embryo development time-series. 
 
+The reference data has uneven time sampling, as can often be the case.
 We show a trick using ranks to build an adequate model in order to avoid interpolation bias. 
 
 The datasets are 
 
- 1. A time series of zebrafish embryonic development (with uneven sampling) published by @white2017high, hereafter called `dswhite2017`. This is the dataset used to build the reference. ([Data accessible in the publication](https://elifesciences.org/articles/30860))
- 1. A high-resolution time series of embryonic development published by @levin2016mid, hereafter called `dslevin2016zeb`. This is the dataset used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
+ 1. An embryo time-series of zebrafish embryonic development (with uneven sampling) published by @white2017high, hereafter called `dswhite2017`. This data is used to build the reference. ([Data accessible in the publication](https://elifesciences.org/articles/30860))
+ 1. A high-resolution time-series of embryonic development published by @levin2016mid, hereafter `dslevin2016zeb`. This data is used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
 
 #### {.tabset}
 Code to generate `dswhite2017` and `dslevin2016zeb` :
@@ -370,20 +370,41 @@ show_fig(expr = {
 ##### Build reference & stage samples
 
 ```{r ex3_vd_c3, eval = F}
-# make a 'reference object' 
-r_dswhite2017 <- list(interpGE = pred_m_dswhite2017, time.series = newdat$age)
+# make a 'ref' object'
+r_dswhite2017 <- make_ref(m_dswhite2017, 
+                          n.inter = 10, 
+                          cov.levels = list("batch"="1"), 
+                          t.unit = "h post-fertilization",     # time unit
+                          metadata = list("organism" = "D. rerio", # any metadata
+                                          "profiling" = "whole-organism, single-embryo",
+                                          "technology" = "RNAseq",
+                                          "note" = "rank-trick interpolation"))
+# replace the default results with our rank prediction
+r_dswhite2017$interpGE <- pred_m_dswhite2017
+r_dswhite2017$time <- newdat$age
 
-ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017$interpGE, r_dswhite2017$time.series)
-ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017$interpGE, r_dswhite2017$time.series)
+# stage samples
+ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017)
+ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017)
 ```
 
 ```{r ex3_vd_c3bis, include = F, eval = gen_figs}
-# make a 'reference object' 
-r_dswhite2017 <- list(interpGE = pred_m_dswhite2017, time.series = newdat$age)
+# make a 'ref' object'
+r_dswhite2017 <- make_ref(m_dswhite2017, 
+                          n.inter = 10, 
+                          cov.levels = list("batch"="1"), 
+                          t.unit = "h post-fertilization",     # time unit
+                          metadata = list("organism" = "D. rerio", # any metadata
+                                          "profiling" = "whole-organism, bulk",
+                                          "technology" = "RNAseq",
+                                          "note" = "rank-trick interpolation"))
+# replace the default results with our rank prediction
+r_dswhite2017$interpGE <- pred_m_dswhite2017
+r_dswhite2017$time <- newdat$age
 
 # speed up w/ no bootstrap
-ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017$interpGE, r_dswhite2017$time.series, bootstrap.n = 1)
-ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017$interpGE, r_dswhite2017$time.series, bootstrap.n = 1)
+ae_dswhite2017 <- ae(dswhite2017$g, r_dswhite2017, bootstrap.n = 1)
+ae_dslevin2016zeb <- ae(dslevin2016zeb$g, r_dswhite2017, bootstrap.n = 1)
 ```
 
 
@@ -421,7 +442,7 @@ show_fig(expr = {
 ##### On a model without using ranks
 
 We'll build the same model (not the optimal model !) without considering uneven sampling, for comparison. 
-This will allow us to showcase some interpolation issues to look out for.
+This will also serve to show interpolation issues to look out for.
 
 ```{r ex3_vd_c5, eval=gen_figs}
 m_dswhite2017_norank <- ge_im(X = dswhite2017$g, p = dswhite2017$p, formula = "X ~ s(age, bs = 'ds') + batch", nc = nc)
@@ -487,26 +508,39 @@ show_fig(expr = {
 ```
 
 We can already see that the model has trouble predicting the dynamics accurately.
-For example, we pick up noise in PC5 and flatten dynamics in PC6.
+For example, we overfit in PC5 and flatten dynamics in PC6.
 
-This has consequences on the estimates *of the validation dataset*, as you'll see when we stage the samples.
+Consequences can be seen on the age estimates of external data (*i.e.* the validation data), **but not necessarily on estimates of the reference data**, as you'll see when we stage the samples. 
+This stresses the importance of validating references with independent data.
 
 ```{r ex3_vd_c8, eval = F}
-# make a 'reference object' 
-r_dswhite2017_norank <- list(interpGE = pred_m_dswhite2017_norank, time.series = newdat$age)
+# make a 'ref' object'
+r_dswhite2017_norank <- make_ref(m_dswhite2017_norank, 
+                                 n.inter = 200, 
+                                 cov.levels = list("batch"="1"), 
+                                 t.unit = "h post-fertilization",     # time unit
+                                 metadata = list("organism" = "D. rerio", # any metadata
+                                          "profiling" = "whole-organism, bulk",
+                                          "technology" = "RNAseq",
+                                          "note" = "NO rank-trick interpolation"))
 
-ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series)
-ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, r_dswhite2017_norank$time.series)
+ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank)
+ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank)
 ```
 
 ```{r ex3_vd_c8bis, include = F, eval=gen_figs}
-# make a 'reference object' 
-r_dswhite2017_norank <- list(interpGE = pred_m_dswhite2017_norank, time.series = newdat$age)
+# make a 'ref' object'
+r_dswhite2017_norank <- make_ref(m_dswhite2017_norank, 
+                                 n.inter = 200, 
+                                 cov.levels = list("batch"="1"), 
+                                 t.unit = "h post-fertilization",     # time unit
+                                 metadata = list("organism" = "D. rerio", # any metadata
+                                          "profiling" = "whole-organism, bulk",
+                                          "technology" = "RNAseq",
+                                          "note" = "NO rank-trick interpolation"))
 
-ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank$interpGE, 
-                            r_dswhite2017_norank$time.series, bootstrap.n = 1)
-ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank$interpGE, 
-                               r_dswhite2017_norank$time.series, bootstrap.n = 1)
+ae_dswhite2017_norank <- ae(dswhite2017$g, r_dswhite2017_norank, bootstrap.n = 1)
+ae_dslevin2016zeb_norank <- ae(dslevin2016zeb$g, r_dswhite2017_norank, bootstrap.n = 1)
 ```
 
 
@@ -540,10 +574,10 @@ show_fig(expr = {
 }, fig.height=6, fig.width=13)
 ```
 
-The "gaps" or "steps" you can see on the validation dataset's estimates are due to interpolation bias : the picked up noise and flattened dynamics mentioned above.
-Essentially, the model errors create local "unlikely/unrealistic" gene expression zones in the interpolation, which will not correlate well with the samples of corresponding age.
-These zones will most often find themselves in between timepoints of the dataset used to build the reference, meaning the estimates of its samples are unaffected.
-However, the validation dataset has clear blank ranges of age estimates, around which are clustered the samples of corresponding age.
+The "gaps" or "steps" seen on the validation data's estimates are due to interpolation bias : the overfitting and flattened dynamics mentioned above.
+Model errors create local "unlikely/unrealistic" gene expression zones in the interpolation, which will not correlate well with the samples of corresponding age.
+These zones will most often be in between original time points of the reference data, meaning the estimates of original reference samples are unaffected.
+However, validation data has clear 'blank' ranges of age estimates, around which are clustered the samples of corresponding age.
 
-While we've used a suboptimal model here (which clearly displays model errors on component plots), some interpolation bias can be much more subtle. 
-In such cases, this is something that can only be assessed using an external dataset. 
+If the sub-optimal model we used had clear red flags on component plots, some forms interpolation bias can be much more subtle. 
+In such cases, it can only be assessed through external data validation. 
