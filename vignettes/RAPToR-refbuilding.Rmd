@@ -768,7 +768,8 @@ You may also notice some noisy components get "flattened", with a null model fit
 These components can be left in or removed as they generally have little to no impact on interpolation at the gene level (representing a minuscule part of total variance in the data). 
 This sometimes actually gets rid of unwanted variation.
 
-Plotting a model and a reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component. This information is also returned by the plot function.
+Plotting a model and a reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component (this information is also returned by the plot function).
+DE can be used to define components with "intelligible" dynamics (*w.r.t.* time), when $DE>0.5$. In noisy data, this distinction can be useful to remove components which do not reflect meaningful developmental variation (but rather noise).
 
 Predictions of the first few components from `dsaeschimann2017` are plotted below.
 
