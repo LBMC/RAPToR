@@ -13,13 +13,13 @@ author: Romain Bulteau
 date: "`r format(Sys.Date(), '%B %Y')`"
 ---
 
-In this vignette, you will find a showcase of a few useful ways RAPToR can be used.
+This vignette showcases different uses for `RAPToR.`
 
 
 <br>
 <br>
 
-# Improving a Differential Gene Expression analysis with age estimates
+# Improving Differential Expression analysis with age estimates
 ```{r sc_1, child = "sc_1.Rmd"}
 
 ```
