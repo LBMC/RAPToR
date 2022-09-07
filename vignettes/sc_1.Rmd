@@ -115,10 +115,10 @@ ae_dslb <- ae(dslehrbach2012$g, r_ya)
 
 
 
-```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F}
+```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F, out.width="80%"}
 show_fig(expr = { 
   plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
-     main = "age estimates of samples grouped by timepoint", 
+     main = "Sample age estimates, grouped by time point", 
      lmar = 7, col = c(2,1)[dslehrbach2012$p$strain])
 }, fig.width=8, fig.height=6)
 ```
@@ -126,10 +126,10 @@ show_fig(expr = {
 We can see quite a lot of variation in the sample timings, especially at the 0 and 6 hour timepoints.
 Another interesting effect can be seen when grouping the samples by replicate.
 
-```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F}
+```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F, out.width="80%"}
 show_fig(expr = {
 plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24), 
-     main = "age estimates of samples grouped by replicate", 
+     main = "Sample age estimates, grouped by batch", 
      lmar=7, col = c(2,1)[dslehrbach2012$p$strain])
 }, fig.width=8, fig.height=6)
 ```
@@ -137,26 +137,37 @@ plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24),
 
 The first two replicates have the `mut` samples consistently older than `wt`, while the opposite is true for the third replicate. This effect is statistically significant.
 
+<div style = "display:block">
+<div style="width:60%; float:left">
+<br>
+<br>
 ```{r sc1_stat_batch, eval=gen_figs}
-age_dif <- ae_dslb$age.estimates[dslehrbach2012$p$strain=="wt",1] - ae_dslb$age.estimates[dslehrbach2012$p$strain!="wt",1]
+age_dif <- ae_dslb$age.estimates[dslehrbach2012$p$strain=="wt",1] - 
+  ae_dslb$age.estimates[dslehrbach2012$p$strain!="wt",1]
+
 reps <- dslehrbach2012$p$rep[dslehrbach2012$p$strain=="wt"]
 
 summary(lm(age_dif~reps))$coefficients
 #>
-#>               Estimate Std. Error    t value   Pr(>|t|)
-#> (Intercept) -2.2168512  0.7784027 -2.8479492 0.01915315 *
-#> reps2       -0.9360038  1.1008276 -0.8502729 0.41721906
-#> reps3        3.4976985  1.1008276  3.1773355 0.01123277 *
+#>            Estimate  Std. Error   t value  Pr(>|t|)
+#> (Intercept) -2.216851  0.778402 -2.847949 0.0191531 *
+#> reps2       -0.936003  1.100827 -0.850272 0.4172190
+#> reps3        3.497698  1.100827  3.177335 0.0112327 *
 ```
-```{r sc1_stat_batch_plot, eval=gen_figs, fig.width=4, fig.height=5, echo=F, out.width="60%"}
+</div>
+<div style="width:38%; float:right">
+
+```{r sc1_stat_batch_plot, fig.width=4, fig.height=5, echo=F, out.height="100%", fig.align='center'}
 show_fig(expr = {
+  par(mar = c(5,4,0,1))
 plot(age_dif~reps, 
-     ylab="Estimated age difference between wt and mut samples (h)", 
+     ylab="Estimated age difference\nbetween wt and mut samples (h)", 
      xlab = "Batch", boxwex=.4);abline(h=0, lty=2, col='grey')
 }, fig.width=4, fig.height=5)
 ```
 
-
+</div></div>
+<div style="clear: both;"></div>
 
 
 ## The impact of development on gene expression
