@@ -398,7 +398,7 @@ ae_soma_prior <- ae(
   )
 ```
 
-This now shifts our estimate to the first peak (note that the correlation profile itself is not changed).
+This now shifts our estimate to the first peak, while the correlation profile (central black line) is unchanged. (The dotted lines correspond to bootstrap estimates from random gene sets and are thus different).
 
 ```{r sc3_cor_ae_prior, echo = F, fig.height=4, fig.width=5, fig.align='center', out.width="33%"}
 show_fig(expr = {
