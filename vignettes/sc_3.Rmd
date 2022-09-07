@@ -48,75 +48,35 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
-It is known that within some species, tissues can develop at different rates, which can vary between individuals.
+Tissues can develop at different rates in some species, and these rates can vary between individuals.
 In *C. elegans*, this developmental heterochrony has been shown between soma and germline (@perez2017maternal).
-By restricting the gene subset on which RAPToR stages the samples to specific tissues, it is possible to get estimates for development specific to these tissues.
+By giving genes associated with or expressed in specific tissues to RAPToR for staging, it is possible to estimate development specific to these tissues.
 
 ### The data
 
-We'll be working with a dataset published by @rockman2010selection.  
-
-This dataset correpsonds to microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains. 
+@rockman2010selection published microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains. 
 These 208 samples were described as *"developmentally synchronized"* in the original paper. 
-However, it was later demonstrated that a very significant developmental spread of the samples existed, spanning around 20 hours of $20^\circ C$ late larval development (@francesconi2014effects).
-
-This essentially makes this dataset a very high-resolution timecourse of late-larval development.
+However, @francesconi2014effects later showed there is significant developmental spread between samples, spanning around 20 hours of $20^\circ C$ late larval development.
+This data essentially turns out to be a very high-resolution time course of late-larval development.
 
 <br>
 
 ### Workflow
 
-We want to observe the *C. elegans* heterochrony of soma and germline development.  
-Using RAPToR, we can capture tissue-specific age by restricting the geneset used for staging to the tissue of interest.
-
-#### Gene subsets
-
-We define a `germline` geneset of 2554 genes from joining the `germline_intrinsic`, `germline_oogenesis_enriched` and `germline_sperm_enriched` categories defined in @perez2017maternal.
-
-We define a `soma` geneset of 2718 genes from the `osc` gene category defined in @hendriks2014extensive.
+To observe the heterochrony of *C. elegans* soma and germline development, we stage samples with RAPToR while restricting genes to the tissues of interest. In this way, we can capture tissue-specific age.
 
 
-#### Staging
+We build a `germline` set of 2554 genes by combining the `germline_intrinsic`, `germline_oogenesis_enriched` and `germline_sperm_enriched` categories defined in @perez2017maternal.
+We also define a `soma` set of 2718 genes from the `osc` (molting) gene category defined in @hendriks2014extensive.
 
-A first staging is done with all available genes : this corresponds to the "**Global age**".
 
-Then, tissue-specific staging is simply done by limiting the genes to the previously mentioned sets.
-The estimates from the soma and germline gene subsets are called "**<span style="color:firebrick">Soma age</span>**" and "**<span style="color:royalblue">Germline age</span>**" respectively.
+First, we stage with all available genes to get the "**Global age**".
+Then, we restrict genes to the previously mentioned sets and estimate "**<span style="color:firebrick">Soma age</span>**" and "**<span style="color:royalblue">Germline age</span>**".
 
 #### Validation
 
 We can look at PCA or ICA components against the different ages to evaluate the results.
 We can *e.g.* expect components corresponding to molting (oscillatory) processes to be "cleaner" with the soma estimates, consequently introducing noise on the germline components and vice-versa.
-
-<!-- dsperez2017 -->
-
-<!-- ```{r load_dsperez2017_c, eval = F} -->
-<!-- geo_dsperez2017 <- "GSE98747" -->
-
-<!-- geo_dsperez2017 <- GEOquery::getGEO(geo_dsperez2017)[[1]] -->
-<!-- X_dsperez2017 <- Biobase::exprs(geo_dsperez2017) -->
-
-
-
-<!-- gpl_23457 <- GEOquery::getGEO("GPL23457") -->
-<!-- probe_ids <- GEOquery::Table(gpl_23457) -->
-
-<!-- X_dsperez2017 <- format_ids(X_dsperez2017, probe_ids, from = "ID", to = "WbID")[-(1:2),] -->
-
-<!-- P_dsperez2017 <- Biobase::pData(geo_dsperez2017) -->
-<!-- P_dsperez2017 <- P_dsperez2017[, c("title", "geo_accession", "batch:ch1", "protocol:ch1")] -->
-<!-- colnames(P_dsperez2017)[3:4] <- c("batch", "protocol") -->
-
-<!-- P_dsperez2017$batch <- as.factor(P_dsperez2017$batch) -->
-<!-- P_dsperez2017$title <- as.character(P_dsperez2017$title) -->
-<!-- X_dsperez2017 <- X_dsperez2017[, P_dsperez2017$geo_accession] -->
-
-<!-- dsperez2017 <- list(g = X_dsperez2017, p = P_dsperez2017) -->
-
-<!-- save(dsperez2017, file = paste0(data_folder, "dsperez2017.RData")) -->
-
-<!-- rm(P_dsperez2017, X_dsperez2017, geo_dsperez2017, gpl_23457, probe_ids) -->
-<!-- ``` -->
 
 
 #### {.tabset}
@@ -256,39 +216,36 @@ dsrockman2010$g <- log1p(dsrockman2010$g)
 
 ### Staging the samples (global)
 
-We can use one of the young-adult references for *C. elegans* to stage the samples.
+We use a young-adult references for *C. elegans* to stage the samples.
 
 ```{r sc3_ae, eval = gen_figs}
 r_ya <- prepare_refdata("Cel_YA_1", "wormRef", n.inter = 400)
 
-ae_dsrockman2010 <- ae(dsrockman2010$g, r_ya$interpGE, r_ya$time.series)
+ae_dsrockman2010 <- ae(dsrockman2010$g, r_ya)
 ```
 
-```{r sc3_plot_ae, echo = F, fig.height=8, fig.width=5, out.width="60%"}
+```{r sc3_plot_ae, echo = F, fig.height=8, fig.width=6, out.width="50%"}
 show_fig(expr = {
-  plot(ae_dsrockman2010, show.boot_estimates = T, cex = .8)
+  plot(ae_dsrockman2010, cex = .5, lmar = 7, CIbar.width = .05)
 }, fig.height = 8, fig.width = 5)
 ```
 
-We can check the estimates against the previously estimated ages on this data from @francesconi2014effects.
-These are in the supplementary data of the paper.
+We find our estimates match the previously inferred ages by @francesconi2014effects (can be found in their supplementary data).
 
 ```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=6, fig.width=6, out.width="60%"}
 show_fig(expr = {
   plot(francesconi_time[dsrockman2010$p$geo_accession,"time"], ae_dsrockman2010$age.estimates[,1],
      lwd = 2, col = "black", main = "RAPToR vs. Francesconi & Lehner (2014) age estimates",
-     xlab = "Francesconi & Lehner 2014 estimates", ylab = "RAPToR estimates")
+     xlab = "Francesconi & Lehner (2014) estimates, h past L4 stage (25°C)", ylab = "RAPToR estimates, h past egg-laying (20°C)")
 }, fig.height=6, fig.width=6)
 ```
 
 
 ### Dynamics of the dataset
 
-We can use ICA components to look at the dynamics of the dataset on a global scale.
-Some of the components can be associated to specific developmental processes.
-Looking at the gene loadings (or contributions) on the components allows us to establish enrichment in gene sets.
+Expression dynamics in the data can be observed through ICA components, and enrichment in their gene loadings (or contributions) allows us to associate them to specific developmental processes.
 
-First, we can decide how many components to extract by looking at how many PCA components are needed to explain $99\%$ of the variance.
+First, we decide how many ICA components to extract from the number of PCA components needed to explain $99\%$ of the variance.
 
 ```{r sc3_pca_summary, eval = gen_figs}
 pca_rock <- summary(stats::prcomp(t(dsrockman2010$g), rank = 30, center = TRUE, scale = FALSE))
@@ -313,8 +270,8 @@ show_fig(expr = {
 }, fig.width=18, fig.height=15)
 ```
 <br>
-A lot of these components don't have a definite link to developmental processes.
-We can have a closer look at the components that clearly capture development, and look at their gene loadings' enrichment in gene sets of interest.
+A lot of these components don't have a definite link to developmental processes, which is expected given the genetic background heterogeneity in the samples.
+We can have a closer look at components that clearly capture development, and the enrichment of their loadings for gene sets of interest.
 
 ```{r sc3_devcomps, eval = gen_figs}
 dev_comps <- 1:6
@@ -347,6 +304,7 @@ show_fig(expr = {
     boxplot(gl~gs, data = dat, main = paste("Gene loadings on IC", i), at = c(1,.25+(2:4)),
          ylab = "Gene loadings", xlab = "", outline = F, boxwex = .4,
          col = transp(cols, a = .4), border = cols, boxlwd = 2)
+    abline(h = 0, lty = 2, col = "grey80")
     vioplot(gl~gs, data = dat, add = T, h = .3, at = c(1,.25+(2:4)),
          col = transp(cols, a = .4), border = cols, rectCol = cols, lineCol = cols, 
          lwd = 2, frame.plot = F)
@@ -359,23 +317,21 @@ show_fig(expr = {
 From the plots above, we can establish that 
 
  - component IC2 is linked to oogenesis
- - component IC3 is clearly associated with spermatogenesis processes
+ - component IC3 is clearly associated with spermatogenesis
  - components IC1, IC4 and IC5 have good contribution from the soma geneset, and show oscillatory dynamics.
 
-### Staging the samples (soma & germline)
+### Tissue-specific staging
 
 Now, we stage the samples using only germline or soma gene subsets.
 
 ```{r ae_soma_germline, eval = gen_figs}
 ae_soma <- ae(
   dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
-  r_ya$interpGE, r_ya$time.series
-  )
+  r_ya)
 
 ae_germline <- ae(
   dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$germline,], # select germline gene subset
-  r_ya$interpGE, r_ya$time.series
-  )
+  r_ya)
 
 ```
 
@@ -406,37 +362,36 @@ abline(a = 0, b = 1, lty = 2, col = "black")
 }, fig.height = 4, fig.width = 12)
 ```
 
-We can notice on the soma estimates that two samples appear quite off from their global or germline age (marked with a $\small{\triangle}$).
-This sort of artefact can happen when using small genesets for estimates, as similar expression profiles can occur at different times (which is especially true for oscillatory profiles).
+We notice the soma estimates of two samples (marked with $\small{\triangle}$) are quite off from their global or germline age.
+This is due to both the fact we used a small gene set for inferring age, and that very similar expression profiles can occur at different times in oscillatory profiles (which is the case for molting genes).
 
-If we look at the correlation profile of one of these samples on the 3 estimates, we can see 2 peaks for the soma:
+If we look at the correlation profiles of one of these samples on the 3 estimates, we can clearly see 2 peaks for the soma:
 
 ```{r sc3_plot_cor_sg, echo = F, fig.height=3, fig.width=12}
 show_fig(expr = {
 par(mfrow = c(1,3))
-plot_cor.ae(ae_soma, subset = 80)
+plot_cor(ae_soma, subset = 80)
 mtext("Soma", side = 3, line = -2, col = "firebrick", font = 2)
 box(lwd = 2, col = "firebrick")
 
 
-
-plot_cor.ae(ae_germline, subset = 80, )
+plot_cor(ae_germline, subset = 80, )
 mtext("Germline", side = 3, line = -2, col = "royalblue", font = 2)
 box(lwd = 2, col = "royalblue")
 
 
-plot_cor.ae(ae_dsrockman2010, subset = 80)
+plot_cor(ae_dsrockman2010, subset = 80)
 mtext("Global", side = 3, line = -2, col = "black", font = 2)
 }, fig.height=3, fig.width=12)
 ```
 
-This scenario is a prime example of when it is appropriate to use a prior. 
-We can input the global age as a prior to favor the first peak of the soma correlation profile.
+This is the perfect situation to use a prior. 
+We can input the global age as a prior to favor the correct peak of the soma correlation profile for the erroneous samples.
 
 ```{r sc3_ae_prior, eval = gen_figs}
 ae_soma_prior <- ae(
   dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
-  r_ya$interpGE, r_ya$time.series,
+  r_ya,
   prior = ae_dsrockman2010$age.estimates[,1], # gaussian prior values (mean) 
   prior.params = 10                           # gaussian prior sd
   )
@@ -444,29 +399,24 @@ ae_soma_prior <- ae(
 
 This now shifts our estimate to the first peak (note that the correlation profile itself is not changed).
 
-```{r sc3_cor_ae_prior, echo = F, fig.height=3, fig.width=12}
+```{r sc3_cor_ae_prior, echo = F, fig.height=3.5, fig.width=5, fig.align='center'}
 show_fig(expr = {
-  par(mfrow = c(1,3))
-  plot.new()
-  plot_cor.ae(ae_soma_prior, subset = 80, show.prior = T)
+  plot_cor(ae_soma_prior, subset = 80, show.prior = T)
   mtext("Soma (w/ prior)", side = 3, line = -2, col = "firebrick", font = 2)
   box(lwd = 2, col = "firebrick")
-  plot.new()
-}, fig.height=3, fig.width=12)
+}, fig.height=3.5, fig.width=5)
 
 ```
 
-At the same time, all of our other estimates essentially stay the same.
+At the same time, all the other estimates are essentially unchanged.
 ```{r sc3_testeq, eval=gen_figs}
 # 80 & 141 are the indices of the offset samples
-summary(ae_soma$age.estimates[-c(80,141), 1] - ae_soma_prior$age.estimates[-c(80,141), 1])
-#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#> -4.11886  0.00000  0.00000 -0.01466  0.00000  1.81230 
+mean(ae_soma$age.estimates[-c(80,141), 1] - ae_soma_prior$age.estimates[-c(80,141), 1])
+#> [1] -0.014664
 ```
 
 
-Now, we can look once more at the components of our data using our tissue-specific estimates.
-We'll use the prior version of the soma estimates for the plots below.
+Now, We can observe the expression dynamics in the data along tissue-specific estimates.
 
 ```{r sc3_ae_sg_ica, echo = F, fig.height=9, fig.width=18}
 show_fig(expr = {
@@ -488,33 +438,13 @@ par(mfcol = c(3,6))
 ```
 
 
-Notice how components IC1, IC4 and IC5, previously associated with soma, are much cleaner when plotting with the soma age. 
-Also, see that the IC2 and IC3 germline-associated components appear quite noisy.
+A expected, components IC1, IC4, and IC5 (previously associated with soma), are much cleaner along the soma age. 
+At the same time, germline-associated components IC2 and IC3 appear quite noisy.
 
-With the germline estimates, we get the opposite effect: much cleaner dynamics on the second and third components, at the cost of clarity on the oscillatory dynamics.
+The opposite is true along the germline estimates, with much cleaner dynamics on germline-associated IC2 and IC3, and increased noise for soma oscillatory dynamics in IC1, IC4, and IC5.
 
 <br>
 
-**Note:** In the RAPToR paper (@bulteau2021raptor), we used a different reference to stage the samples (`Cel_larv_YA` instead of the presented `Cel_YA_1`). This was to showcase a combination of soma-germline heterochrony *between* the reference and the RILs, as well as among the RILs.
-Thus, you may note some differences in the figures presented here to those from the paper. We also kept the analysis brief in the present vignette. 
-(*e.g.* the ICA does not join reference and RILs, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clearly expressed).
-
-
-<!-- ```{r fig.height=9, fig.width=15} -->
-<!-- par(mfcol = c(3,5)) -->
-<!--   invisible(sapply(seq_len(5), function(i){ -->
-<!--     plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black", -->
-<!--          xlab = "ae", ylab = "IC", main = paste0("(global) IC", i)) -->
-<!--     # box(lwd = 2, col = "firebrick") -->
-
-<!--     plot(ae_soma$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick", -->
-<!--          xlab = "ae", ylab = "IC", main = paste0("(soma) IC", i)) -->
-<!--     box(lwd = 2, col = "firebrick") -->
-
-<!--     plot(ae_germline$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "royalblue", -->
-<!--          xlab = "ae", ylab = "IC", main = paste0("(germline) IC", i)) -->
-<!--     box(lwd = 2, col = "royalblue") -->
-<!-- })) -->
-<!-- ``` -->
-
-
+**Note:** In the RAPToR paper (@bulteau2022real), we used a different reference to stage the samples (`Cel_larv_YA` instead of the presented `Cel_YA_1`) in order to show a combination of soma-germline heterochrony *between* the reference and the RILs, as well as among the RILs. 
+We also shortened the analysis for the vignette. 
+Thus, you may note differences with the figures presented here (*e.g.* the ICA does not combine reference and RILs, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clear).
