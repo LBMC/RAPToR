@@ -21,11 +21,6 @@ This vignette showcases different uses for `RAPToR`.
 
 # Improving Differential Expression analysis with age estimates
 
-Including estimated age as a covariate in Differential Expression (DE) analysis can substantially reduce previously unexplained variation between samples. 
-This results in better model fits and consequently better power to detect DE genes. 
-In this section, we show that even time-series designs benefit from this approach thanks to unsynchronized replicates.
-
-
 ```{r sc_1, child = "sc_1.Rmd"}
 
 ```

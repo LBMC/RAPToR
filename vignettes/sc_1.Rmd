@@ -48,6 +48,12 @@ show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = fi
 }
 ```
 
+
+Including estimated age as a covariate in Differential Expression (DE) analysis can substantially reduce previously unexplained variation between samples. 
+This results in better model fits and consequently better power to detect DE genes. 
+In this section, we show that even time-series designs benefit from this approach thanks to unsynchronized replicates.
+
+
 ## The data
 
 The data in this example is a *C. elegans* microarray profiling experiment by @lehrbach2012post, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
@@ -57,7 +63,7 @@ The experimental setup is the following.
 Two *C. elegans* strains : wild-type (`wt`) and *pash-1(mj100)* (`mut`) were profiled at 0, 6, 12 and 24 hours past the L4 stage (~ 50 hours post-hatching at 20°C). Each condition was profiled in triplicates.
 
 Here, finding Differential Gene Expression (DE) between strains relies on the inclusion of the effect of development.
-This is true in any time series context, even more so in this case because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (snoek2014rapid).
+This is true in any time series context, even more so in this case because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (@snoek2014rapid).
 
 #### {.tabset}
 
