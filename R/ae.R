@@ -41,7 +41,7 @@ ae <- function(samp, refdata, ref.time_series = NULL,
                prior = NULL, prior.params = NULL,
                verbose = T)
 {
-  refinput <- "ref" == class(refdata) # input is a 'ref' object
+  refinput <- ("ref" == class(refdata))[1] # input is a 'ref' object
   if(refinput){ 
     ref <- refdata
     refdata <- ref$interpGE
