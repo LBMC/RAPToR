@@ -32,6 +32,7 @@
 #' 
 #' @importFrom parallel parApply parSapply parLapply stopCluster makeForkCluster
 #' @importFrom stats quantile dnorm
+#' @importFrom data.table frank
 #' @importFrom pryr standardise_call
 #' 
 ae <- function(samp, refdata, ref.time_series = NULL,
@@ -134,6 +135,14 @@ ae <- function(samp, refdata, ref.time_series = NULL,
       return(cbind(time = cor.max.time, cor.score = cor.max))
     }
   }
+  if("spearman"==cor.method){
+    # compute ranks now, and use pearson
+    samp <- apply(samp, 2, data.table::frank)
+    rownames(samp) <- rownames(refdata)
+    refdata <- apply(refdata, 2, data.table::frank)
+    rownames(refdata) <- rownames(samp)
+    cor.method <- "pearson"
+  }
   
   # build clusters for parallel comp. (detecting OS for cluster type)
   cl <- parallel::makeCluster(nb.cores, 
@@ -167,7 +176,7 @@ ae <- function(samp, refdata, ref.time_series = NULL,
   if(verbose){
     message("\tBuilding gene subsets...")
   }
-  totalset <- 1:nrow(samp)
+  totalset <- nrow(samp)
   gene_subsets <- lapply(boot.seq, function(i){
     sample(totalset, size = bootstrap.set_size, replace = F)
   })
