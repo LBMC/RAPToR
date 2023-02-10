@@ -4,14 +4,14 @@
 \alias{ref_compare}
 \title{Compare expression changes between sample groups to a matching developmental reference.}
 \usage{
-ref_compare(X, ref, fac, ae_obj = NULL, ae_values = NULL)
+ref_compare(X, ref, group, ae_obj = NULL, ae_values = NULL)
 }
 \arguments{
 \item{X}{sample gene expression matrix (should be comparable to reference, usually log(TPM+1)).}
 
 \item{ref}{a \code{ref} object (as returned by \link{\code{make_ref}})}
 
-\item{fac}{factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.}
+\item{group}{a factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.}
 
 \item{ae_obj}{an \code{ae} object (as returned by \link{\code{ae}})}
 

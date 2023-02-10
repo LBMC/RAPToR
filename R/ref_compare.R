@@ -59,7 +59,7 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' 
 #' @param X sample gene expression matrix (should be comparable to reference, usually log(TPM+1)).
 #' @param ref a \code{ref} object (as returned by \link{\code{make_ref}})
-#' @param fac factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.
+#' @param group a factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.
 #' @param ae_obj an \code{ae} object (as returned by \link{\code{ae}})
 #' @param ae_values age estimate values (used if ae_obj is NULL). 
 #' @param return.idx if TRUE (default) returns reference indices. If FALSE, returns corresponding reference expression matrix.
@@ -73,19 +73,21 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' @importFrom Rdpack reprompt
 #' @importFrom stats lm
 #' 
-ref_compare <- function(X, ref, fac, 
+ref_compare <- function(X, ref, group, 
                         ae_obj=NULL, ae_values=NULL){
   
-  if(!is.factor(fac)| length(levels(fac)) < 2){
-    stop("fac must be a factor with at least 2 levels specifying groups to compare")
+  if(!is.factor(group)| length(levels(group)) < 2){
+    stop("group must be a factor with at least 2 levels specifying groups to compare")
   }
-  if(length(fac) != ncol(X)){
-    stop("ncol(X) different from length(fac)")
+  if(length(group) != ncol(X)){
+    stop("ncol(X) different from length(group)")
   }
   
   if(is.null(ae_obj)){
     if(is.null(ae_values)){
-      stop("One of ae_obj or ae_values must be specified.")
+      warning("No ae information specified, performing ae with given data...")
+      ae_obj <- RAPToR::ae(X, ref, bootstrap.n = 2, verbose = F)
+      ae_values <- ae_obj$age.estimates[,1]
     } else {
       if(!is.numeric(ae_values) | 
          any(ae_values < min(ref$time)) | 
@@ -106,21 +108,21 @@ ref_compare <- function(X, ref, fac,
   
   ovl <- RAPToR::format_to_ref(X, RAPToR::get_refTP(ref, ae_values = ae_values, return.idx = F), verbose = F)
   
-  lm_samp <- stats::lm(log2(exp(t(ovl$samp)))~fac)
-  lm_ref <-stats::lm(log2(exp(t(ovl$ref)))~fac)
+  lm_samp <- stats::lm(log2(exp(t(ovl$samp)))~group)
+  lm_ref <-stats::lm(log2(exp(t(ovl$ref)))~group)
   
   coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_ref))) 
   
-  fac_stats <- list(ae_avg = tapply(ae_values, fac, mean),
-                    ae_sd = tapply(ae_values, fac, sd),
+  group_stats <- list(ae_avg = tapply(ae_values, group, mean),
+                    ae_sd = tapply(ae_values, group, sd),
                     ae_range = as.data.frame(
-                      do.call(cbind, tapply(ae_values, fac, range)),
+                      do.call(cbind, tapply(ae_values, group, range)),
                       row.names = c("min", "max")
                       ))
   
-  res <- list(coefs = coefs, expr = ovl, fac = fac)
+  res <- list(coefs = coefs, expr = ovl, group = group)
   class(res) <- "rcmp"
-  attr(res, "fac.stats") <- fac_stats
+  attr(res, "group.stats") <- group_stats
   attr(res, "ref.info") <- list(t.unit = attr(ref, "t.unit"),
                                 metadata = attr(ref, "metadata"))
 
@@ -134,7 +136,7 @@ ref_compare <- function(X, ref, fac,
 #' Fetches the log2-fold change (logFC) values for a given group comparison in the samples or in the reference.
 #' 
 #' @param rc an rcmp object, as returned by \link{\code{ref_compare}}
-#' @param l,l0 sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{fac} respectively.
+#' @param l,l0 sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{group} respectively.
 #' @param verbose if TRUE (default), prints warnings and selected factor levels.
 #'
 #' @return a dataframe with sample and reference logFCs between groups.
@@ -145,14 +147,14 @@ ref_compare <- function(X, ref, fac,
 #' 
 #' @importFrom Rdpack reprompt
 #' 
-get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1], 
+get_logFC <- function(rc, l = levels(rc$group)[2], l0 = levels(rc$group)[1], 
                       verbose=T){
   if("rcmp"!=class(rc)){
     stop("rc must be an 'rcmp' object, as returned by ref_compare.")
   }
-  ll <- levels(rc$fac)
+  ll <- levels(rc$group)
   if(!l%in%ll | !l0%in%ll){
-    stop("l and l0 must be levels of the group factor (fac).")
+    stop("l and l0 must be levels of the group factor (group).")
   }
   if(verbose){
     message(paste0("Comparing ",l0, " vs. ", l))
@@ -191,17 +193,17 @@ get_logFC <- function(rc, l = levels(rc$fac)[2], l0 = levels(rc$fac)[1],
 #' 
 #' 
 print.rcmp <- function(x, ...){
-  lfcs <- lapply(levels(x$fac)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$fac)[1], verbose=F)
+  lfcs <- lapply(levels(x$group)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$group)[1], verbose=F)
   rs <- unlist(lapply(lfcs, function(lfci) cor(lfci$samp, lfci$ref)))
-  ae_avg <- attr(x, "fac.stats")$ae_avg
-  df <- as.data.frame(cbind(#fac = levels(x$fac),,
+  ae_avg <- attr(x, "group.stats")$ae_avg
+  df <- as.data.frame(cbind(#group = levels(x$group),,
               ref.logFC.r = c(NA, rs),
               ref.logFC.r2 = c(NA, rs^2),
               ae.avg.dif = c(NA, ae_avg[-1] - ae_avg[1])
               ))
-  rownames(df) <- sapply(seq_along(levels(x$fac)), function(i){
-    paste(levels(x$fac)[i], ifelse(1==i, " (ctrl, n=", " (n="), 
-          table(x$fac)[i] ,")", sep="")
+  rownames(df) <- sapply(seq_along(levels(x$group)), function(i){
+    paste(levels(x$group)[i], ifelse(1==i, " (ctrl, n=", " (n="), 
+          table(x$group)[i] ,")", sep="")
   })
 
   cat("DE comparison with reference\n---\n")
