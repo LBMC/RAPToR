@@ -2,31 +2,33 @@
 
 `RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict the developmental age of individual samples from their gene expression profiles. 
 
-We achieve this by staging samples on high-resolution references we build from existing developmental profiling time-series.
+We stage samples on high-resolution references that we build from existing developmental profiling time-series.
 Inferred age can then be used in multiple ways to 
 precisely estimate perturbations effects on developmental timing, 
 increase power in differential expression analyses, 
 estimate differential expression due to uncontrolled development and 
 most importantly, to recover perturbation specific effects on gene expression even in the extreme scenario when the perturbation is completely confounded by development. 
 
-Please cite our preprint if you use RAPToR in your research:
+Please cite our paper if you use RAPToR in your research:
 
- - Bulteau R., Francesconi M. Real Age Prediction from the Transcriptome with RAPToR (2021) *bioRxiv* [doi: 10.1101/2021.09.07.459270](https://doi.org/10.1101/2021.09.07.459270)
+ - Bulteau, R., Francesconi, M. Real age prediction from the transcriptome with RAPToR. *Nat Methods* (2022). (https://doi.org/10.1038/s41592-022-01540-0)
 
 
 
 ## Installation
 
-### System requirements
-We have verified RAPToR works with R v3.6.3, v4.1.1, and v4.1.2
-on Unix (Ubuntu 18.04/20.04 LTS), Windows 10, and macOS (10.14) systems.
+To install the latest version of RAPToR, run the following in your R console :
 
-Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
-For reference, the [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157) (`dsaeschimann2017`) dataset used for demo in the main vignette (43 samples by ~19500 genes) 
-can be both downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
+```r
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
+remotes::install_github("LBMC/RAPToR", build_vignettes = T)
+```
 
-#### Dependencies
-RAPToR has R package dependencies which users can choose to install manually from an R console:
+When dependencies are met, installation should take under 20 seconds.
+
+### Dependencies
+Users can choose to install the RAPToR package dependencies manually from an R console:
 
 ```r
 # CRAN packages
@@ -38,29 +40,28 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("limma")
 ```
 
-We also recommend the installation of the following packages used in RAPToR vignettes to download demo data:
+We also recommend to install the following packages used in RAPToR vignettes to download demo data:
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("GEOquery", "biomaRt"))
 ```
 
+### System requirements
+We have verified RAPToR works with R v3.6.3, v4.1.1, and v4.1.2
+on Unix (Ubuntu 18.04/20.04/22.04 LTS), Windows 10, and macOS (10.14) systems.
 
-Then, you can use the `devtools` R package to install the latest version of RAPToR, from your R console :
+Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
+For reference, the [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157) (`dsaeschimann2017`) dataset used for demo in the main vignette (43 samples by ~19500 genes) 
+can be both downloaded and staged with RAPToR in under 30 seconds, using less than 2Gb of RAM.
 
-```r
-if (!requireNamespace("devtools", quietly = TRUE))
-    install.packages("devtools")
-devtools::install_github("LBMC/RAPToR", build_vignettes = T)
-```
 
-When dependencies are met, installation of RAPToR should take under 20 seconds.
 
 
 
 ## Getting started
 
-Everything you need to know to make this work is detailed in the package's main vignette. You can access it from your R console with
+You can access the package's main vignette from your R console with
 
 ```r
 library(RAPToR)
@@ -106,8 +107,8 @@ We recommend you get our data-packages with pre-built references of common organ
    - make reference-building more direct, from a `geim` object,
    - simplify the age estimation call (now simply `ae(samp, ref)`),
    - store reference metadata (such as the reference time unit) to use in subsequent plotting/printing.
- - Updated documentation, vignettes, and vignette sections related to reference-building with the new procedure.
  - Updated `ae` object printing to include reference metadata when available.
+ - Optimized ae bootstrap correlation (over 2x faster)
  - Rewrote `ae` plotting function to
   - display bootstrap estimates by default.
   - include reference time units when available.
@@ -118,7 +119,13 @@ We recommend you get our data-packages with pre-built references of common organ
  - Added functions to compare log-fold-changes between sample groups to a reference and quantify the impact of development on differential expression analysis. 
   - `ref_compare()` gets matching reference time points to the samples and compares logFCs between given sample groups, and between matching reference time points (giving an estimate of development logFCs between groups).
   - `get_logFC()` extracts sample and reference logFCs between specified groups from the output of `ref_compare()`.
- - Renamed `plot_cor.ae()` to `plot_cor()`. 
+ - Renamed `plot_cor.ae()` to `plot_cor()`.
+ - Updated documentation:
+  - Added a vignette on correcting DE analysis for development `vignette("RAPToR-DEcorrection")`
+  - Updated vignette sections related to reference-building with the new procedure.
+  - Added a reference-building section for aging references
+  - Re-formatted vignettes with Bioconductor style
+  - Added PDF versions of all vignettes
 
 ### v1.1
 #### v1.1.6
