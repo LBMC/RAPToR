@@ -1,8 +1,8 @@
 *.RData
 old*
-ex_1.html
-ex_2.html
-ex_3.html
-sc_1.html
-sc_2.html
-sc_3.html
+ex_*.html
+sc_*.html
+*.log
+
+*_cache
+*_files
