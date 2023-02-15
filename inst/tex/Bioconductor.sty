@@ -1,0 +1,605 @@
+% File from https://code.bioconductor.org/browse/BiocStyle/tree/RELEASE_3_16/inst/resources/tex/
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{Bioconductor}[2016/06/22 Bioconductor LaTeX Style]
+%
+\RequirePackage{ifthen}
+\newboolean{BiocStyle@titlecaps}
+\setboolean{BiocStyle@titlecaps}{true}
+%
+\DeclareOption{notitlecaps}{\setboolean{BiocStyle@titlecaps}{false}}
+\ProcessOptions
+%
+\PassOptionsToPackage{usenames,dvipsnames}{color}
+\RequirePackage{color}
+\definecolor{BiocBlue}{RGB}{24,129,194}
+\definecolor{BiocGreen}{RGB}{135,177,63}
+\definecolor{BiocGray}{cmyk}{0,0,0,0.50}
+\definecolor{BiocMagenta}{rgb}{1, 0, 1}
+\definecolor{BiocRed}{rgb}{1, 0, 0}
+\definecolor{BiocBittersweet}{cmyk}{0,0.75,1,0.24}
+\definecolor{codecolor}{RGB}{64,64,64}
+%
+\RequirePackage[%
+ pdfpagelabels,%
+ plainpages=false,%
+ pdfborder={0 0 0},%
+ bookmarks=true,%
+ bookmarksopen=true,%
+ bookmarksnumbered=true,%
+ hyperfootnotes=false,%
+ colorlinks,%
+ breaklinks,%
+ linkcolor=BiocBlue,%
+ citecolor=BiocBlue,%
+ anchorcolor=BiocBlue,%
+ urlcolor=BiocBlue,%
+ citebordercolor={.7 .7 .7},%
+ linkbordercolor={.7 .7 .7},%
+ urlbordercolor={.7 .7 .7},%
+ raiselinks,%
+ pdfusetitle,%
+ pdftex]{hyperref}
+\urlstyle{same}  % don't use monospace font for urls
+\pdfpageattr{/Group << /S /Transparency /I true /CS /DeviceRGB>>} %fixes incorrect color rendering in acroread
+% Define page layout
+\RequirePackage{geometry}
+%
+\newlength\hfskip
+\setlength\hfskip{15mm}
+\newlength\layoutw
+\setlength\layoutw{210mm}% width of A4 paper which is smaller than US Letter (8.5in=216mm)
+\newlength\layouth
+\setlength\layouth{11in}% height of US Letter paper (279mm) which is smaller than A4 (297mm)
+\newlength\layouthoff
+\newlength\layoutvoff
+\setlength\layouthoff\paperwidth
+\setlength\layoutvoff\paperheight
+\advance\layouthoff-\layoutw
+\advance\layoutvoff-\layouth
+\geometry{%
+% showframe,showcrop,%
+% page layout set to common area of letter and A4
+ layoutsize={\layoutw,\layouth},
+ layouthoffset=.5\layouthoff,
+ layoutvoffset=.5\layoutvoff,
+ width=135mm,
+ marginparsep=5mm,
+ marginparwidth=30mm,
+ hmargin={30mm,45mm},
+ vmargin={15mm,15mm},
+ includeheadfoot=true,
+ headheight=\hfskip,
+ headsep=0mm,
+ footskip=\hfskip
+}
+\newlength{\overhang}
+\setlength{\overhang}{15mm}
+\newlength{\rightoffset} % right offset of the document body
+\setlength{\rightoffset}{30mm}
+\newlength{\fltoffset} % left offset of floats relative to paragraph text
+\setlength{\fltoffset}{15mm}
+\newlength{\capoffset} % right offset of captions relative to float's body
+\setlength{\capoffset}{-\fltoffset}
+%% Use Latin Modern Sans Serif font
+\renewcommand\familydefault\sfdefault
+\renewcommand\sfdefault{lmss}
+%% Beramono font for TT font
+\RequirePackage[scaled=0.798]{beramono}
+\RequirePackage[T1]{fontenc}
+%
+\RequirePackage{etoolbox}% provides \patchcmd
+\RequirePackage[newlinetospace,explicit]{titlesec}
+%% Font definitions
+\def\mdhelvet{\fontfamily{phv}\selectfont\mdseries}
+\def\bfhelvet{\fontfamily{phv}\selectfont\bfseries}
+%
+\def\titlefont{\mdhelvet\color{BiocBlue}}
+% Fixed-width labels
+\def\labelbox{\makebox[\overhang][l]{\textcolor{BiocBlue}{\thetitle}}}
+\titlelabel{\labelbox}
+% Section
+\titleformat{\section}
+ {\LARGE\mdhelvet}
+ {\labelbox}{0in}{\textcolor{BiocBlue}{#1}}
+ [\vspace{-.2ex}\titleline{\color{BiocBlue}\titlerule}]
+% Section, numberless
+\titleformat{name=\section,numberless}
+ {\LARGE\mdhelvet}
+ {}{0in}{\textcolor{BiocBlue}{#1}}
+% Subsection and Subsubsection
+\titleformat{\subsection}
+ {\Large\mdhelvet}
+ {\labelbox}{0in}{\textcolor{BiocBlue}{#1}}
+\titleformat{\subsubsection}
+ {\large\mdhelvet}
+ {\labelbox}{0in}{\textcolor{BiocBlue}{#1}}
+%
+\titlespacing{\section}{-\overhang}{*3.5}{*2.5}
+\titlespacing{\subsection}{-\overhang}{*3.25}{*1.5}
+\titlespacing{\subsubsection}{-\overhang}{*3.25}{*1.5}
+%
+% Flush left titles that are not numbered
+%\let\@contentsname\contentsname
+%\renewcommand{\contentsname}{\hspace{-\overhang}\@contentsname}
+%\let\@refname\refname
+%\renewcommand{\refname}{\hspace{-\overhang}\@refname}
+% \RequirePackage{sectsty}
+% \titlefont{\sffamily\bfseries\color{BiocBlue}\sectionrule{0pt}{0pt}{-1ex}{1pt}}
+% \subtitlefont{\sffamily\bfseries\color{BiocBlue}}
+% \subsubtitlefont{\sffamily\bfseries\color{BiocBlue}}
+%% Code and output chunks
+\RequirePackage{framed}
+\definecolor{shadecolor}{RGB}{240,240,240}
+\newlength{\voverhang}
+\setlength\voverhang{\overhang}
+%% The implementation of the following environment is based on snugshade* from the package framed
+\OuterFrameSep=0mm
+\newenvironment{myshaded}{%
+  \def\FrameCommand##1{\fboxsep=.5\baselineskip%
+   \hskip-\voverhang \hskip\@totalleftmargin%
+   \colorbox{shadecolor}{\hskip\voverhang \hskip-\fboxsep ##1}%
+      % There is no \@totalrightmargin, so:
+      \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+  \MakeFramed {\advance\hsize-\width
+    \@totalleftmargin\z@ \linewidth\hsize
+    \advance\labelsep\fboxsep
+    \@setminipage}%
+ }{\par\unskip\@minipagefalse\endMakeFramed}
+%% Code chunks styling
+% Sweave
+\newenvironment{Schunk}{\begin{myshaded}}{\end{myshaded}}
+% knitr
+\newenvironment{kframe}{\begin{myshaded}}{\end{myshaded}}
+%% Title
+\let\@bioctitle\@empty
+\let\@oldtitle\title
+\renewcommand{\title}[1]{\def\@bioctitle{#1}\@oldtitle{#1}}
+\newcommand{\bioctitle}[2][]{\@oldtitle{#2}%
+  \def\tmp{#1}\ifx\tmp\@empty\def\@bioctitle{#2}\else\def\@bioctitle{#1}\fi}
+%% Page layout
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyhead[LO,RE]{\parbox[b][\hfskip][t]{\headwidth}{\bfhelvet\@bioctitle}}
+\fancyhfoffset[L]{\overhang}
+\fancyhfoffset[R]{\rightoffset}
+\renewcommand{\headrule}{}
+\fancyfoot[R]{\bfhelvet\thepage}
+%
+\RequirePackage{enumitem}
+\setlist[itemize]{label=\color{BiocBlue}\textbullet}
+%
+\RequirePackage{parskip}
+%% Alter some LaTeX defaults for better treatment of floats
+%% See p.105 of "TeX Unbound" for suggested values
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\setcounter{dbltopnumber}{2}
+\renewcommand\topfraction{0.9}
+\renewcommand\bottomfraction{0.5}
+\renewcommand\textfraction{0.1}
+\renewcommand\floatpagefraction{0.9}% originally 0.8
+\renewcommand\dbltopfraction{0.9}
+\renewcommand\dblfloatpagefraction{0.8}
+%
+\RequirePackage[defaultlines=3,all]{nowidow}% prevent widows and orphans
+%
+%% Title page
+% use parnotes to typeset email addresses
+\RequirePackage{parnotes}
+\renewcommand{\parnotefmt}[1]{#1}% typeset as normal text
+\renewcommand{\parnotevskip}{0in}
+\@ifpackagelater{parnotes}{2016/07/26}{%
+  \renewcommand{\theparnotemark}{\fnsymbol{parnotemark}}
+  \renewcommand{\parnotecusmarkfmt}[1]{\textsuperscript{\normalfont\footnotesize{#1}}}
+}{%
+  \renewcommand{\parnotemarkfmt}[1]{\textsuperscript{\normalfont\footnotesize\fnsymbol{#1}}}
+}
+% patch the following command in order to get rid of space after symbol
+\patchcmd{\PN@parnote@real}{\thinspace}{}{}{}
+\renewcommand{\thanks}[1]{\,\parnote{#1}\hspace{-.16667em}}
+\renewcommand{\maketitle}{%
+%\begin{titlepage}
+\thispagestyle{empty}
+\begin{adjustwidth}{-\overhang}{0mm}
+ {\huge\bfhelvet\color{BiocBlue}\@title\unskip\strut\par}
+\end{adjustwidth}
+\addvspace{3.5ex plus 0.5ex minus 0.25ex}
+{\@author\unskip\strut\par}
+\parnotes
+\addvspace{2.5ex plus 0.5ex minus 0.25ex}
+{\large\bfseries\@date\unskip\strut\par}
+\addvspace{1.5ex plus 0.25ex minus 0.15ex}
+%\end{titlepage}
+}
+%% Support author affiliations
+\RequirePackage[noblocks]{authblk}
+\renewcommand\Authfont{\Large\bfseries\itshape}
+\renewcommand\Affilfont{\normalsize\mdseries\upshape}
+\makeatletter
+\renewcommand\AB@authnote[1]{\,\textsuperscript{\normalfont\footnotesize#1}}
+\makeatother
+%% Abstract
+\renewenvironment{abstract}%
+{{\bfhelvet\hskip-\overhang\abstractname\unskip\strut\par}}%
+{\par}
+%%
+\newcommand{\email}[1]{\href{mailto:#1}{\ttfamily#1}}
+\newcommand{\file}[1]{`\path{#1}'}
+%
+\newcommand{\software}[1]{\textsl{#1}}
+\newcommand\R{\software{R}}
+%
+\newcommand\Bioconductor{\software{Bioconductor}}
+\newcommand{\Rpackage}[1]{\textsl{#1}}
+\newcommand\Biocpkg[1]{%
+  {\href{http://bioconductor.org/packages/#1}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocannopkg[1]{\Biocpkg{#1}}
+\newcommand\Biocexptpkg[1]{\Biocpkg{#1}}
+\newcommand\CRANpkg[1]{%
+  {\href{https://CRAN.R-project.org/package=#1}%
+    {\Rpackage{#1}}}}
+\newcommand\Githubpkg[1]{\GithubSplit#1\relax}
+\def\GithubSplit#1/#2\relax{{\href{https://github.com/#1/#2}%
+    {\Rpackage{#2}}}}
+%
+\RequirePackage{soul} %inline code highligting
+% 
+% make the use of soul transparent to the end user by mimicking regular behavior
+\soulregister{\newline}{0}
+%
+\sethlcolor{shadecolor}
+% fine-tune inline code highlighting
+\makeatletter
+\def\SOUL@hlpreamble{%
+ \setul{}{2.05ex}% default is 2.5ex
+ \SOUL@stpreamble
+ \dimen@\SOUL@ulthickness
+ \dimen@i=-.575ex% default is -.5ex
+ \advance\dimen@i-.5\dimen@
+ \edef\SOUL@uldepth{\the\dimen@i}%
+ \let\SOUL@ulcolor\SOUL@hlcolor
+ \SOUL@ulpreamble
+}
+\makeatother
+%
+% override knitr color definitions
+%
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{0, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\definecolor{functioncolor}{RGB}{240, 112, 32}
+%
+% local redefinitions in \texttt to allow use of \`{}  and \^{} in \hl
+\renewcommand{\texttt}[2][codecolor]{{%
+ \def\`{\textasciigrave}%
+ \def\^{\textasciicircum}%
+ \textcolor{#1}{\hl{\ttfamily#2}}%
+}}
+\newcommand{\Rcode}[1]{\texttt{#1}}
+\newcommand{\Rfunction}[1]{\texttt[functioncolor]{#1}}
+\newcommand{\Robject}[1]{\Rcode{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+%
+\newcommand{\bioccomment}[2][Comment]{\textsl{\textcolor{BiocGray}{#1: #2}}}
+\newcommand{\warning}[2][Warning]{\textsl{\textcolor{BiocMagenta}{#1: #2}}}
+\newcommand{\fixme}[2][FixMe]{\textsl{\textcolor{BiocBittersweet}{#1: #2}}}
+%%
+% The placeins package provides the \FloatBarrier command.  This forces
+% LaTeX to place all of the floats before proceeding.  We'll use this to
+% keep the float (figure and table) numbers in sequence.
+\RequirePackage[section]{placeins}
+%
+\newcommand\packageVersion[1]{\par{\bfhelvet\hskip-\overhang Package}\unskip\strut\par#1\unskip\strut\par}
+% Footnotes on margin
+\RequirePackage{ragged2e}% expose \RaggedRight to 'footmisc' to allowing hyphenation
+\RequirePackage[side, ragged, flushmargin, multiple]{footmisc}
+% align the footnote mark inside the footnote body 
+\makeatletter
+\patchcmd{\@makefntext}{\llap{\@makefnmark}}{\@makefnmark}{}{}
+\makeatother
+\RequirePackage{marginfix}% prevent margin notes from overflowing the bottom margin
+% Patch the internal LaTeX macro used by \marginpar to save the current color
+% Fixes https://github.com/Bioconductor/BiocStyle/issues/5
+% and   https://github.com/shicks/marginfix/issues/13
+% Implemented using the idea from http://tex.stackexchange.com/a/247854/102422
+\makeatletter
+\long\def \@savemarbox #1#2{%
+  \global\setbox #1%
+    \color@vbox
+      \vtop{%
+        \hsize\marginparwidth
+        \@parboxrestore
+        \@marginparreset
+        \color@setgroup#2\color@endgroup%
+        \@minipagefalse
+        \outer@nobreak
+        }%
+    \color@endbox
+}
+\makeatother
+%
+%% FLOATS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+% set figure dimensions
+\RequirePackage{graphicx}
+\makeatletter
+\def\figwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\figheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\AtBeginDocument{
+ \@ifpackageloaded{pdfpages}{}{%
+  \setkeys{Gin}{width=\figwidth,height=\figheight,keepaspectratio}
+ }
+}
+%
+\def\fps@figure{htbp}
+\def\fps@table{htbp}
+%
+\RequirePackage[strict]{changepage}
+%
+\def\@biocfloat%
+#1% {type}
+#2% {placement}
+#3% {fltoffsetleft}
+#4% {fltoffsetright}
+#5% {capoffsetleft}
+#6% {capoffsetright}
+{% Uses the approach described in http://stackoverflow.com/a/1569922/2792099
+ \edef\@tempa{\noexpand\@float{#1}[#2]}
+ \@tempa
+ \addtolength{\capoffset}{#6}
+ \captionsetup{margin={#5,\capoffset}}
+ \addtolength{\textwidth}{-#3}\addtolength{\textwidth}{-#4}
+ \adjustwidth{#3}{#4}
+}
+\def\end@biocfloat{\endadjustwidth\end@float}
+%
+\newcommand{\@biocfloat@regular}[2]{%
+ \@biocfloat{#1}{#2}{\fltoffset}{0mm}{0mm}{0mm}%
+}
+\newcommand{\@biocfloat@small}[2]{%
+ \@biocfloat{#1}{#2}{2\fltoffset}{2\fltoffset}{-\fltoffset}{-2\fltoffset}%
+}
+\newcommand{\@biocfloat@wide}[2]{%
+ \@biocfloat{#1}{#2}{0mm}{-\fltoffset}{\fltoffset}{\fltoffset}
+}
+%
+\renewenvironment{table}[1][\fps@table]
+ {\@biocfloat@regular{table}{#1}}
+ {\end@biocfloat}
+\renewenvironment{table*}[1][\fps@table]
+ {\blockmargin\@biocfloat@wide{table}{#1}}
+ {\endtable\unblockmargin[1em]}
+\renewenvironment{figure}[1][\fps@figure]
+ {\@biocfloat@regular{figure}{#1}}
+ {\end@biocfloat}
+\renewenvironment{figure*}[1][\fps@figure]
+ {\blockmargin\@biocfloat@wide{figure}{#1}}
+ {\endfigure\unblockmargin[1em]}
+\newenvironment{smallfigure}[1][\fps@figure]
+ {\@biocfloat@small{figure}{#1}}
+ {\endfigure}
+% Adaption to the [H] placement provided by the 'float' package
+% http://tex.stackexchange.com/a/314261/102422
+\AtBeginDocument{
+ \@ifpackageloaded{float}{%
+  \let\float@endHorg\float@endH
+  \def\float@endH{\endadjustwidth\float@endHorg}
+ }{}
+}
+%
+% incfig macro
+%
+% Make the last argument optional by combining the ideas from 
+% http://tex.stackexchange.com/a/30561/102422 and
+% http://tex.stackexchange.com/a/118150/102422
+\newcommand{\incfig}[4][\fps@figure]{%
+ \def\incfig@args{{#1}{#2}{#3}{#4}}%
+ \incfig@
+}
+\newcommand{\incfig@}{%
+ \@ifnextchar\bgroup{\expandafter\incfig@org\incfig@args}{\expandafter\incfig@org\incfig@args{}}
+}
+\newcommand{\prefix}[1]{#1}
+\newcommand{\incfig@org}[5]{%[1:placement]{2:filename}{3:width}{4:title}{5:caption}
+ \begin{figure}[#1]%
+ \includegraphics[width=#3]{\prefix{#2}}%
+ \caption[#4]{\label{#2}#4 #5}%
+ \end{figure}%
+}
+\makeatother
+%
+%% Captions
+%
+\RequirePackage{caption}
+\DeclareCaptionFont{bfhelvet}{\bfhelvet}
+\captionsetup{%
+ font=footnotesize,%
+ labelfont=bfhelvet,%
+ justification=RaggedRight,%
+ singlelinecheck=false,%
+ margin={\fltoffset,\capoffset}% default margin used by longtable
+}
+% %% make first sentence of caption bold
+%
+% Redefine the caption environment following the suggestion in http://tex.stackexchange.com/a/242214/102422
+% 
+\makeatletter
+\ifthenelse{\boolean{BiocStyle@titlecaps}}{%
+\RequirePackage{xstring}
+\newcommand\formatlabel[1]{%
+ \noexpandarg%
+ \IfSubStr{#1}{. }{% use trailing space to avoid capturing decimal separator in numbers
+  \StrBefore{#1}{. }[\captiontitle]%
+  \StrBehind{#1}{. }[\captionbody]%
+ }{%
+  \IfEndWith{#1}{.}{\StrGobbleRight{#1}{1}[\captiontitle]}{\def\captiontitle{#1}}
+  \def\captionbody{}%
+ }%
+ {{\bfhelvet\color{BiocBlue}\captiontitle}\\\captionbody}
+}
+\AtBeginDocument{%
+ \let\org@caption\@caption
+ \def\@caption#1[#2]#3{%  
+  \org@caption{#1}[{#2}]{\formatlabel{#3}}%
+ }%
+ \@ifundefined{LT@makecaption}{}{%
+   \let\org@LT@makecaption\LT@makecaption
+   \def\LT@makecaption#1#2#3{%  
+    \org@LT@makecaption{#1}{#2}{\formatlabel{#3}}%
+   }%
+ }
+}
+% subfloat captions
+\DeclareCaptionTextFormat{nocaptiontitle}{\renewcommand\formatlabel[1]{##1}#1}
+\captionsetup[subfloat]{%
+% needed by subcaption package
+  font=footnotesize,%
+  textformat=nocaptiontitle,%
+% needed by subfigure package
+  margin=0mm}
+}{}%
+\makeatother
+%
+% TOC
+%
+% styling
+%
+\RequirePackage{titletoc}
+%
+\def\pagefont{\small\mdhelvet\color{black}}
+%
+\newlength{\rightextend}
+%\setlength{\rightextend}{20mm}
+\setlength{\rightextend}{0mm}
+%
+\titlecontents{chapter}[10mm]%
+{\addvspace{1.5\baselineskip}\large\bfhelvet\color{BiocBlue}}%
+{\contentslabel{10mm}}{}{\small\bfhelvet\color{black}\titlerule*[9pt]{.}\contentspage\hspace*{-\rightextend}}
+%
+\titlecontents{section}[10mm]%
+{\addvspace{.85\baselineskip}\large\titlefont}%
+{\contentslabel{10mm}}{}{\pagefont\titlerule*[9pt]{.}\contentspage\hspace*{-\rightextend}}
+%
+\titlecontents{subsection}[22mm]%
+{\addvspace{.35\baselineskip}\normalsize\titlefont}%
+{\contentslabel{12mm}}{}{\pagefont\titlerule*[9pt]{.}\contentspage\hspace*{-\rightextend}}
+%
+\titlecontents{subsubsection}[35mm]%
+{\small\titlefont}%
+{\contentslabel{13mm}}{}{\pagefont\titlerule*[9pt]{.}\contentspage\hspace*{-\rightextend}}
+%
+% Equation numbering
+% 
+\RequirePackage[reqno]{mathtools}
+\newtagform{brackets}[\setlength{\fboxsep}{1pt}\bfhelvet\small\color{white}\fcolorbox{BiocBlue}{BiocBlue}]{}{}
+\usetagform{brackets}
+\let\eqreforg\eqref
+\renewcommand{\eqref}[1]{\hypersetup{linkcolor=white}\eqreforg{#1}\hypersetup{linkcolor=BiocBlue}}
+%
+% References
+%
+\makeatletter
+\renewcommand{\@biblabel}[1]{[#1]\hfill}
+\makeatother
+\let\thebibliographyorg\thebibliography
+\def\thebibliography{\raggedright\thebibliographyorg}
+%
+% patch soul and ragged2e incompatibility http://tex.stackexchange.com/q/191989/102422
+%
+\makeatletter
+\newif\if@inside@soul
+\newif\if@inside@soul@ul
+\g@addto@macro\SOUL@ulpreamble{%
+  \@inside@soul@ultrue
+}
+\patchcmd\SOUL@start{\SOUL@preamble}{\@inside@soultrue\SOUL@preamble}
+  {}{\errmessage{Cannot patch \protect\SOUL@start}}
+\renewcommand{\@raggedtwoe@everyselectfont}{%
+  \if@raggedtwoe@spaceskip
+    \ifdim\fontdimen\thr@@\font=\z@\relax
+      \if@inside@soul
+        \if@inside@soul@ul
+          \spaceskip\fontdimen\tw@\font
+          \@minus\fontdimen4\font
+        \fi
+      \else
+        \spaceskip\z@
+      \fi
+    \else
+      \spaceskip\fontdimen\tw@\font
+    \fi
+  \else
+    \if@inside@soul
+      \if@inside@soul@ul
+        \spaceskip\fontdimen\tw@\font
+        \@plus\fontdimen\thr@@\font
+        \@minus\fontdimen4\font
+      \fi
+    \else
+      \spaceskip\z@
+    \fi
+  \fi
+}
+\makeatother
+%
+% apply longtable patch from http://www.latex-project.org/cgi-bin/ltxbugs2html?pr=tools/3512
+% This now appears to be included in longtable directly and is only needed for older versions
+%
+\makeatletter
+\@ifpackageloaded{longtable}{
+% Usage \@ifpackagelater{<name>}{<date>}{<yes>}{<no>}
+  \@ifpackagelater{longtable}{2020/01/07}{
+    {\wlog{Skipping longtable patch}}
+  }{
+    \patchcmd{\LT@start}{\advance\vsize}{\global\advance\vsize}
+      {\wlog{Patching longtable .}}{Cannot patch longtable \LT@start}
+    \patchcmd{\endlongtable}{\endgraf\penalty -\LT@end@pen}{\endgraf\penalty -\LT@end@pen
+      \ifvoid\LT@foot\else
+        \global\advance\vsize\ht\LT@foot
+        \global\advance\@colroom\ht\LT@foot
+        \dimen@\pagegoal\advance\dimen@\ht\LT@foot\pagegoal\dimen@
+      \fi}
+      {\wlog{Patching longtable ..}}{Cannot patch longtable \endlongtable}
+    \patchcmd{\endlongtable}{\pagegoal\vsize}{}
+      {\wlog{Patching longtable ...}}{Cannot patch longtable \endlongtable}
+    \def\LT@output{%
+      \ifnum\outputpenalty <-\@Mi
+        \ifnum\outputpenalty > -\LT@end@pen
+          \LT@err{floats and marginpars not allowed in a longtable}\@ehc
+        \else
+          \setbox\z@\vbox{\unvbox\@cclv}%
+          \ifdim \ht\LT@lastfoot>\ht\LT@foot
+            \dimen@\pagegoal
+            \advance\dimen@\ht\LT@foot
+            \advance\dimen@-\ht\LT@lastfoot
+            \ifdim\dimen@<\ht\z@
+              \setbox\@cclv\vbox{\unvbox\z@\copy\LT@foot\vss}%
+              \@makecol
+              \@outputpage
+              \global\vsize\@colroom
+              \setbox\z@\vbox{\box\LT@head}%
+            \fi
+          \fi
+          \unvbox\z@\ifvoid\LT@lastfoot\copy\LT@foot\else\box\LT@lastfoot\fi
+        \fi
+      \else
+        \setbox\@cclv\vbox{\unvbox\@cclv\copy\LT@foot\vss}%
+        \@makecol
+        \@outputpage
+          \global\vsize\@colroom
+        \copy\LT@head\nobreak
+      \fi}
+    \wlog{Patching longtable done!}
+  }
+}{}
+%
+%
+\endinput
+
