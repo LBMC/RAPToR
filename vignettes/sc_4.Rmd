@@ -1,0 +1,102 @@
+```{r, include = FALSE, eval = T}
+knitr::opts_knit$set(out.format = "html", header = "")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  out.width = '100%'
+)
+options(width=100)
+
+gen_figs <- F
+figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
+if(!file.exists(figpath)){
+  dir.create(figpath)
+}
+
+
+library(RAPToR)
+library(wormRef)
+
+library(beeswarm)
+library(parallel)
+library(RColorBrewer)
+library(viridis)
+
+library(limma)
+library(DESeq2)
+library(stats)
+
+transp <- function(col, a=.5){
+  colr <- col2rgb(col)
+  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
+}
+
+png_custom <- function(figname, path = "", 
+                       fig.width = 7, fig.height = 5, res = 150, ...){
+  png(filename = paste0(path, figname, ".png"), 
+      width = fig.width, height = fig.height, res = res, units = "in")
+}
+
+show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
+  if(gen_figs){
+    png_custom(figname = figname, path = figpath, ...)
+    eval(expr = expr)
+    dev.off()
+  }
+  else{
+    knitr::include_graphics(paste0(path, figname, ".png"))
+  }
+}
+```
+
+
+Write intro here on variable confusion with devpt.
+
+
+## The data
+
+@miki2017two profiled *C. elegans* time-series of late-larval development in wild-type (WT) and *xrn-2* mutants, hereafter called `dsmiki2017` (Accession : [GSE97775](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97775)). 
+
+After defining a gold-standard set of Differentially Expressed (DE) genes using mutant and WT samples of matching age, we can select non-matching sample groups to evaluate the effect of an age difference on the DE analysis.
+
+
+
+#### {.tabset}
+
+<a name="code-gen_dsmiki2017"></a>
+  
+Code to generate `dsmiiki2017` :
+  
+##### Hide
+  
+##### Show
+
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+
+```{r sc4_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+library("GEOquery") # May need to be installed with bioconductor
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+```
+
+###### `dsmiki2017`
+```{r sc4_load_dsmiki_c, code = readLines("load_dsmiki2017.R"), echo = TRUE, eval = FALSE}
+```
+
+<br>
+
+
+```{r sc4_load, include=F, eval=gen_figs}
+load("../inst/extdata/dsmiki2017.RData")
+```
+
+## Normalization
+
+```{r sc4_qnormlog, eval = gen_figs}
+dsmiki2017$g <- limma::normalizeBetweenArrays(dsmiki2017$g, method = "quantile")
+dsmiki2017$g <- log1p(dsmiki2017$g)
+```
