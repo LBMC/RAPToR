@@ -4,47 +4,16 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.align = "center",
-  out.width = '100%'
+  out.width = '100%',
+  cache=T
 )
 options(width=100)
 
-gen_figs <- F
-figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
-if(!file.exists(figpath)){
-  dir.create(figpath)
-}
-
-
-library(RAPToR)
-library(RColorBrewer)
-library(beeswarm)
-library(parallel)
-library(vioplot)
-
-library(limma)
-requireNamespace("wormRef")
-library(stats)
+gen_figs <- T
 
 transp <- function(col, a=.5){
   colr <- col2rgb(col)
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
-}
-
-png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 150, ...){
-  png(filename = paste0(path, figname, ".png"), 
-      width = fig.width, height = fig.height, res = res, units = "in")
-}
-
-show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
-  if(gen_figs){
-    png_custom(figname = figname, path = figpath, ...)
-    eval(expr = expr)
-    dev.off()
-  }
-  else{
-    knitr::include_graphics(paste0(path, figname, ".png"))
-  }
 }
 ```
 
@@ -54,44 +23,27 @@ This results in better model fits and consequently better power to detect DE gen
 In this section, we show that even time-series designs benefit from this approach thanks to unsynchronized replicates.
 
 
-## The data
+## Data and strategy
 
-The data in this example is a *C. elegans* microarray profiling experiment by @lehrbach2012post, hereafter called `dslehrbach2012` (Accession : [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). 
+@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* (`mut`) mutants at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-dslehrbach2012). 
 
+Given the time-series experimental design, finding Differential Expression (DE) of genes between strains requires including development in the model.
+This is true in any time series context, even more here because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (@snoek2014rapid).
 
-The experimental setup is the following. 
-Two *C. elegans* strains : wild-type (`wt`) and *pash-1(mj100)* (`mut`) were profiled at 0, 6, 12 and 24 hours past the L4 stage (~ 50 hours post-hatching at 20°C). Each condition was profiled in triplicates.
+```{r sc1_libload, message=FALSE, warning=FALSE}
+library(RAPToR)
+library(wormRef)
 
-Here, finding Differential Gene Expression (DE) between strains relies on the inclusion of the effect of development.
-This is true in any time series context, even more so in this case because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (@snoek2014rapid).
+library(stats)
+library(parallel)
+library(limma)
 
-#### {.tabset}
-
-<a name="code-gen_ds1-ds2"></a>
-  
-Code to generate `dslehrbach2012` :
-  
-##### Hide
-  
-##### Show
-
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
-
-```{r sc1_load_namespaces, eval = F}
-data_folder <- "../inst/extdata/"
-
-library("biomaRt") # May need to be installed with bioconductor
-library("limma")   # ..
-library("affy")    # ..
-library("gcrma")   # ..
-
-requireNamespace("wormRef", quietly = T)
-requireNamespace("utils", quietly = T)
+# for plotting
+library(RColorBrewer)
+library(beeswarm)
+library(vioplot)
 ```
 
-###### `dslehrbach202`
-```{r sc1_load_dslehrbach_c, code = readLines("load_dslehrbach2012.R"), echo = TRUE, eval = FALSE}
-```
 
 <br>
 
@@ -100,169 +52,103 @@ requireNamespace("utils", quietly = T)
 load("../inst/extdata/dslerhbach2012.RData")
 ```
 
-## Normalization
+
+
+
+## Estimating sample age
+
+We start by applying a quantile-normalization and $log(X+1)$ transformation to the data.
 
 ```{r sc1_qnormlog, eval = gen_figs}
 dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, method = "quantile")
 dslehrbach2012$g <- log1p(dslehrbach2012$g)
 ```
 
+Next, we select a reference and stage the samples. Since sample (chronological) age ranges from the fourth larval molt (L4) to 24h past L4, we select `Cel_YA_2` from `wormRef` that covers this range.
 
-## Staging the samples
+```{r sc1_ae_lb, eval=gen_figs,  class.source = 'fold-show'}
+# load reference
+r_ya <- prepare_refdata("Cel_YA_2", "wormRef", 400)
 
-The sample (chronological) ages range from the fourth larval molt (L4) to 24h past L4.
-The `Cel_YA_2` reference from `wormRef` covers this range, so we'll select it to stage the samples.
-
-```{r sc1_ae_lb, eval=gen_figs}
-r_ya <- prepare_refdata("Cel_YA_2", datapkg = "wormRef", n.inter = 200)
-
-ae_dslb <- ae(dslehrbach2012$g, r_ya)
+# estimate sample age
+ae_lerhbach <- ae(dslehrbach2012$g, r_ya)
 ```
 
 
 
-```{r sc1_plot_ae, fig.width=8, fig.height=6,  echo = F, out.width="80%"}
-show_fig(expr = { 
-  plot(ae_dslb, groups = as.factor(dslehrbach2012$p$tpastL4), subset = rev(1:24), 
-     main = "Sample age estimates, grouped by time point", 
-     lmar = 7, col = c(2,1)[dslehrbach2012$p$strain])
-}, fig.width=8, fig.height=6)
+```{r sc1_plot_ae, fig.width=7, fig.height=5, echo = F, out.width="80%", class.source = 'fold-show'}
+plot(ae_lerhbach, groups = as.factor(dslehrbach2012$p$tpastL4),
+     main = "Lerhbach et al. (2012) samples, grouped by time point",
+     subset = rev(1:24), lmar = 7, col = c(2,1)[dslehrbach2012$p$strain])
 ```
 
-We can see quite a lot of variation in the sample timings, especially at the 0 and 6 hour timepoints.
-Another interesting effect can be seen when grouping the samples by replicate.
+We can see quite a lot of variation in the sample timings, especially at the 0- and 6-hour time points.
 
-```{r sc1_plot_ae2, fig.width=8, fig.height=6,  echo = F, out.width="80%"}
-show_fig(expr = {
-plot(ae_dslb, groups = dslehrbach2012$p$rep, subset = rev(1:24), 
-     main = "Sample age estimates, grouped by batch", 
-     lmar=7, col = c(2,1)[dslehrbach2012$p$strain])
-}, fig.width=8, fig.height=6)
+
+Another curious effect can be noted, easier to see when grouping the samples by batch 
+In the first two replicates, mutants are systematically (and statistically significantly) older than WT, while the opposite effect is true for the third replicate.
+
+
+```{r sc1_stat_batch, class.source = 'fold-show'}
+# compute age difference between wt & mut at each time point
+isWT <- dslehrbach2012$p$strain=="wt"
+ae_dif <- ae_lerhbach$age.estimates[isWT,1] - ae_lerhbach$age.estimates[!isWT,1]
+
+# test for effect significance with a linear model
+batch <- dslehrbach2012$p$rep[isWT]
+summary(lm(ae_dif~batch))$coefficients
 ```
 
+```{r sc1_plot_ae2, fig.width=10, fig.height=5, echo = F, out.width="100%"}
+layout(matrix(1:2, nrow=1), widths = c(.7, .3))
+par(mar = c(4,5,3,1))
+plot(ae_lerhbach, groups = dslehrbach2012$p$rep, 
+     main = "Lerhbach et al. (2012) samples, grouped by batch", 
+     subset = rev(1:24), lmar=7, col = c(2,1)[dslehrbach2012$p$strain])
 
-The first two replicates have the `mut` samples consistently older than `wt`, while the opposite is true for the third replicate. This effect is statistically significant.
-
-<div style = "display:block">
-<div style="width:60%; float:left">
-<br>
-<br>
-```{r sc1_stat_batch, eval=gen_figs}
-age_dif <- ae_dslb$age.estimates[dslehrbach2012$p$strain=="wt",1] - 
-  ae_dslb$age.estimates[dslehrbach2012$p$strain!="wt",1]
-
-reps <- dslehrbach2012$p$rep[dslehrbach2012$p$strain=="wt"]
-
-summary(lm(age_dif~reps))$coefficients
-#>
-#>            Estimate  Std. Error   t value  Pr(>|t|)
-#> (Intercept) -2.216851  0.778402 -2.847949 0.0191531 *
-#> reps2       -0.936003  1.100827 -0.850272 0.4172190
-#> reps3        3.497698  1.100827  3.177335 0.0112327 *
-```
-</div>
-<div style="width:38%; float:right">
-
-```{r sc1_stat_batch_plot, fig.width=4, fig.height=5, echo=F, out.height="100%", fig.align='center'}
-show_fig(expr = {
-  par(mar = c(5,4,0,1))
-plot(age_dif~reps, 
+plot(ae_dif~batch, 
      ylab="Estimated age difference\nbetween wt and mut samples (h)", 
      xlab = "Batch", boxwex=.4);abline(h=0, lty=2, col='grey')
-}, fig.width=4, fig.height=5)
 ```
 
-</div></div>
-<div style="clear: both;"></div>
 
+## Impact of development on gene expression
 
-## The impact of development on gene expression
+Gene expression depends so strongly on development that correlation between samples is only predicted by their age difference, rather than by their genetic background. 
+The graph below shows correlation between all possible pairs of samples, with no clear effect of strain difference. 
 
 ```{r sc1_cor_dev, eval = gen_figs}
 cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
 ```
 
-By comparing the correlation between sample pairs to their age difference, we can show how development impacts overall gene expression in the data.
-
-The graph below shows this, with each point corresponding to a pair of samples and color-coding whether both samples are of the same strain or not.
 
 ```{r sc1_cor_dev_plot, fig.height=5, fig.width=5, echo = F, out.width="60%"}
-show_fig(expr = {
-  ut <- upper.tri(cc, diag = F)
-  ya <- cc[ut]
-  xa <- abs(ae_dslb$age.estimates[col(cc)[ut],1] - ae_dslb$age.estimates[row(cc)[ut],1])
-  cols <- (dslehrbach2012$p$strain[col(cc)[ut]] != dslehrbach2012$p$strain[row(cc)[ut]]) + 1
-  
-  plot(xa, ya, ylab = "Spearman correlation",
-       xlab = "Absolute estimated age difference",
-       cex=.5, xlim = range(xa),
-       lwd=2, col = cols)
-  # abline(h=0, col='grey50', lty=2)
-  legend("bottomleft", legend = c("same strain", "different strain"), 
-         title = "Sample pair of", bty = 'n', 
-         col = 1:2, pch = 1, lwd = 3, lty = NA, text.font = 2, text.col = 1:2)
-}, fig.height=5, fig.width=5)
+ut <- upper.tri(cc, diag = F)
+ya <- cc[ut]
+xa <- abs(ae_lerhbach$age.estimates[col(cc)[ut],1] - ae_lerhbach$age.estimates[row(cc)[ut],1])
+cols <- (dslehrbach2012$p$strain[col(cc)[ut]] != dslehrbach2012$p$strain[row(cc)[ut]]) + 1
+
+plot(xa, ya, ylab = "Spearman correlation",
+     xlab = "Absolute estimated age difference (h)",
+     cex=.5, xlim = range(xa),
+     lwd=2, col = cols)
+legend("topright", legend = c("same strain", "different strain"), 
+       title = "Sample pair of", bty = 'n', inset = .05,
+       col = 1:2, pch = 1, lwd = 3, lty = NA, text.font = 2, text.col = 1:2)
 ```
 
-We see the strain does not impact correlation between samples, in comparison to developmental differences.
-This is also visible through correlation heatmaps ordered by strain and chronological age, or estimated age.
-
-<br>
-
-<div style = "display:block">
-<div style="width:49%; float:left">
-```{r sc1_hm_strain, echo = F, fig.height=5, fig.width=6}
-show_fig(expr = {
-  heatmap(cc, Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
-          RowSideColors = transp(as.numeric(dslehrbach2012$p$strain)), labRow = "", labCol = "",
-          main = "Ordered by strain and chronological timepoint")
-  par(xpd = T)
-  mtext(c(unique(dslehrbach2012$p$tpastL4), ""), side = 1, line = 4, cex = .8, at = seq(0.1,.95, l = 5))
-  mtext("timepoint", side = 1, at = -.1, line = 4, cex = .8)
-}, fig.height = 5, fig.width = 6)
-```
-
-</div>
-<div style="width:49%; float:right">
-```{r sc1_hm_age, echo = F, fig.height=5, fig.width=6}
-show_fig(expr = {
-  ord2 <- order(ae_dslb$age.estimates[,1])
-  heatmap(cc[ord2, ord2], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
-          RowSideColors = transp(as.numeric(dslehrbach2012$p$strain[ord2])), labRow = "", labCol = "",
-          main = "Ordered by age estimates")
-par(xpd = T)
-
-# color key
-image(x = c(.9,.95), y = seq(0.6,1, l = 10), useRaster = T,
-      z = matrix(seq(min(cc), max(cc), l = 10), ncol = 10),
-      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-text(.925, 1.01, pos = 3, labels = expression(rho), font = 2, cex = 1.25)
-text(.95, y = seq(0.6,1, l = 10), pos = 4,
-     labels = round(seq(min(cc), max(cc), l = 10), 2), cex = .6)
-
-# strain legend
-mtext("Strain", side = 4, line = -1.25, las = 2, at = .45, adj = .5)
-mtext(text = c("wt", "mut"), side = 4, line = -1.25, at = c(.4, .45)-.06,
-      font = 2, col = transp(1:2, a = .8), las = 2, adj = .5, cex = 1.25)
-}, fig.height = 5, fig.width = 6)
-```
-</div>
-</div>
-<div style="clear: both;"></div>
-
-
-<br>
-<br>
 
 ## Differential Expression analysis
 
-We can perform a simple DE analysis with `limma`, using the following model : 
+We can perform a simple DE analysis with `limma`, with the following model : 
 
-$$X \sim strain \times \texttt{ns(age, df = 2)} $$
+$$ 
+X \sim strain \times \texttt{ns(age, df = 2)} 
+$$
 
-Non-linear dynamics in the data are taken care of by a spline with $\texttt{ns()}$.
+Non-linear expression dynamics are managed by a spline with $\texttt{ns()}$.
 
-We'll look at the number of DE genes due to development or strain, which translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
+To evaluate the number of DE genes due to development or to strain translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
 
 $$
 \begin{align}
@@ -274,16 +160,14 @@ Y & = \beta_0 + \beta_1 I_{strain}\\
 Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
 \end{align}
 $$
+We don't consider whether genes are up- or down-regulated, but only the detection of an effect. 
+Genes will be considered DE with Benjamini-Holm adjusted p-values $ < 0.05$ for corresponding coefficients.
 
-Note that we don't consider whether genes are up- or down-regulated, but only the detection of an effect. 
-Genes will be considered DE with Benjamini-Holm adjusted p.values of coefficients below $0.05$.
 
-#### {.tabset}
 DE code :
 
-##### Hide
 ##### Show
-```{r sc1_dge_setup_funcs, eval = gen_figs}
+```{r sc1_dge_setup_funcs}
 # Predictions from limma model
 pred_lmFit <- function(Fit){
   tcrossprod(Fit$coefficients, Fit$design)
@@ -301,7 +185,7 @@ GoF <- function(Fit, X){
 }
 ```
 
-```{r sc1_dge_main_func, eval = gen_figs}
+```{r sc1_dge_main_func}
 DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   require(splines)
   if(! length(strain) == ncol(X) | ! length(age) == ncol(X))
@@ -373,7 +257,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 <br>
 <br>
 
-#### {}
+
 
 To determine whether there is an improvement in DE analysis when using age estimates or chronological age, we use  *the same model* with either predictor and compare results.
 
@@ -383,7 +267,7 @@ X <- log2(exp(dslehrbach2012$g))
 
 dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, 
               name = "dge.ca", return.model = T)
-dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_dslb$age.estimates[,1], 
+dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_lerhbach$age.estimates[,1], 
               name = "dge.ae", return.model = T)
 ```
 
@@ -411,8 +295,6 @@ plot_DGE_pval_vs <- function(pv.x, pv.y,
 Below, we show adjusted p.values for detection of an effect for each gene, when using chronological or estimate age in the model. Red bars correspond to the 0.05 threshold for significance and gene counts for each quadrant are color-matched.
 
 ```{r sc1_plot_dge, echo = F, fig.height=5, fig.width=10}
-show_fig(expr = { 
-
 par(mfrow = c(1,2))
 cols <- plot_DGE_pval_vs(dge.ca$tmut$adj.P.Val, dge.ae$tmut$adj.P.Val, main = "Strain effect detection (chron. vs ae)", 
                          xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
@@ -423,7 +305,6 @@ cols <- plot_DGE_pval_vs(dge.ca$tage$adj.P.Val, dge.ae$tage$adj.P.Val, main = "D
                          xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
 # plot(dge.ca$gof, dge.ae$gof, pch = 16, cex = .4, col = cols)
 # points(dge.ca$gof[cols>1], dge.ae$gof[cols>1], pch = 16, cex = .6, col = cols[cols>1])
-}, fig.height=5, fig.width=10)
 ```
 
 ```{r dge_increase, eval = gen_figs, results='markup'}
@@ -445,36 +326,19 @@ We detect nearly *twice* as many DE genes for strain using our estimates compare
 This, along with the large proportion of genes changing with development ($57 - 62\%$) compared to strain ($7-16\%$) shows how crucial it is to properly include developmental dynamics in DE analyses.
 
 
-```{r dge_write, echo = F, eval = F, include = F}
-write.csv(data.frame(" " = rownames(dge.ca$tmut)),
-          file = "../inst/extdata/full_gl.txt", 
-          row.names = F, quote = F)
-
-
-write.csv(data.frame(" " = rownames(dge.ca$tmut)[dge.ca$tmut$adj.P.Val<0.05]),
-          file = "../inst/extdata/ca_mut_gl.txt", 
-          row.names = F, quote = F)
-
-write.csv(data.frame(" " = rownames(dge.ae$tmut)[dge.ae$tmut$adj.P.Val<0.05]),
-          file = "../inst/extdata/ae_mut_gl.txt",
-          row.names = F, quote = F)
-```
-
 
 This increase in DE genes is at least partially explained by better model fits. Below, we show the fit distribution across genes, The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
 
 ```{r sc1_gof_dist, echo = F, fig.height=4, fig.width=6, out.width="60%"}
-show_fig(expr = {
-  d.ca <- density(dge.ca$gof, from = 0, to = 1)
-  d.ae <- density(dge.ae$gof, from = 0, to = 1)
-  
-  plot(d.ca$x, d.ca$y, type = "l", lwd = 3, ylim = range(c(d.ca$y, d.ae$y)), 
-       xlab = "GoF", col = "red", ylab = "Density", main = paste("Model Goodness of Fit distribution across",nrow(X),"genes"))
-  points(d.ae$x, d.ae$y, type = 'l', col = "blue", lwd = 3) 
-  legend("bottom", lwd = 4, col = c("red", "blue"), title = "Model with",
-         legend = c("Chronological age", "Estimated age"), title.col = "black",
-         text.font = 2, text.col = c("red", "blue"), bty = 'n')
-}, fig.height = 4, fig.width = 6)
+d.ca <- density(dge.ca$gof, from = 0, to = 1)
+d.ae <- density(dge.ae$gof, from = 0, to = 1)
+
+plot(d.ca$x, d.ca$y, type = "l", lwd = 3, ylim = range(c(d.ca$y, d.ae$y)), 
+     xlab = "GoF", col = "red", ylab = "Density", main = paste("Model Goodness of Fit distribution across",nrow(X),"genes"))
+points(d.ae$x, d.ae$y, type = 'l', col = "blue", lwd = 3) 
+legend("bottom", lwd = 4, col = c("red", "blue"), title = "Model with",
+       legend = c("Chronological age", "Estimated age"), title.col = "black",
+       text.font = 2, text.col = c("red", "blue"), bty = 'n')
 ```
 
 
@@ -489,7 +353,7 @@ As done above, we compare results with the model goodness-of-fit (GoF) per gene:
 We also look at the number of DE genes found for strain and development (defined as those with a BH-adjusted p.value below 0.05).
 
 ```{r sc1_comp_dge1, eval = gen_figs}
-age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_dslb$age.estimates[,1]
+age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_lerhbach$age.estimates[,1]
 # Note : + 50 to shift tpastL4 to age, avoiding generation of negative tpastl4 values,
 #        this has no impact on the DGE analysis (it just shifts the age window).
 
@@ -516,8 +380,8 @@ points(d_ad, type = 'l', lwd = 3)
 legend("topright", legend = "Density of age_diffs", lwd = 3, bty = "n")
 # hist(age_diffs, col = transp(4), freq = F, add = T,
 #      breaks = 20)
-# plot(dslehrbach2012$p$tpastL4, ae_dslb$age.estimates[,1], type = "n", ylim = range(rd_ages))
-# points(dslehrbach2012$p$tpastL4, ae_dslb$age.estimates[,1], col = 4, lwd = 2)
+# plot(dslehrbach2012$p$tpastL4, ae_lerhbach$age.estimates[,1], type = "n", ylim = range(rd_ages))
+# points(dslehrbach2012$p$tpastL4, ae_lerhbach$age.estimates[,1], col = 4, lwd = 2)
 ```
 
 
@@ -545,8 +409,6 @@ quants <- do.call(rbind, quants)
 ```
 
 ```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=10}
-show_fig(expr = {
-
 layout(mat = matrix(c(2,3,1,1), ncol = 2), widths = c(.45,.55))
 
 plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "QQ-plot of Goodness of Fit distribution")
@@ -571,7 +433,6 @@ abline(v = sum(dge.ae$tmut$adj.P.Val < 0.05), lwd = 3, col = 4)
 hist(diffgens$age, breaks = 50, xlim = c(min(diffgens$age), 12000), main = "Nb of DE genes for devpt.", xlab = "Nb. genes")
 abline(v = sum(dge.ca$tage$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tage$adj.P.Val < 0.05), lwd = 3, col = 4)
-}, fig.height=6, fig.width=10)
 ```
 
 We can see that using the estimated age leads to better model fits and increased detection of DE genes both for strain and along development.
@@ -609,8 +470,6 @@ plot_QQGoFbox <- function(gof, bins = 10, at = seq(0,1,l = bins), boxwex = .5/bi
 ```
 
 ```{r sc1_plot_resdge4, echo = F, fig.height=8, fig.width=16}
-show_fig(expr = {
-  
 par(mfrow = c(1,2), mar = c(4,4,4,1))
 plot(0:1, 0:1, type = "n", ylab = "GoF", xlab = "quantile", main = "Goodness of Fit distribution in chron. age quantile order\n(estimated age)")
 points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
@@ -623,7 +482,29 @@ legend('bottomright', legend = c("Chronological age GoF quantiles"),
 plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = paste0("Goodness of Fit distribution in chron. age quantile order\n(joined simulated age + noise sets, n = ",n, ")"))
 points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
 plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
+```
 
-}, fig.height=8, fig.width=16)
+
+
+
+
+## Code to generate `dslehrbach2012` :
+<a name="code-gen_ds1-ds2"></a>
+  
+```{r sc1_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+library("biomaRt") # May need to be installed with bioconductor
+library("limma")   # ..
+library("affy")    # ..
+library("gcrma")   # ..
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+```
+**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+
+###### `dslehrbach202`
+```{r sc1_load_dslehrbach_c, code = readLines("load_dslehrbach2012.R"), echo = TRUE, eval = FALSE}
 ```
 
