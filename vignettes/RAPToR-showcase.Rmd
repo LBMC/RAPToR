@@ -1,16 +1,23 @@
 ---
 title: "`RAPToR` - Showcase"
 output: 
-  rmarkdown::html_document :
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    code_folding: hide
+  rmarkdown::pdf_document:
+    toc: true
+    number_sections: yes
+    includes:
+      in_header: "../inst/tex/preamble.tex"
+subtitle: "`r BiocStyle::pkg_ver('RAPToR')`"
 vignette: >
   %\VignetteIndexEntry{RAPToR-showcase}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: ../inst/REFERENCES.bib
 author: Romain Bulteau
-date: "`r format(Sys.Date(), '%B %Y')`"
+date: "`r Sys.setlocale('LC_TIME', 'C'); format(Sys.Date(), '%B %Y')`"
 ---
 
 This vignette showcases different uses for `RAPToR`.
