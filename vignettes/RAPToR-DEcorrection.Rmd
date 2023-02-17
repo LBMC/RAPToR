@@ -141,7 +141,7 @@ Using `RAPToR` reference data, we can bridge the gap between non-overlapping sam
 [@miki2017two](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5695088/) profiled time-series of *C. elegans* wild-type (WT) and *xrn-2* mutants ([GSE97775](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97775)). Code to download this data and generate the `dsmiki2017` object can be found [at the end of this vignette](#code-gen_dsmiki2017)
 
 By selecting specific samples from both time-series, we define a gold-standard of DE genes with samples of matching development.
-Then, we can evaluate the effect of increasing developmental shifts between the groups on the DE analysis by sliding the window of WT samples.
+By sliding the window of WT samples, we can then evaluate the effect of increasing developmental shifts between the groups on the DE analysis, as well as measure the advantages of integrating reference data in the analysis.
 
 
 
@@ -256,7 +256,7 @@ legend("bottomright", bty = "n", lty = 2, pch = 1, lwd = 2,
 Between two conditions 'A' and 'B' where the sample groups have developmental differences, the expression changes (or log-fold changes, logFCs) observed between the groups will be a combination of perturbation and developmental effects (**a**).
 
 We can determine the expression changes expected only from the difference in development using reference expression profiles matching the samples (**b**).
-Any correlation between observed (sample) and expected (reference) logFCs will be due to the developmental effect, with uncorrelated logFCs corresponding to the perturbation effect (**c**).
+Any correlation between observed (sample) and expected (reference) logFCs will then correspond to the developmental effect, with uncorrelated logFCs corresponding to the perturbation effect (**c**).
 
 
 ```{r sc4_include_refcompare_fig, fig.align='center', echo=F}
@@ -409,7 +409,7 @@ DE.GS <- run_DESeq2_age(g.filt[, subs$gold.standard],
 res.GS <- get_DEres(DE.GS, coefname = "strain_xrn2_vs_wt") # get results table
 ```
 
-We define genes as DE with the thresholds below.
+Genes are considered DE with the thresholds below.
 ```{r sc4_define_truth, class.source = 'fold-show'}
 # Define DE (with p < thr AND |logFC| > thr)
 thr.p <- 0.01
@@ -420,7 +420,7 @@ truth <- (res.GS$padj < thr.p) & abs(res.GS$log2FoldChange) >= thr.logFC
 table(truth)
 ```
 
-We find `r table(truth)[2]` "true" DE genes with a $p.value < `r thr.p`$ and $|logFC| > `r thr.logFC`$
+With thresholds of $p.value < `r thr.p`$ and $|logFC| > `r thr.logFC`$, we find `r table(truth)[2]` DE genes in the absence of developmental effects ("true" DE genes). 
 <br>
 <br>
 
@@ -514,7 +514,7 @@ bpnde <- function(nDE, main="", cpal = c('red', col.palette2), names= rownames(n
 
 ```
 
-```{r sc4_ndegenbp, echo=F, fig.height=5, fig.width=3, out.width="40%"}
+```{r sc4_ndegenbp, echo=F, fig.height=5, fig.width=3, out.width="35%"}
 par(mar=c(4,4,1,1))
 bpnde(nDEgen, las=2, show_in_gs = T)
 
@@ -729,11 +729,11 @@ Having defined the appropriate reference fit parameters, we can run DESeq2 while
 ```{r sc4_runDEcorr, message=FALSE, warning=FALSE, class.source='fold-show'}
 # run DESeq2 with reference data inclusion on shifted subsets
 DEref.shifts <- lapply(seq_along(subs), function(i){
-  s <-subs[[i]]
+  s <-subs[[i]]  # select sample subset
   run_DESeq2_ref(X = g.filt[, s],                # sample counts
                  p = dsmiki2017$p[s, ],          # sample pdata
                  ae_values = dsmiki2017$p$ae[s], # age estimates
-                 formula = ~strain,  # formula (age is added by the function)
+                 formula = ~strain,   # formula (age is added by the function)
                  ref = r_cel,         # ref object
                  ns.df = df_opti[i],  # df for spline fit
                  window.extend = 1)   # reference window extension
@@ -794,7 +794,7 @@ barplot(t(aucs), beside = T, col = transp(rep(c('red', col.palette2), e=2), a=c(
 axis(2, lwd.ticks = 0, labels = F, line=0) 
 title(ylab = "P/R curve AUC", line = 0.5)
 legend('topright', legend = c("no correction", "age-corrected"),
-       pt.bg = c(transp(c(1,1), a=c(0.5, 1))), pch = 22, col = 0, bty = "n", 
+       pt.bg = c(transp(c(1,1), a=c(0.3, 1))), pch = 22, col = 0, bty = "n", 
        pt.cex = 3, y.intersp = 1.1, inset = c(0, 0))
 ```
 
