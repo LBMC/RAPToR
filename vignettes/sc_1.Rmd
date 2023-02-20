@@ -19,16 +19,17 @@ transp <- function(col, a=.5){
 
 
 Including estimated age as a covariate in Differential Expression (DE) analysis can substantially reduce previously unexplained variation between samples. 
-This results in better model fits and consequently better power to detect DE genes. 
-In this section, we show that even time-series designs benefit from this approach thanks to unsynchronized replicates.
+In this example, we show that even when chronological age of different time points is known, using estimated age results in better model fits and consequently better power to detect DE genes.
 
 
 ## Data and strategy
 
 @lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-dslehrbach2012). 
 
-Given the time-series experimental design, finding Differential Expression (DE) of genes between strains requires including development in the model.
-This is true in any time series context, even more here because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (@snoek2014rapid).
+Given the time-series experimental design, searching for Differentially Expresses (DE) genes between strains requires including development in the model.
+While true in any time series context, it is particularly important here as late-larval development of *C. elegans* is known for drastic changes in gene expression within short time frames (@snoek2014rapid).
+
+Using identical DE models with either chronological age or RAPToR age estimates as covariates, we can determine which of the two is the best predictor and thus gives more power to detect differentatial expression. 
 
 ```{r sc1_libload, message=FALSE, warning=FALSE}
 library(RAPToR)
@@ -59,14 +60,15 @@ load("../inst/extdata/dslerhbach2012.RData")
 
 We start by applying a quantile-normalization and $log(X+1)$ transformation to the data.
 
-```{r sc1_qnormlog, eval = gen_figs}
-dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, method = "quantile")
+```{r sc1_qnormlog}
+dslehrbach2012$g <- limma::normalizeBetweenArrays(dslehrbach2012$g, 
+                                                  method = "quantile")
 dslehrbach2012$g <- log1p(dslehrbach2012$g)
 ```
 
 Next, we select a reference and stage the samples. Since sample (chronological) age ranges from the fourth larval molt (L4) to 24h past L4, we select `Cel_YA_2` from `wormRef` that covers this range.
 
-```{r sc1_ae_lb, eval=gen_figs,  class.source = 'fold-show'}
+```{r sc1_ae_lb, eval=gen_figs,  class.source = 'fold-show', warning=FALSE}
 # load reference
 r_ya <- prepare_refdata("Cel_YA_2", "wormRef", 400)
 
@@ -85,7 +87,7 @@ plot(ae_lerhbach, groups = as.factor(dslehrbach2012$p$tpastL4),
 We can see quite a lot of variation in the sample timings, especially at the 0- and 6-hour time points.
 
 
-Another curious effect can be noted, easier to see when grouping the samples by batch 
+Another curious effect can be noted, easier to see when grouping the samples by batch.
 In the first two replicates, mutants are systematically (and statistically significantly) older than WT, while the opposite effect is true for the third replicate.
 
 
@@ -96,7 +98,7 @@ ae_dif <- ae_lerhbach$age.estimates[isWT,1] - ae_lerhbach$age.estimates[!isWT,1]
 
 # test for effect significance with a linear model
 batch <- dslehrbach2012$p$rep[isWT]
-summary(lm(ae_dif~batch))$coefficients
+summary(lm(ae_dif~batch))
 ```
 
 ```{r sc1_plot_ae2, fig.width=10, fig.height=5, echo = F, out.width="100%"}
@@ -115,6 +117,7 @@ plot(ae_dif~batch,
 ## Impact of development on gene expression
 
 Gene expression depends so strongly on development that correlation between samples is only predicted by their age difference, rather than by their genetic background. 
+
 The graph below shows correlation between all possible pairs of samples, with no clear effect of strain difference. 
 
 ```{r sc1_cor_dev, eval = gen_figs}
@@ -140,15 +143,14 @@ legend("topright", legend = c("same strain", "different strain"),
 
 ## Differential Expression analysis
 
-We can perform a simple DE analysis with `limma`, with the following model : 
+We will use `limma` to perform a DE analysis with the following model: 
 
 $$ 
 X \sim strain \times \mathtt{ns(age, df = 2)} 
 $$
+where $\mathtt{age}$ will either be chronological or estimated age, and the spline $\mathtt{ns()}$ will be used to handle non-linear expression dynamics along time.
 
-Non-linear expression dynamics are managed by a spline with $\mathtt{ns()}$.
-
-To evaluate the number of DE genes due to development or to strain translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
+To find differential expression of genes along development or between strains translates to comparing the following nested models: (2) vs. (1) for development, (3) vs. (1) for strain.
 
 $$
 \begin{aligned}
@@ -160,21 +162,19 @@ Y & = \beta_0 + \beta_1 I_{strain}\\
 Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
 \end{aligned}
 $$
-We don't consider whether genes are up- or down-regulated, but only the detection of an effect. 
-Genes will be considered DE with Benjamini-Holm adjusted p-values $ < 0.05$ for corresponding coefficients.
+Genes will be considered DE with Benjamini-Holm adjusted p-values $ < 0.05$ for the corresponding coefficients.
+
+Note: for the purpose of this vignette, we don't consider whether genes are up- or down-regulated, but only if a significant effect is detected. 
 
 
-DE code :
-
-##### Show
-```{r sc1_dge_setup_funcs}
-# Predictions from limma model
+```{r sc1_dge_setup_funcs, include=F}
 pred_lmFit <- function(Fit){
+# Predictions from a limma model
   tcrossprod(Fit$coefficients, Fit$design)
 }
 
-# Compute Goodness of Fit
 GoF <- function(Fit, X){
+# Compute Goodness of Fit
   pred <- pred_lmFit(Fit)
   res <- (X - pred)
   ss <- apply(X, 1, function(ro) sum((ro - mean(ro))^2))
@@ -185,7 +185,7 @@ GoF <- function(Fit, X){
 }
 ```
 
-```{r sc1_dge_main_func}
+```{r sc1_dge_main_func, include=F}
 DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   require(splines)
   if(! length(strain) == ncol(X) | ! length(age) == ncol(X))
@@ -255,19 +255,22 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 ```
 
 <br>
-<br>
+
+We now run the same DE analysis using either chronological age or RAPToR age estimates as predictor, and compare results to determine if there is an improvement. Code for `DGE()` can be found [at the end of this section](#de-functions).
 
 
-
-To determine whether there is an improvement in DE analysis when using age estimates or chronological age, we use  *the same model* with either predictor and compare results.
-
-```{r do_dge, eval = gen_figs, results='hide'}
+```{r do_dge, eval = gen_figs, results='hide', class.source='fold-show'}
 # format gdata as log2 for limma input
 X <- log2(exp(dslehrbach2012$g))
 
-dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, 
+# with chron. age
+dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, 
+              age = dslehrbach2012$p$tpastL4, 
               name = "dge.ca", return.model = T)
-dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, age = ae_lerhbach$age.estimates[,1], 
+
+# with RAPToR ae
+dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain, 
+              age = ae_lerhbach$age.estimates[,1], 
               name = "dge.ae", return.model = T)
 ```
 
@@ -286,48 +289,50 @@ plot_DGE_pval_vs <- function(pv.x, pv.y,
   abline(v=-log10(0.05), h=-log10(0.05), col=2)
   
   legend('bottomright', legend = paste(table(cols)), text.col = 1:4,
-         text.font = 2, horiz = T, bty='n')
+         text.font = 2, horiz = T, bty='n', x.intersp = .25)
   invisible(cols)
 }
 
 ```
 
-Below, we show adjusted p.values for detection of an effect for each gene, when using chronological or estimate age in the model. Red bars correspond to the 0.05 threshold for significance and gene counts for each quadrant are color-matched.
 
-```{r sc1_plot_dge, echo = F, fig.height=5, fig.width=10}
+```{r sc1_plot_dge, echo = F, fig.height=4.5, fig.width=9, out.width="90%"}
 par(mfrow = c(1,2))
 cols <- plot_DGE_pval_vs(dge.ca$tmut$adj.P.Val, dge.ae$tmut$adj.P.Val, main = "Strain effect detection (chron. vs ae)", 
                          xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
-# plot(dge.ca$gof, dge.ae$gof, pch = 16, cex = .4, col = cols)
-# points(dge.ca$gof[cols>1], dge.ae$gof[cols>1], pch = 16, cex = .6, col = cols[cols>1])
 
 cols <- plot_DGE_pval_vs(dge.ca$tage$adj.P.Val, dge.ae$tage$adj.P.Val, main = "Development effect detection (chron. vs ae)",
                          xlab = "-log10(pval) with chron. age", ylab = "-log10(pval) with ae")
-# plot(dge.ca$gof, dge.ae$gof, pch = 16, cex = .4, col = cols)
-# points(dge.ca$gof[cols>1], dge.ae$gof[cols>1], pch = 16, cex = .6, col = cols[cols>1])
 ```
 
+Estimated age shows a clear increase in performance over chronological age when comparing adjusted p-values of each gene for detection of an effect. Red bars in the plots above correspond to the $0.05$ threshold for significance and color-coded gene counts for each quadrant are indicated in the bottom-right.
+
+
+
 ```{r dge_increase, eval = gen_figs, results='markup'}
+# compute nb. of DE genes for mutation
 mut_dif.ca <- sum(dge.ca$tmut$adj.P.Val < 0.05)
 mut_dif.ae <- sum(dge.ae$tmut$adj.P.Val < 0.05)
 
+# compute nb. of DE genes for development
 age_dif.ca <- sum(dge.ca$tage$adj.P.Val < 0.05)
 age_dif.ae <- sum(dge.ae$tage$adj.P.Val < 0.05)
 
+# percentage increase of mutation DE genes
 100 * (mut_dif.ae - mut_dif.ca) / (mut_dif.ca) # mut pct increase 
-#> [1] 96.39528
 
+# percentage increase of development DE genes
 100 * (age_dif.ae - age_dif.ca) / (age_dif.ca) # age pct increase
 #> [1] 7.674787
 
 ```
 
-We detect nearly *twice* as many DE genes for strain using our estimates compared to using the chronological age, and around $8\%$ more genes with development. 
-This, along with the large proportion of genes changing with development ($57 - 62\%$) compared to strain ($7-16\%$) shows how crucial it is to properly include developmental dynamics in DE analyses.
+Indeed, we detect nearly *twice* as many DE genes for strain using RAPToR age estimates compared to chronological age, and around $8\%$ more genes with development. 
+Furthermore, the large proportion of genes changing with development ($57 - 62\%$) compared to strain ($7-16\%$) also shows how crucial it is to properly model developmental dynamics in DE analyses.
 
 
 
-This increase in DE genes is partially explained by better model fits, shown below by the goodness-of-fit (GoF) distribution across genes. The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
+The increase in DE genes is partially explained by better model fits, shown below by the goodness-of-fit (GoF) distribution across genes. The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
 
 ```{r sc1_gof_dist, echo = F, fig.height=4, fig.width=6, out.width="60%"}
 d.ca <- density(dge.ca$gof, from = 0, to = 1)
@@ -342,52 +347,35 @@ legend("bottom", lwd = 4, col = c("red", "blue"), title = "Model with",
 ```
 
 
-## Comparing model fit between chronological age, estimated age, and random noise on chronological age
+## Further support for the increase in performance
 
+If the asynchronicity that RAPToR detects between samples is erroneous, then adding random noise around the chronological age values should yield similar results to using our age estimates in the model.
+To test this, we simulate age sets with added noise of similar distribution to the age differences observed between chronological and estimated age.
 
-If the asynchronicity we observe in age estimates is erroneous, then using random noise around the chronological age values should yield similar results to using our age estimates in the model.
-To test this, we can simulate age sets with added noise of similar distribution to the age differences observed between chronological and estimated age.
+```{r sc1_comp_dge1, class.source = 'fold-show'}
+set.seed(10) # for reproducibility
 
-As done above, we compare results with the model goodness-of-fit (GoF) per gene: an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$.
-
-We also look at the number of DE genes found for strain and development (defined as those with a BH-adjusted p.value below 0.05).
-
-```{r sc1_comp_dge1, eval = gen_figs}
 age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_lerhbach$age.estimates[,1]
-# Note : + 50 to shift tpastL4 to age, avoiding generation of negative tpastl4 values,
-#        this has no impact on the DGE analysis (it just shifts the age window).
+# Note : we add 50 to shift tpastL4 to the age values and avoid negative 
+#        tpastl4 values. This has no impact on the DGE analysis.
+
 
 # estimate density function of age_diffs
 d_ad <- density(age_diffs)
-
-# generate age sets of with random age_diffs-like noise 
-set.seed(10)
-
+# generate 100 age sets of with random age_diffs-like noise 
 n <- 100
 rd_ages <- lapply(seq_len(n), function(i){
-  (dslehrbach2012$p$tpastL4 + 50) + sample(x = d_ad$x, size = nrow(dslehrbach2012$p), prob = d_ad$y, replace = T) 
+  (dslehrbach2012$p$tpastL4 + 50) + 
+    sample(x = d_ad$x, size = nrow(dslehrbach2012$p), 
+           prob = d_ad$y, replace = T) 
 })
-
 ```
 
+As done above, we run identical DE models and compare results with the model goodness-of-fit (GoF) per gene and look at the number of DE genes found for strain and development (DE with BH-adjusted p-value $< 0.05$).
 
-```{r sc1_comp_dge1bis, eval = F, include = F}
-# plot(density(unlist(lapply(rd_ages, function(a) a - 50- dslehrbach2012$p$tpastL4))))
-hist(unlist(lapply(rd_ages, function(a) a - 50 - dslehrbach2012$p$tpastL4)),
-     border = transp(1, 0.4), breaks = 50, freq = F, 
-     main = "Simulated age differences", xlab = "Age difference")
-points(d_ad, type = 'l', lwd = 3)
-legend("topright", legend = "Density of age_diffs", lwd = 3, bty = "n")
-# hist(age_diffs, col = transp(4), freq = F, add = T,
-#      breaks = 20)
-# plot(dslehrbach2012$p$tpastL4, ae_lerhbach$age.estimates[,1], type = "n", ylim = range(rd_ages))
-# points(dslehrbach2012$p$tpastL4, ae_lerhbach$age.estimates[,1], col = 4, lwd = 2)
-```
-
-
-```{r sc1_comp_dge2, eval = gen_figs, results='hide'}
+```{r sc1_comp_dge2, eval = F, results='hide', class.source="fold-show"}
 # setup cluster for parallelization
-cl <- makeCluster(3, "FORK")
+cl <- parallel::makeCluster(6, "FORK")
 
 # do DGE on all age sets
 rd_dges <- parLapply(cl, seq_len(n), function(i){
@@ -400,7 +388,8 @@ gc()
 ```
 
 
-```{r sc1_format_forplot, echo = F, eval=gen_figs}
+```{r sc1_format_forplot}
+# get quantiles of GoF for plotting
 qts <- seq(0,1, length.out = 100)
 quants <- lapply(seq_len(n), function(i){
   quantile(rd_dges[[i]]$gof, probs = qts)
@@ -408,7 +397,7 @@ quants <- lapply(seq_len(n), function(i){
 quants <- do.call(rbind, quants)
 ```
 
-```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=10}
+```{r sc1_plot_resdge, echo = F, fig.height=6, fig.width=10, out.width="100%"}
 layout(mat = matrix(c(2,3,1,1), ncol = 2), widths = c(.45,.55))
 
 plot(0:1, 0:1, type = "n", ylab = "GoF >= quantile", xlab = "quantile", main = "QQ-plot of Goodness of Fit distribution")
@@ -435,15 +424,12 @@ abline(v = sum(dge.ca$tage$adj.P.Val < 0.05), lwd = 3, col = 2)
 abline(v = sum(dge.ae$tage$adj.P.Val < 0.05), lwd = 3, col = 4)
 ```
 
-We can see that using the estimated age leads to better model fits and increased detection of DE genes both for strain and along development.
+We can see that using estimated age systematically leads to better model fits and increased detection of DE genes both for strain and development.
 
-Below, GoF distributions ordered by chronological age quantiles (binned along the quantile scale) and shown as boxplots also clearly show that for the same genes, we tend to have better fits with estimated age than chronological age, while that is not the case when adding noise.
+Gene GoF using estimated age and binned by chronological age GoF quantiles (below, left) also clearly shows that for the same genes, we tend to have better fits with estimated age, while that is not the case when adding noise.
 
-```{r sc1_plot_resdge2, echo = F, eval = gen_figs}
+```{r sc1_plot_resdge2, echo = F}
 ord <- order(dge.ca$gof)
-# par(mfrow = c(1,1))
-# plot(dge.ca$gof[ord], type = 'l')
-
 
 gofs <- lapply(seq_len(n), function(i){
   rd_dges[[i]]$gof[ord]
@@ -451,7 +437,7 @@ gofs <- lapply(seq_len(n), function(i){
 gofs <- do.call(rbind, gofs)
 ```
 
-```{r sc1_plot_resdge3, echo = F, eval = gen_figs}
+```{r sc1_plot_resdge3, echo = F}
 plot_QQGoFbox <- function(gof, bins = 10, at = seq(0,1,l = bins), boxwex = .5/bins, add = F, plotargs = list(), ...){
   grps <- cut(1:length(gof), bins)
   
@@ -469,7 +455,7 @@ plot_QQGoFbox <- function(gof, bins = 10, at = seq(0,1,l = bins), boxwex = .5/bi
 }
 ```
 
-```{r sc1_plot_resdge4, echo = F, fig.height=8, fig.width=16}
+```{r sc1_plot_resdge4, echo = F, fig.height=6, fig.width=12, out.width="100%"}
 par(mfrow = c(1,2), mar = c(4,4,4,1))
 plot(0:1, 0:1, type = "n", ylab = "GoF", xlab = "quantile", main = "Goodness of Fit distribution in chron. age quantile order\n(estimated age)")
 points(qts, quantile(dge.ca$gof, probs = qts), type = "l", lwd = 4, col = 2)
@@ -487,10 +473,9 @@ plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
 
 
 
+## Functions and code
+### Code to generate `dslehrbach2012` :
 
-## Code to generate `dslehrbach2012` :
-<a name="code-gen_ds1-ds2"></a>
-  
 ```{r sc1_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
 
@@ -502,9 +487,20 @@ library("gcrma")   # ..
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
 ```
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
+*Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
 
-###### `dslehrbach202`
 ```{r sc1_load_dslehrbach_c, code = readLines("load_dslehrbach2012.R"), echo = TRUE, eval = FALSE}
+```
+
+### DE functions
+
+Functions to compute predictions (`pred_lmFit()`) and Goodness-of-fit (`GoF()`) from `limma` models.
+```{r sc1_dge_setup_funcs, eval=F}
+```
+
+
+Function to run DE analysis with `limma`, as described in [Differential Expression analysis](#differential-expression-analysis) (`DGE()`).
+
+```{r sc1_dge_main_func, eval=F}
 ```
 
