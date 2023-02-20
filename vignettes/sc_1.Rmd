@@ -25,7 +25,7 @@ In this section, we show that even time-series designs benefit from this approac
 
 ## Data and strategy
 
-@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* (`mut`) mutants at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-dslehrbach2012). 
+@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-dslehrbach2012). 
 
 Given the time-series experimental design, finding Differential Expression (DE) of genes between strains requires including development in the model.
 This is true in any time series context, even more here because late-larval development of *C. elegans* is known for drastic changes in gene expression within a short time frame (@snoek2014rapid).
@@ -143,22 +143,22 @@ legend("topright", legend = c("same strain", "different strain"),
 We can perform a simple DE analysis with `limma`, with the following model : 
 
 $$ 
-X \sim strain \times \texttt{ns(age, df = 2)} 
+X \sim strain \times \mathtt{ns(age, df = 2)} 
 $$
 
-Non-linear expression dynamics are managed by a spline with $\texttt{ns()}$.
+Non-linear expression dynamics are managed by a spline with $\mathtt{ns()}$.
 
 To evaluate the number of DE genes due to development or to strain translates to comparing the following nested models (2 vs. 1 for development, 3 vs. 1 for strain).
 
 $$
-\begin{align}
+\begin{aligned}
 Y & = \beta_0 +
 \beta_1 I_{strain} +
 (\alpha_1 age_{sp1} + \alpha_2 age_{sp2}) +
 (\gamma_1 I_{strain} age_{sp1} + \gamma_2 I_{strain} age_{sp2})\\
 Y & = \beta_0 + \beta_1 I_{strain}\\
 Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
-\end{align}
+\end{aligned}
 $$
 We don't consider whether genes are up- or down-regulated, but only the detection of an effect. 
 Genes will be considered DE with Benjamini-Holm adjusted p-values $ < 0.05$ for corresponding coefficients.
@@ -262,7 +262,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 To determine whether there is an improvement in DE analysis when using age estimates or chronological age, we use  *the same model* with either predictor and compare results.
 
 ```{r do_dge, eval = gen_figs, results='hide'}
-# format gdata
+# format gdata as log2 for limma input
 X <- log2(exp(dslehrbach2012$g))
 
 dge.ca <- DGE(X = X, strain = dslehrbach2012$p$strain, age = dslehrbach2012$p$tpastL4, 
@@ -327,7 +327,7 @@ This, along with the large proportion of genes changing with development ($57 - 
 
 
 
-This increase in DE genes is at least partially explained by better model fits. Below, we show the fit distribution across genes, The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
+This increase in DE genes is partially explained by better model fits, shown below by the goodness-of-fit (GoF) distribution across genes. The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
 
 ```{r sc1_gof_dist, echo = F, fig.height=4, fig.width=6, out.width="60%"}
 d.ca <- density(dge.ca$gof, from = 0, to = 1)
