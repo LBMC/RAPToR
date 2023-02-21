@@ -8,278 +8,218 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- F
-figpath <- "../inst/cdoc/RAPToR-showcase_figs/"
-if(!file.exists(figpath)){
-  dir.create(figpath)
-}
-
-
-library(RAPToR)
-library(RColorBrewer)
-library(beeswarm)
-library(parallel)
-library(vioplot)
-
-library(limma)
-requireNamespace("wormRef")
-library(stats)
+gen_figs <- T
 
 transp <- function(col, a=.5){
   colr <- col2rgb(col)
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
 }
 
-png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 150, ...){
-  png(filename = paste0(path, figname, ".png"), 
-      width = fig.width, height = fig.height, res = res, units = "in")
-}
-
-show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
-  if(gen_figs){
-    png_custom(figname = figname, path = figpath, ...)
-    eval(expr = expr)
-    dev.off()
-  }
-  else{
-    knitr::include_graphics(paste0(path, figname, ".png"))
-  }
-}
 ```
 
-Tissues can develop at different rates in some species, and these rates can vary between individuals.
-In *C. elegans*, this developmental heterochrony has been shown between soma and germline (@perez2017maternal).
-By giving genes associated with or expressed in specific tissues to RAPToR for staging, it is possible to estimate development specific to these tissues.
+In some species, tissues can develop at different rates, and these rates can vary between individuals.
+In *C. elegans*, @perez2017maternal have shown such developmental heterochrony between soma and germline.
 
-### The data
+By restricting genes used by RAPToR for staging to the genes associated with (or expressed in) specific tissues, it is possible to estimate development specific to these tissues.
 
-@rockman2010selection published microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains. 
-These 208 samples were described as *"developmentally synchronized"* in the original paper. 
-However, @francesconi2014effects later showed there is significant developmental spread between samples, spanning around 20 hours of 20°C late larval development, essentially making this data a very high-resolution time course hereafter called `dsrockman2010`.
+## Data and strategy
 
-We build a `germline` set of 2554 genes by combining the `germline_intrinsic`, `germline_oogenesis_enriched`, and `germline_sperm_enriched` categories defined in @perez2017maternal.
-We also define a `soma` set of 2718 genes from the `osc` (molting) gene category defined in @hendriks2014extensive.
+@rockman2010selection published microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains (Accession: [GSE23857](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE23857), `dsrockman2010`). 
+These 208 samples were described as *"developmentally synchronized"* in the original article. 
+However, @francesconi2014effects later showed there is significant developmental spread between samples, spanning around 20 hours of 20°C late-larval development, essentially making this dataset a very high-resolution time course.
+
+<br>
+We will start by staging samples with all available genes to get their "***global age***".
+
+Then, we stage samples a second time, but restricting the input to a `germline` set of 2554 genes by combining the `germline_intrinsic`, `germline_oogenesis_enriched`, and `germline_sperm_enriched` categories defined in @perez2017maternal (based on previous work by @reinke2004genome). This will give us a ***germline age*** for the samples.
+
+Staging the samples a third time, with a `soma` set of 2718 genes from the `osc` (molting) gene category defined in @hendriks2014extensive, will give us the ***soma age***.
 
 <br>
 
-#### {.tabset}
-
-Code to generate `dsrockman2010`, `francesconi_time` and `gsubset`.
-
-##### Hide
-
-##### Show
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
-
-```{r sc3_load_namespaces, eval = F}
-data_folder <- "../inst/extdata/"
-
-requireNamespace("wormRef", quietly = T)
-requireNamespace("utils", quietly = T)
-requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
-requireNamespace("Biobase", quietly = T)
-requireNamespace("limma", quietly = T)
-```
-
-```{r sc3_load_rockman_c, code = readLines("load_dsrockman2010.R"), echo = TRUE, eval=FALSE}
-```
-
-
-```{r sc3_load_genesets_c, eval = F}
-library(readxl)
-germline_url <- "https://static-content.springer.com/esm/art%3A10.1038%2Fnature25012/MediaObjects/41586_2017_BFnature25012_MOESM3_ESM.xlsx"
-germline_file <- paste0(data_folder, "germline_gset.xlsx")
-utils::download.file(url = germline_url, destfile = germline_file)
-
-germline_set <- read_xlsx(germline_file, sheet = 3, na = "NA")[,c(1, 44:46)]
-germline_set[is.na(germline_set)] <- FALSE
-germline_set <- cbind(wb_id = germline_set[,1], 
-                      germline = apply(germline_set[, 2:4], 1, function(r) any(r)),
-                      germline_set[, 2:4])
-# germline_set$germline[is.na(germline_set$germline)] <- FALSE
-germline <- germline_set[germline_set$germline,1]
-germline_intrinsic <- germline_set[germline_set$germline_intrinsic,1]
-germline_oogenesis <- germline_set[germline_set$germline_oogenesis_enriched,1]
-germline_sperm <- germline_set[germline_set$germline_sperm_enriched,1]
-
-
-soma_url <- "https://ars.els-cdn.com/content/image/1-s2.0-S1097276513009039-mmc2.xlsx"
-soma_file <- paste0(data_folder, "soma_gset.xlsx")
-utils::download.file(url = soma_url, destfile = soma_file)
-
-soma_set <- read_xlsx(soma_file, skip = 3, na = "NA")[,c(1, 4)]
-soma_set$class <- factor(soma_set$class)
-
-soma_set$soma <- soma_set$class == "osc"
-soma_set <- soma_set[soma_set$soma, 1]
-
-gsubset <- list(germline = germline, soma = soma_set$`Gene WB ID`, 
-                germline_intrinsic = germline_intrinsic,
-                germline_oogenesis = germline_oogenesis,
-                germline_sperm = germline_sperm)
-
-save(gsubset, file = paste0(data_folder, "sc3_gsubset.RData"), compress = "xz")
-
-file.remove(germline_file)
-file.remove(soma_file)
-rm(germline_url, germline_file, germline_set, soma_url, soma_file, soma_set)
-```
-
-```{r sc3_load_francesc_age, eval = gen_figs}
-# Copied from supp data of Francesconi & Lehner (2014)
-
-francesconi_time <- data.frame(time = 
-  c(4.862660944, 4.957081545, 5.051502146, 5.145922747, 5.240343348, 5.334763948, 5.429184549, 5.52360515,
-    5.618025751, 5.712446352, 5.806866953, 5.901287554, 5.995708155, 6.090128755, 6.184549356, 6.278969957,
-    6.373390558, 6.467811159, 6.56223176, 6.656652361, 6.751072961, 6.845493562, 6.939914163, 7.034334764,
-    7.128755365, 7.223175966, 7.317596567, 7.412017167, 7.506437768, 7.600858369, 7.69527897, 7.789699571,
-    7.884120172, 7.978540773, 8.072961373, 8.167381974, 8.261802575, 8.356223176, 8.450643777, 8.545064378, 
-    8.639484979, 8.733905579, 8.82832618, 8.82832618, 8.82832618, 8.875536481, 8.875536481, 8.875536481,
-    8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.969957082, 9.017167382,
-    9.017167382, 9.064377682, 9.064377682, 9.111587983, 9.206008584, 9.206008584, 9.206008584, 9.300429185, 
-    9.394849785, 9.489270386, 9.489270386, 9.489270386, 9.489270386, 9.489270386, 9.583690987, 9.583690987, 
-    9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.630901288, 9.725321888, 
-    9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 9.91416309, 
-    10.00858369, 10.05579399, 10.05579399, 10.05579399, 10.05579399, 10.10300429, 10.19742489, 10.19742489, 
-    10.29184549, 10.29184549, 10.29184549, 10.38626609, 10.38626609, 10.38626609, 10.43347639, 10.43347639, 
-    10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 
-    10.43347639, 10.43347639, 10.527897, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 
-    10.6223176, 10.6695279, 10.6695279, 10.6695279, 10.7639485, 10.7639485, 10.7639485, 10.8583691, 10.8583691, 
-    10.9527897, 10.9527897, 10.9527897, 11.0472103, 11.1416309, 11.2360515, 11.2360515, 11.3304721, 11.3304721, 
-    11.3776824, 11.472103, 11.56652361, 11.66094421, 11.75536481, 11.84978541, 11.94420601, 12.03862661, 12.13304721, 
-    12.22746781, 12.32188841, 12.41630901, 12.51072961, 12.60515021, 12.69957082, 12.79399142, 12.88841202, 12.98283262, 
-    13.07725322, 13.17167382, 13.26609442, 13.36051502, 13.45493562, 13.54935622, 13.54935622, 13.54935622, 13.54935622, 
-    13.54935622, 13.59656652, 13.69098712, 13.78540773, 13.78540773, 13.78540773, 13.87982833, 13.97424893, 14.06866953, 
-    14.06866953, 14.06866953, 14.16309013, 14.25751073, 14.35193133, 14.44635193, 14.54077253, 14.63519313, 14.72961373, 
-    14.82403433, 14.82403433, 14.82403433, 14.91845494, 14.96566524, 15.01287554, 15.10729614, 15.20171674, 15.29613734, 
-    15.39055794, 15.48497854, 15.57939914, 15.67381974, 15.76824034, 15.86266094, 15.95708155, 16.05150215, 16.14592275, 
-    16.24034335, 16.33476395, 16.42918455, 16.52360515),
-  geo_accession = 
-    c("GSM588291", "GSM588174", "GSM588110", "GSM588097", "GSM588271", "GSM588203", "GSM588105", "GSM588200", "GSM588123",
-      "GSM588122", "GSM588115", "GSM588100", "GSM588171", "GSM588190", "GSM588229", "GSM588206", "GSM588277", "GSM588129",
-      "GSM588175", "GSM588151", "GSM588273", "GSM588216", "GSM588099", "GSM588117", "GSM588179", "GSM588164", "GSM588184",
-      "GSM588092", "GSM588285", "GSM588272", "GSM588228", "GSM588121", "GSM588170", "GSM588194", "GSM588143", "GSM588149",
-      "GSM588156", "GSM588220", "GSM588212", "GSM588089", "GSM588209", "GSM588253", "GSM588091", "GSM588113", "GSM588130",
-      "GSM588202", "GSM588191", "GSM588244", "GSM588227", "GSM588197", "GSM588233", "GSM588292", "GSM588163", "GSM588196",
-      "GSM588224", "GSM588283", "GSM588267", "GSM588257", "GSM588221", "GSM588274", "GSM588090", "GSM588114", "GSM588195",
-      "GSM588265", "GSM588182", "GSM588093", "GSM588157", "GSM588251", "GSM588177", "GSM588188", "GSM588269", "GSM588145",
-      "GSM588205", "GSM588162", "GSM588210", "GSM588166", "GSM588125", "GSM588252", "GSM588207", "GSM588173", "GSM588102",
-      "GSM588286", "GSM588107", "GSM588238", "GSM588189", "GSM588106", "GSM588295", "GSM588192", "GSM588134", "GSM588183",
-      "GSM588103", "GSM588198", "GSM588293", "GSM588218", "GSM588259", "GSM588234", "GSM588137", "GSM588152", "GSM588133",
-      "GSM588250", "GSM588168", "GSM588235", "GSM588148", "GSM588279", "GSM588140", "GSM588241", "GSM588111", "GSM588231",
-      "GSM588128", "GSM588131", "GSM588101", "GSM588088", "GSM588281", "GSM588159", "GSM588249", "GSM588290", "GSM588118",
-      "GSM588154", "GSM588136", "GSM588268", "GSM588204", "GSM588160", "GSM588135", "GSM588098", "GSM588294", "GSM588225",
-      "GSM588181", "GSM588248", "GSM588096", "GSM588217", "GSM588147", "GSM588176", "GSM588116", "GSM588146", "GSM588127",
-      "GSM588104", "GSM588108", "GSM588262", "GSM588223", "GSM588161", "GSM588237", "GSM588172", "GSM588284", "GSM588256",
-      "GSM588165", "GSM588211", "GSM588242", "GSM588169", "GSM588240", "GSM588264", "GSM588219", "GSM588287", "GSM588124",
-      "GSM588178", "GSM588167", "GSM588258", "GSM588232", "GSM588141", "GSM588112", "GSM588208", "GSM588215", "GSM588132",
-      "GSM588278", "GSM588275", "GSM588155", "GSM588153", "GSM588109", "GSM588185", "GSM588138", "GSM588094", "GSM588226",
-      "GSM588236", "GSM588266", "GSM588119", "GSM588222", "GSM588246", "GSM588150", "GSM588261", "GSM588201", "GSM588247",
-      "GSM588186", "GSM588280", "GSM588255", "GSM588288", "GSM588260", "GSM588139", "GSM588245", "GSM588270", "GSM588276",
-      "GSM588199", "GSM588254", "GSM588120", "GSM588144", "GSM588243", "GSM588214", "GSM588180", "GSM588126", "GSM588282",
-      "GSM588187", "GSM588158", "GSM588193", "GSM588213", "GSM588230", "GSM588263", "GSM588142", "GSM588095"),
-  stringsAsFactors = F
-)
-rownames(francesconi_time) <- francesconi_time$geo_accession
-```
-
-#### {}
-
-
-### Workflow
-
-To observe the heterochrony of *C. elegans* soma and germline development, we must can capture tissue-specific age, and thus stage samples with RAPToR while restricting genes to the tissues of interest.
-
-
-First, we stage with all available genes to get the "**Global age**".
-Then, we restrict genes to the previously mentioned sets to estimate "**<span style="color:firebrick">Soma age</span>**" and "**<span style="color:royalblue">Germline age</span>**".
-
-#### Validation
-
-Since PCA or ICA components summarize the expression dynamics of the data, we can evaluate our results by plotting them along the different ages. 
+Finally, we can evaluate the results of staging using PCA or ICA components, which summarize the expression dynamics of the data. 
 For example, we can expect that components corresponding to particular tissues will have noticeably cleaner dynamics along their respective age estimates (*e.g.* oscillatory molting dynamics would be less noisy with soma age than germline age).
 
+Code to generate `dsrockman2010` (RIL expression data) and `gsubset` (germline/soma gene sets) can be found [at the end of this section](#code-to-generate-objects)
+
+```{r sc3_libload, warning=FALSE, message=FALSE}
+library(RAPToR)
+library(wormRef)
+
+library(ica)
+library(stats)
+library(limma)
+
+# for plotting
+library(vioplot)
+```
 
 
 
-### Normalization 
 ```{r sc_3_load_ds, include = F, eval = gen_figs}
 load("../inst/extdata/dsrockman2010.RData")
 load("../inst/extdata/sc3_gsubset.RData")
 ```
 
+```{r sc3_load_francesc_age, include = FALSE}
+# Copied from supp data of Francesconi & Lehner (2014)
+francesconi_time <- data.frame(
+  time = c(
+  4.862660944, 4.957081545, 5.051502146, 5.145922747, 5.240343348, 5.334763948, 
+  5.429184549, 5.52360515, 5.618025751, 5.712446352, 5.806866953, 5.901287554, 
+  5.995708155, 6.090128755, 6.184549356, 6.278969957, 6.373390558, 6.467811159, 
+  6.56223176, 6.656652361, 6.751072961, 6.845493562, 6.939914163, 7.034334764,
+  7.128755365, 7.223175966, 7.317596567, 7.412017167, 7.506437768, 7.600858369, 
+  7.69527897, 7.789699571, 7.884120172, 7.978540773, 8.072961373, 8.167381974, 
+  8.261802575, 8.356223176, 8.450643777, 8.545064378, 8.639484979, 8.733905579, 
+  8.82832618, 8.82832618, 8.82832618, 8.875536481, 8.875536481, 8.875536481,
+  8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 8.875536481, 
+  8.969957082, 9.017167382, 9.017167382, 9.064377682, 9.064377682, 9.111587983, 
+  9.206008584, 9.206008584, 9.206008584, 9.300429185, 9.394849785, 9.489270386, 
+  9.489270386, 9.489270386, 9.489270386, 9.489270386, 9.583690987, 9.583690987, 
+  9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 9.583690987, 
+  9.630901288, 9.725321888, 9.819742489, 9.819742489, 9.819742489, 9.819742489, 
+  9.819742489, 9.819742489, 9.819742489, 9.91416309, 10.00858369, 10.05579399, 
+  10.05579399, 10.05579399, 10.05579399, 10.10300429, 10.19742489, 10.19742489, 
+  10.29184549, 10.29184549, 10.29184549, 10.38626609, 10.38626609, 10.38626609, 
+  10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 
+  10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 10.43347639, 
+  10.527897, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 10.6223176, 
+  10.6223176, 10.6223176, 10.6695279, 10.6695279, 10.6695279, 10.7639485, 
+  10.7639485, 10.7639485, 10.8583691, 10.8583691, 10.9527897, 10.9527897, 
+  10.9527897, 11.0472103, 11.1416309, 11.2360515, 11.2360515, 11.3304721, 
+  11.3304721, 11.3776824, 11.472103, 11.56652361, 11.66094421, 11.75536481, 
+  11.84978541, 11.94420601, 12.03862661, 12.13304721, 12.22746781, 12.32188841, 
+  12.41630901, 12.51072961, 12.60515021, 12.69957082, 12.79399142, 12.88841202, 
+  12.98283262, 13.07725322, 13.17167382, 13.26609442, 13.36051502, 13.45493562, 
+  13.54935622, 13.54935622, 13.54935622, 13.54935622, 13.54935622, 13.59656652, 
+  13.69098712, 13.78540773, 13.78540773, 13.78540773, 13.87982833, 13.97424893, 
+  14.06866953, 14.06866953, 14.06866953, 14.16309013, 14.25751073, 14.35193133, 
+  14.44635193, 14.54077253, 14.63519313, 14.72961373, 14.82403433, 14.82403433, 
+  14.82403433, 14.91845494, 14.96566524, 15.01287554, 15.10729614, 15.20171674, 
+  15.29613734, 15.39055794, 15.48497854, 15.57939914, 15.67381974, 15.76824034, 
+  15.86266094, 15.95708155, 16.05150215, 16.14592275, 16.24034335, 16.33476395, 
+  16.42918455, 16.52360515),
+  geo_accession = c(
+  "GSM588291", "GSM588174", "GSM588110", "GSM588097", "GSM588271", "GSM588203", 
+  "GSM588105", "GSM588200", "GSM588123", "GSM588122", "GSM588115", "GSM588100", 
+  "GSM588171", "GSM588190", "GSM588229", "GSM588206", "GSM588277", "GSM588129",
+  "GSM588175", "GSM588151", "GSM588273", "GSM588216", "GSM588099", "GSM588117", 
+  "GSM588179", "GSM588164", "GSM588184", "GSM588092", "GSM588285", "GSM588272", 
+  "GSM588228", "GSM588121", "GSM588170", "GSM588194", "GSM588143", "GSM588149",
+  "GSM588156", "GSM588220", "GSM588212", "GSM588089", "GSM588209", "GSM588253", 
+  "GSM588091", "GSM588113", "GSM588130", "GSM588202", "GSM588191", "GSM588244", 
+  "GSM588227", "GSM588197", "GSM588233", "GSM588292", "GSM588163", "GSM588196",
+  "GSM588224", "GSM588283", "GSM588267", "GSM588257", "GSM588221", "GSM588274", 
+  "GSM588090", "GSM588114", "GSM588195", "GSM588265", "GSM588182", "GSM588093", 
+  "GSM588157", "GSM588251", "GSM588177", "GSM588188", "GSM588269", "GSM588145",
+  "GSM588205", "GSM588162", "GSM588210", "GSM588166", "GSM588125", "GSM588252", 
+  "GSM588207", "GSM588173", "GSM588102", "GSM588286", "GSM588107", "GSM588238", 
+  "GSM588189", "GSM588106", "GSM588295", "GSM588192", "GSM588134", "GSM588183",
+  "GSM588103", "GSM588198", "GSM588293", "GSM588218", "GSM588259", "GSM588234", 
+  "GSM588137", "GSM588152", "GSM588133", "GSM588250", "GSM588168", "GSM588235", 
+  "GSM588148", "GSM588279", "GSM588140", "GSM588241", "GSM588111", "GSM588231",
+  "GSM588128", "GSM588131", "GSM588101", "GSM588088", "GSM588281", "GSM588159", 
+  "GSM588249", "GSM588290", "GSM588118", "GSM588154", "GSM588136", "GSM588268", 
+  "GSM588204", "GSM588160", "GSM588135", "GSM588098", "GSM588294", "GSM588225",
+  "GSM588181", "GSM588248", "GSM588096", "GSM588217", "GSM588147", "GSM588176", 
+  "GSM588116", "GSM588146", "GSM588127", "GSM588104", "GSM588108", "GSM588262", 
+  "GSM588223", "GSM588161", "GSM588237", "GSM588172", "GSM588284", "GSM588256",
+  "GSM588165", "GSM588211", "GSM588242", "GSM588169", "GSM588240", "GSM588264", 
+  "GSM588219", "GSM588287", "GSM588124", "GSM588178", "GSM588167", "GSM588258", 
+  "GSM588232", "GSM588141", "GSM588112", "GSM588208", "GSM588215", "GSM588132",
+  "GSM588278", "GSM588275", "GSM588155", "GSM588153", "GSM588109", "GSM588185", 
+  "GSM588138", "GSM588094", "GSM588226", "GSM588236", "GSM588266", "GSM588119", 
+  "GSM588222", "GSM588246", "GSM588150", "GSM588261", "GSM588201", "GSM588247",
+  "GSM588186", "GSM588280", "GSM588255", "GSM588288", "GSM588260", "GSM588139", 
+  "GSM588245", "GSM588270", "GSM588276", "GSM588199", "GSM588254", "GSM588120", 
+  "GSM588144", "GSM588243", "GSM588214", "GSM588180", "GSM588126", "GSM588282",
+  "GSM588187", "GSM588158", "GSM588193", "GSM588213", "GSM588230", "GSM588263", 
+  "GSM588142", "GSM588095"),
+  stringsAsFactors = F)
+rownames(francesconi_time) <- francesconi_time$geo_accession
+```
 
-```{r sc3_qnorm, eval=gen_figs}
-dsrockman2010$g <- limma::normalizeBetweenArrays(dsrockman2010$g, method = "quantile")
+
+### Estimating sample global age
+
+We start by applying a quantile-normalization and $log(X+1)$ transformation to the data.
+```{r sc3_qnorm}
+dsrockman2010$g <- limma::normalizeBetweenArrays(dsrockman2010$g, 
+                                                 method = "quantile")
 dsrockman2010$g <- log1p(dsrockman2010$g)
 ```
 
-### Staging the samples (global)
+Then, we select an appropriate *C. elegans* reference (larval to young-adult), and stage the samples.
 
-We use a young-adult references for *C. elegans* to stage the samples.
-
-```{r sc3_ae, eval = gen_figs}
+```{r sc3_ae, class.source = "fold-show", warning=FALSE}
 r_ya <- prepare_refdata("Cel_YA_1", "wormRef", n.inter = 400)
 
 ae_dsrockman2010 <- ae(dsrockman2010$g, r_ya)
 ```
 
-```{r sc3_plot_ae, echo = F, fig.height=8, fig.width=6, out.width="50%"}
-show_fig(expr = {
-  plot(ae_dsrockman2010, cex = .5, lmar = 7, CIbar.width = .05)
-}, fig.height = 8, fig.width = 5)
+```{r sc3_plot_ae, echo = F, fig.height=8, fig.width=12, out.width="100%"}
+par(mfrow = c(1,2))
+plot(ae_dsrockman2010, cex = .5, lmar = 7, CIbar.width = .05,
+     main = paste0("Samples 1 - ", round((nrow(dsrockman2010$p)/2))),
+     subset=1L:round((nrow(dsrockman2010$p)/2)))
+plot(ae_dsrockman2010, cex = .5, lmar = 7, CIbar.width = .05, 
+     main = paste0("Samples ", 1+round((nrow(dsrockman2010$p)/2)), " - ", nrow(dsrockman2010$p)),
+     subset=round(1+(nrow(dsrockman2010$p)/2)):nrow(dsrockman2010$p))
 ```
 
-We find our estimates match the previously inferred ages by @francesconi2014effects.
+Our estimates confirm the wide developmental spread and match the previously inferred ages by @francesconi2014effects.
 
-```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=6, fig.width=6, out.width="60%"}
-show_fig(expr = {
-  plot(francesconi_time[dsrockman2010$p$geo_accession,"time"], ae_dsrockman2010$age.estimates[,1],
-     lwd = 2, col = "black", main = "RAPToR vs. Francesconi & Lehner (2014) age estimates",
-     xlab = "Francesconi & Lehner (2014) estimates, h past L4 stage (25°C)", ylab = "RAPToR (global) estimates, h past egg-laying (20°C)")
-}, fig.height=6, fig.width=6)
+```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=5, fig.width=5, out.width="60%"}
+plot(francesconi_time[dsrockman2010$p$geo_accession,"time"], 
+     ae_dsrockman2010$age.estimates[,1],
+     lwd = 2, col = "black",
+     main = "RAPToR vs. Francesconi & Lehner (2014) age",
+     xlab = "Francesconi & Lehner (2014) estimates, h past L4 stage (25°C)",
+     ylab = "RAPToR (global) estimates, h past egg-laying (20°C)")
+text(6.5, 67.5, 
+     labels=paste0("r = ",round(cor(na.omit(cbind(
+       francesconi_time[dsrockman2010$p$geo_accession,"time"],
+       ae_dsrockman2010$age.estimates[,1])), method = "pearson")[1,2], 3)))
 ```
 
 
-### Dynamics of the data
+## Caracterization of expression dynamics
 
-Expression dynamics in the data can be observed through ICA components, and enrichment in their gene loadings (or contributions) allows us to associate them to specific developmental processes.
+Expression dynamics in the data can be observed through ICA components, and enrichment in their gene loadings (or contributions) allows us to associate them to specific processes.
 
-First, we decide how many ICA components to extract from the number of PCA components needed to explain $99\%$ of the variance.
+We find out how many independent components (IC) to extract from how many principal components are needed to explain $90\%$ of the variance in the data.
 
-```{r sc3_pca_summary, eval = gen_figs}
+```{r sc3_pca_summary, class.source = "fold-show"}
 pca_rock <- summary(stats::prcomp(t(dsrockman2010$g), rank = 30, center = TRUE, scale = FALSE))
-sum(pca_rock$importance["Cumulative Proportion",] < .85) + 1
-#> [1] 30
+nc <- sum(pca_rock$importance["Cumulative Proportion",] < .90) + 1
+nc
+```
+Then, we perform an ICA extracting the `r nc` components.
+
+```{r sc3_ql_ica, class.source = "fold-show"}
+ica_rock <- ica::icafast(t(scale(t(dsrockman2010$g), center = T, scale = F)), nc = nc)
 ```
 
+We can plot the first few independent components (IC) along global estimated age of the samples :
 
-```{r sc3_ql_ica, eval = gen_figs}
-ica_rock <- ica::icafast(t(scale(t(dsrockman2010$g), center = T, scale = F)), nc = 30)
-```
-
-We can plot all components along the estimated age of the samples :
-
-```{r sc3_ica_allcomps, echo = F, fig.width=18, fig.height=15}
-show_fig(expr = {
-  par(mfrow = c(5,6), mar = c(4,4,3,1))
-  invisible(sapply(seq_len(30), function(i){
-    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
-         ylab = "IC", xlab = "age", cex = .8)
-  }))
-}, fig.width=18, fig.height=15)
+```{r sc3_ica_allcomps, echo = F, fig.width=10, fig.height=6}
+par(mfrow = c(3,5), mar = c(4,4,3,1), pty='s')
+invisible(sapply(1L:15L, function(i){
+  plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
+       ylab = "IC", xlab = "age", cex = .8)
+}))
 ```
 <br>
-A lot of these components don't have a definite link to developmental processes, which is expected given the (intended) genetic background heterogeneity in the samples.
-We can have a closer look at components that clearly capture development, and the enrichment of their loadings for gene sets of interest.
+It seems that past IC7, components don't have a definite link to developmental processes, which is expected given the (intended) genetic background heterogeneity in the samples.
+We can have a closer look at components clearly capturing development, and the enrichment of their loadings for the gene sets of interest.
 
-```{r sc3_devcomps, eval = gen_figs}
-dev_comps <- 1:6
+```{r sc3_devcomps, class.source='fold-show'}
+dev_comps <- 1:7
 ```
 
 
-```{r sc3_ica_gl_prep, echo = F, eval = gen_figs}
+```{r sc3_ica_gl_prep, echo = F}
 oo_g <- which(rownames(dsrockman2010$g) %in% gsubset$germline_oogenesis)
 sp_g <- which(rownames(dsrockman2010$g) %in% gsubset$germline_sperm)
 so_g <- which(rownames(dsrockman2010$g) %in% gsubset$soma)
@@ -292,53 +232,51 @@ gs <- factor(c(rep("All genes", nrow(dsrockman2010$g)),
 cols <- c(1, "royalblue", "royalblue", "firebrick")
 ```
 
-```{r sc3_ql_icaplot, echo = F, fig.height=6, fig.width=18}
-show_fig(expr = {
-  par(mfrow = c(2,6))
-  invisible(sapply(dev_comps, function(i){
-    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
-         ylab = "IC", xlab = "age")
-  }))
-  invisible(sapply(dev_comps, function(i){
-    gl <- ica_rock$S[,i]
-    dat <- data.frame(gs = gs, gl = c(gl, gl[oo_g], gl[sp_g], gl[so_g]))
-    boxplot(gl~gs, data = dat, main = paste("Gene loadings on IC", i), at = c(1,.25+(2:4)),
-         ylab = "Gene loadings", xlab = "", outline = F, boxwex = .4,
-         col = transp(cols, a = .4), border = cols, boxlwd = 2)
-    abline(h = 0, lty = 2, col = "grey80")
-    vioplot(gl~gs, data = dat, add = T, h = .3, at = c(1,.25+(2:4)),
-         col = transp(cols, a = .4), border = cols, rectCol = cols, lineCol = cols, 
-         lwd = 2, frame.plot = F)
-    abline(v = 1.625, lty = 2, col = "grey80")
-  }))
-}, fig.height=6, fig.width=18)
+```{r sc3_ql_icaplot, echo = F, fig.height=5, fig.width=15}
+layout(matrix(1:14, nrow=2, byrow = T), heights = c(.45,.55))
+par(pty='s')
+invisible(sapply(dev_comps, function(i){
+  plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
+       ylab = "IC", xlab = "age")
+}))
+par(pty='m')
+invisible(sapply(dev_comps, function(i){
+  gl <- ica_rock$S[,i]
+  dat <- data.frame(gs = gs, gl = c(gl, gl[oo_g], gl[sp_g], gl[so_g]))
+  boxplot(gl~gs, data = dat, main = paste("Gene loadings on IC", i), at = c(1,.25+(2:4)),
+       ylab = "Gene loadings", xlab = "", outline = F, boxwex = .4, ylim=c(-6,6), las=2,
+       col = transp(cols, a = .4), border = cols, boxlwd = 2)
+  abline(h = 0, lty = 2, col = "grey80")
+  vioplot(gl~gs, data = dat, add = T, h = .3, at = c(1,.25+(2:4)),
+       col = transp(cols, a = .4), border = cols, rectCol = cols, lineCol = cols, 
+       lwd = 2, frame.plot = F)
+  abline(v = 1.625, lty = 2, col = "grey80")
+}))
 ```
 
 
-From the plots above, we can establish that 
+From the gene loadings above, we can establish that 
 
  - component IC2 is linked to oogenesis
  - component IC3 is clearly associated with spermatogenesis
- - components IC1, IC4 and IC5 have good contribution from the soma geneset, and show oscillatory dynamics.
+ - components IC1, IC4, IC5, and IC7 have good contribution from the soma geneset, and show oscillatory dynamics.
 
-### Tissue-specific staging
+## Estimating tissue-specific age
 
 Now, we stage the samples using only germline or soma gene subsets.
 
-```{r ae_soma_germline, eval = gen_figs}
+```{r ae_soma_germline, class.source='fold-show', warning=FALSE}
 ae_soma <- ae(
-  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
+  dsrockman2010$g[rownames(dsrockman2010$g) %in% gsubset$soma,],
   r_ya)
 
 ae_germline <- ae(
-  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$germline,], # select germline gene subset
+  dsrockman2010$g[rownames(dsrockman2010$g) %in% gsubset$germline,],
   r_ya)
-
 ```
 
-```{r sc3_plot_aevs, echo = F, fig.height=4, fig.width=12}
-show_fig(expr = {
-par(mfrow = c(1,3))
+```{r sc3_plot_aevs, echo = F, fig.height=3, fig.width=9}
+par(mfrow = c(1,3), pty='s')
 rg <- c(40,70)
 pch <- (seq_len(ncol(dsrockman2010$g)) %in% c(80, 141)) + 1
 
@@ -359,17 +297,14 @@ plot(ae_soma$age.estimates[,1], ae_germline$age.estimates[,1], lwd = 2,
      xlim = rg, ylim = rg, pch = pch,
      xlab = "Soma age", ylab = "Germline age", main = "Soma vs. Germline age")
 abline(a = 0, b = 1, lty = 2, col = "black")
-
-}, fig.height = 4, fig.width = 12)
 ```
 
 We notice the soma estimates of two samples (marked with $\small{\triangle}$) are quite off from their global or germline age.
-This is due to both the fact we used a small gene set for inferring age, and that very similar expression profiles can occur at different times in oscillatory profiles (which is the case for molting genes).
+This caused by the combination of both the fact we used a small gene set for inferring age, and that very similar expression profiles can occur at different times in oscillatory profiles (which is the case for molting genes).
 
-If we look at the correlation profiles of one of these samples on the 3 estimates, we can clearly see 2 peaks for the soma:
+If we look at the global, soma, or germline correlation profiles of one of these samples, we can see 2 peaks of similar correlation for the soma, which is not the case for germline or global correlation.
 
-```{r sc3_plot_cor_sg, echo = F, fig.height=3, fig.width=12}
-show_fig(expr = {
+```{r sc3_plot_cor_sg, echo = F, fig.height=2.5, fig.width=10}
 par(mfrow = c(1,3))
 plot_cor(ae_soma, subset = 80)
 mtext("Soma", side = 3, line = -2, col = "firebrick", font = 2)
@@ -383,69 +318,135 @@ box(lwd = 2, col = "royalblue")
 
 plot_cor(ae_dsrockman2010, subset = 80)
 mtext("Global", side = 3, line = -2, col = "black", font = 2)
-}, fig.height=3, fig.width=12)
 ```
 
-This is the perfect situation to use a prior. 
-We can input the global age as a prior to favor the correct peak of the soma correlation profile for the erroneous samples.
+This is the perfect situation to use a prior for staging. 
+We can input the global age as a prior so that the correct peak of the soma correlation profile is favored in the erroneous samples.
 
-```{r sc3_ae_prior, eval = gen_figs}
+```{r sc3_ae_prior, class.source='fold-show', warning=FALSE}
 ae_soma_prior <- ae(
-  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,], # select soma gene subset
+  dsrockman2010$g[rownames(dsrockman2010$g)%in%gsubset$soma,],
   r_ya,
   prior = ae_dsrockman2010$age.estimates[,1], # gaussian prior values (mean) 
   prior.params = 10                           # gaussian prior sd
   )
 ```
 
-This now shifts our estimate to the first peak, while the correlation profile (central black line) is unchanged. (The dotted lines correspond to bootstrap estimates from random gene sets and are thus different).
+Indeed, the estimate is now shifted to the first (correct) peak. Note that the correlation profile itself (central black line) is unchanged (dotted lines can be different as they are derived from bootstrap estimates with random gene sets).
 
-```{r sc3_cor_ae_prior, echo = F, fig.height=4, fig.width=5, fig.align='center', out.width="33%"}
-show_fig(expr = {
-  plot_cor(ae_soma_prior, subset = 80, show.prior = T)
-  mtext("Soma (w/ prior)", side = 3, line = -2, col = "firebrick", font = 2)
-  box(lwd = 2, col = "firebrick")
-}, fig.height=4, fig.width=5)
-
+```{r sc3_cor_ae_prior, echo = F, fig.height=4, fig.width=6, out.width="33%"}
+plot_cor(ae_soma_prior, subset = 80, show.prior = T)
+mtext("Soma with prior", side = 3, line = -2, col = "firebrick", font = 2)
+box(lwd = 2, col = "firebrick")
 ```
 
 At the same time, all the other estimates are essentially unchanged.
-```{r sc3_testeq, eval=gen_figs}
-# 80 & 141 are the indices of the offset samples
+```{r sc3_testeq, class.source='fold-show'}
+# 80 & 141 correspond the offset samples
 mean(ae_soma$age.estimates[-c(80,141), 1] - ae_soma_prior$age.estimates[-c(80,141), 1])
-#> [1] -0.014664
 ```
 
 
 Now, we can observe the expression dynamics in the data along tissue-specific estimates.
 
-```{r sc3_ae_sg_ica, echo = F, fig.height=9, fig.width=18}
-show_fig(expr = {
-
-par(mfcol = c(3,6))
+```{r sc3_ae_sg_ica, echo = F, fig.height=4.5, fig.width=14}
+par(mfcol = c(2,7), pty='s', mar = c(4,4,2,1))
   invisible(sapply(dev_comps, function(i){
-    plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black",
-     xlab = "Global age", ylab = "IC", main = paste0("(global) IC", i))
-    
+    # plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "black",
+    #  xlab = "Global age", ylab = "IC", main = paste0("IC", i, " (global age)"))
+    # 
     plot(ae_soma_prior$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "firebrick",
-         xlab = "Soma age", ylab = "IC", main = paste0("(soma w/ prior) IC", i))
+         xlab = "Soma age", ylab = "IC", main = paste0("IC", i, " (soma age)"))
     box(lwd = 2, col = "firebrick")
     
     plot(ae_germline$age.estimates[,1], ica_rock$M[,i], lwd = 2, col = "royalblue",
-         xlab = "Germline age", ylab = "IC", main = paste0("(germline) IC", i))
+         xlab = "Germline age", ylab = "IC", main = paste0("IC", i, " (germline age)"))
     box(lwd = 2, col = "royalblue")
 }))
-}, fig.height=9, fig.width=18)
 ```
 
 
-A expected, components IC1, IC4, and IC5 (previously associated with soma), are much cleaner along the soma age. 
-At the same time, germline-associated components IC2 and IC3 appear quite noisy.
+A expected, components IC1, IC4, IC5, and IC7 that we previously associated with soma are much cleaner along the soma age, but very noisy along germline age. 
 
-The opposite is true along the germline estimates, with much cleaner dynamics on germline-associated IC2 and IC3, and increased noise for soma oscillatory dynamics in IC1, IC4, and IC5.
+At the same time, germline-associated components IC2 and IC3 appear quite noisy along soma age, but are very clean along germline age estimates.
 
 <br>
 
-**Note:** In the RAPToR paper (@bulteau2022real), we used a different reference to stage the samples (`Cel_larv_YA` instead of the presented `Cel_YA_1`) in order to show a combination of soma-germline heterochrony *between* the reference and the RILs, as well as among the RILs. 
-We also shortened the analysis for the vignette. 
-Thus, you may note differences with the figures presented here (*e.g.* the ICA does not combine reference and RILs, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clear).
+Note: In this vignette, we use `Cel_YA_1` to stage the samples, which is different from the RAPToR article (@bulteau2022real)  which uses `Cel_larv_YA`. The article shows a combination of soma-germline heterochrony *between* the reference and the samples, as well as among the samples. We shortened the analysis for the vignette to only show heterochrony among RILs (*e.g.* the ICA does not combine reference and samples, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clear).
+
+
+
+## Code to generate objects
+
+`dsrockman2010`, `francesconi_time` and `gsubset`.
+
+
+```{r sc3_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("readxl", quietly = T)
+
+requireNamespace("GEOquery", quietly = T) # bioconductor
+requireNamespace("Biobase", quietly = T)  # bioconductor
+requireNamespace("limma", quietly = T)    # bioconductor
+```
+*Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
+
+To generate `dsrockman2010`:
+```{r sc3_load_rockman_c, code = readLines("load_dsrockman2010.R"), echo = TRUE, eval=FALSE}
+```
+
+To download the soma and germline gene sets (`gsubset`) :
+```{r sc3_load_genesets_c, eval = F}
+library(readxl)
+# germline sets from Perez et al. (2017) 
+germline_url <- paste0("https://static-content.springer.com/esm/",
+                       "art%3A10.1038%2Fnature25012/MediaObjects/",
+                       "41586_2017_BFnature25012_MOESM3_ESM.xlsx")
+germline_file <- paste0(data_folder, "germline_gset.xlsx")
+utils::download.file(url = germline_url, destfile = germline_file)
+
+germline_set <- read_xlsx(germline_file, sheet = 3, na = "NA")[,c(1, 44:46)]
+germline_set[is.na(germline_set)] <- FALSE
+germline_set <- cbind(wb_id = germline_set[,1], 
+                      germline = apply(germline_set[, 2:4], 1, 
+                                       function(r) any(r)),
+                      germline_set[, 2:4])
+
+germline <- germline_set[germline_set$germline,1]
+germline_intrinsic <- germline_set[germline_set$germline_intrinsic,1]
+germline_oogenesis <- germline_set[germline_set$germline_oogenesis_enriched,1]
+germline_sperm <- germline_set[germline_set$germline_sperm_enriched,1]
+
+# soma set from Hendriks et al. (2014)
+soma_url <- paste0("https://ars.els-cdn.com/content/image/",
+                   "1-s2.0-S1097276513009039-mmc2.xlsx")
+soma_file <- paste0(data_folder, "soma_gset.xlsx")
+utils::download.file(url = soma_url, destfile = soma_file)
+
+soma_set <- read_xlsx(soma_file, skip = 3, na = "NA")[,c(1, 4)]
+soma_set$class <- factor(soma_set$class)
+
+soma_set$soma <- soma_set$class == "osc"
+soma_set <- soma_set[soma_set$soma, 1]
+
+# save gene sets
+gsubset <- list(germline = germline, soma = soma_set$`Gene WB ID`, 
+                germline_intrinsic = germline_intrinsic,
+                germline_oogenesis = germline_oogenesis,
+                germline_sperm = germline_sperm)
+
+save(gsubset, file = paste0(data_folder, "sc3_gsubset.RData"), compress = "xz")
+
+# cleanup
+file.remove(germline_file)
+file.remove(soma_file)
+rm(germline_url, germline_file, germline_set, 
+   soma_url, soma_file, soma_set)
+```
+
+@francesconi2014effects sample timings (`francesconi_time`):
+```{r sc3_load_francesc_age, eval = F}
+```
