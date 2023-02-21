@@ -7,6 +7,7 @@ output:
     code_folding: hide
   rmarkdown::pdf_document:
     toc: true
+    toc_depth: 3
     number_sections: yes
     includes:
       in_header: "../inst/tex/preamble.tex"
@@ -20,10 +21,10 @@ author: Romain Bulteau
 date: "`r Sys.setlocale('LC_TIME', 'C'); format(Sys.Date(), '%B %Y')`"
 ---
 
+<br>
+
 This vignette showcases different uses for `RAPToR`.
 
-
-<br>
 <br>
 
 # Improving Differential Expression analysis with age estimates
@@ -51,8 +52,19 @@ This vignette showcases different uses for `RAPToR`.
 
 <br>
 <br>
-<a href="#top">Back to top</a>
+[Back to top](#top)
 
 <hr>
 
-# References
+# References {.unnumbered}
+<div id="refs"></div>
+
+<hr>
+# SessionInfo {.unnumbered}
+```{r sc_restrictwidth, include=FALSE}
+options(width = 80)
+```
+
+```{r sc_sessInfo, collapse=FALSE, class.source = 'fold-show'}
+sessionInfo()
+```

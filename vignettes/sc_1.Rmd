@@ -185,13 +185,16 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
     stop("strain and age must be of length ncol(X).")
   
   # make pdat df
-  pdat <- data.frame(strain = factor(strain), age = as.numeric(age), row.names = colnames(X))
+  pdat <- data.frame(strain = factor(strain), 
+                     age = as.numeric(age), 
+                     row.names = colnames(X))
   
   # build design matrix
   d <- model.matrix(~ 1 + ns(age, df = df) * strain, data = pdat) 
   
   # fix colnames
-  colnames(d) <- c("b0", paste0(rep("a", df), 1L:df), "strainmut", paste0(rep("strainmut.a", df), 1L:df))
+  colnames(d) <- c("b0", paste0(rep("a", df), 1L:df), 
+                   "strainmut", paste0(rep("strainmut.a", df), 1L:df))
   
   # build contrast matrices for mut and age tests
   if(df == 2){
@@ -231,8 +234,12 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   m.a <- contrasts.fit(m.0, contrasts = cm.age)
   m.a <- eBayes(m.a)
   
-  Tmut <- topTable(m.m, adjust.method = "BH", number = Inf, sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
-  Tage <- topTable(m.a, adjust.method = "BH", number = Inf, sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
+  Tmut <- topTable(m.m, adjust.method = "BH", 
+                   number = Inf, 
+                   sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
+  Tage <- topTable(m.a, adjust.method = "BH", 
+                   number = Inf, 
+                   sort.by = "none")[, c("F", "P.Value", "adj.P.Val")]
   
   res <- list(gof  = gof,
               tmut = Tmut,
