@@ -9,8 +9,6 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
-
 transp <- function(col, a=.5){
   colr <- col2rgb(col)
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
@@ -24,12 +22,12 @@ In this example, we show that even when chronological age of different time poin
 
 ## Data and strategy
 
-@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-dslehrbach2012). 
+@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-objects). 
 
 Given the time-series experimental design, searching for Differentially Expresses (DE) genes between strains requires including development in the model.
 While true in any time series context, it is particularly important here as late-larval development of *C. elegans* is known for drastic changes in gene expression within short time frames (@snoek2014rapid).
 
-Using identical DE models with either chronological age or RAPToR age estimates as covariates, we can determine which of the two is the best predictor and thus gives more power to detect differentatial expression. 
+Using identical DE models with either chronological age or RAPToR age estimates as covariates, we can determine which of the two is the best predictor and thus gives more power to detect differential expression. 
 
 ```{r sc1_libload, message=FALSE, warning=FALSE}
 library(RAPToR)
@@ -38,18 +36,13 @@ library(wormRef)
 library(stats)
 library(parallel)
 library(limma)
-
-# for plotting
-library(RColorBrewer)
-library(beeswarm)
-library(vioplot)
 ```
 
 
 <br>
 
 
-```{r sc1_load, include=F, eval=gen_figs}
+```{r sc1_load, include=F}
 load("../inst/extdata/dslerhbach2012.RData")
 ```
 
@@ -68,7 +61,7 @@ dslehrbach2012$g <- log1p(dslehrbach2012$g)
 
 Next, we select a reference and stage the samples. Since sample (chronological) age ranges from the fourth larval molt (L4) to 24h past L4, we select `Cel_YA_2` from `wormRef` that covers this range.
 
-```{r sc1_ae_lb, eval=gen_figs,  class.source = 'fold-show', warning=FALSE}
+```{r sc1_ae_lb, class.source = 'fold-show', warning=FALSE}
 # load reference
 r_ya <- prepare_refdata("Cel_YA_2", "wormRef", 400)
 
@@ -120,7 +113,7 @@ Gene expression depends so strongly on development that correlation between samp
 
 The graph below shows correlation between all possible pairs of samples, with no clear effect of strain difference. 
 
-```{r sc1_cor_dev, eval = gen_figs}
+```{r sc1_cor_dev}
 cc <- cor(dslehrbach2012$g, dslehrbach2012$g, method = "spearman")
 ```
 
@@ -259,7 +252,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
 We now run the same DE analysis using either chronological age or RAPToR age estimates as predictor, and compare results to determine if there is an improvement. Code for `DGE()` can be found [at the end of this section](#de-functions).
 
 
-```{r do_dge, eval = gen_figs, results='hide', class.source='fold-show'}
+```{r do_dge, results='hide', class.source='fold-show'}
 # format gdata as log2 for limma input
 X <- log2(exp(dslehrbach2012$g))
 
@@ -274,7 +267,7 @@ dge.ae <- DGE(X = X, strain = dslehrbach2012$p$strain,
               name = "dge.ae", return.model = T)
 ```
 
-```{r sc1_plot_dge_func, echo = F, eval = gen_figs}
+```{r sc1_plot_dge_func, echo = F}
 plot_DGE_pval_vs <- function(pv.x, pv.y, 
                              xlab = "-log10(pv.x)", ylab = "-log10(pv.y)", 
                              main = "DE genes with pv.x vs pv.y", ...)
@@ -309,7 +302,7 @@ Estimated age shows a clear increase in performance over chronological age when 
 
 
 
-```{r dge_increase, eval = gen_figs, results='markup'}
+```{r dge_increase, results='markup'}
 # compute nb. of DE genes for mutation
 mut_dif.ca <- sum(dge.ca$tmut$adj.P.Val < 0.05)
 mut_dif.ae <- sum(dge.ae$tmut$adj.P.Val < 0.05)
@@ -474,7 +467,7 @@ plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
 
 
 ## Functions and code
-### Code to generate `dslehrbach2012` :
+### Code to generate objects
 
 ```{r sc1_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
@@ -489,6 +482,7 @@ requireNamespace("utils", quietly = T)
 ```
 *Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
 
+To generate `dslehrbach2012`:
 ```{r sc1_load_dslehrbach_c, code = readLines("load_dslehrbach2012.R"), echo = TRUE, eval = FALSE}
 ```
 

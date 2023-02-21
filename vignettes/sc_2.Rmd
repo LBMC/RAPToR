@@ -8,9 +8,6 @@ knitr::opts_chunk$set(
 )
 options(width=100)
 
-gen_figs <- T
-
-
 transp <- function(col, a=.5){
   colr <- col2rgb(col)
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
@@ -26,11 +23,11 @@ Indeed, samples can be staged cross-species using ortholog genes.
 
 @li2014comparison defined a set of orthologs between *D. melanogaster* and  *C. elegans* (hereafter, `glist`), which we will use to stage *C. elegans* single embryos on a *D. melanogaster* reference (of note, ensembl ortholog sets also work).
 
-The *C. elegans* time-series of single-embryos was profiled and published by @levin2016mid (Accession : [GSE60755](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60755)).
-The *Drosophila melanogaster* embryonic development time-series is part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
+The *C. elegans* time-series of single-embryos was profiled and published by @levin2016mid (Accession : [GSE60755](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60755), `dslevin2016cel`).
+The *Drosophila melanogaster* embryonic development time-series is part of the modENCODE project and published by @graveley2011developmental (data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html), `dsgraveley2011`)
 
 
-Code to generate `glist` (orthologs), `dslevin2016cel` (*C. elegans* data), and `dsgraveley2011` (*D. melanogaster* data) can be found [at the end of this section](#code-to-generate-objects).
+Code to generate `glist` (orthologs), `dslevin2016cel` (*C. elegans* data), and `dsgraveley2011` (*D. melanogaster* data) can be found [at the end of this section](#code-to-generate-objects-1).
 
 
 ```{r sc2_libload, message=FALSE, warning=FALSE}
@@ -78,14 +75,14 @@ It can thus be directly loaded with `prepare_refdata()`.
 
 ```{r sc2_load_rgrav, class.source = "fold-show"}
 # reference built from dsgraveley2011
-r_grav <- RAPToR::prepare_refdata("Dme_embryo", "drosoRef", 500) 
+r_grav <- prepare_refdata("Dme_embryo", "drosoRef", 500) 
 ```
 
 We then convert the *C. elegans* gene IDs to their *D. melanogaster* orthologs, and stage the *C. elegans* embryos with the Drosophila reference. In this case, many-to-one orthologs are averaged and one-to-many are assigned to the first ID match.
 
 ```{r sc2_cel_dmel, class.source = "fold-show", warning=FALSE}
-dslevin2016cel$g_dmel <- RAPToR::format_ids(dslevin2016cel$g, glist, 
-                                            from = "wb_id", to = "fb_id")
+dslevin2016cel$g_dmel <- format_ids(dslevin2016cel$g, glist,
+                                    from = "wb_id", to = "fb_id")
 
 ae_cel_on_dmel <- ae(dslevin2016cel$g_dmel, r_grav)
 ```

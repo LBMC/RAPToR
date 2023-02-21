@@ -40,7 +40,7 @@ Staging the samples a third time, with a `soma` set of 2718 genes from the `osc`
 Finally, we can evaluate the results of staging using PCA or ICA components, which summarize the expression dynamics of the data. 
 For example, we can expect that components corresponding to particular tissues will have noticeably cleaner dynamics along their respective age estimates (*e.g.* oscillatory molting dynamics would be less noisy with soma age than germline age).
 
-Code to generate `dsrockman2010` (RIL expression data) and `gsubset` (germline/soma gene sets) can be found [at the end of this section](#code-to-generate-objects)
+Code to generate `dsrockman2010` (RIL expression data) and `gsubset` (germline/soma gene sets) can be found [at the end of this section](#code-to-generate-objects-2)
 
 ```{r sc3_libload, warning=FALSE, message=FALSE}
 library(RAPToR)
