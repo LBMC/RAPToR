@@ -62,7 +62,7 @@ dslevin2016cel$g <- limma::normalizeBetweenArrays(dslevin2016cel$g,
 dslevin2016cel$g <- log1p(dslevin2016cel$g)
 ```
 
-4 outliers in the *C. elegans* data are then removed from the analysis (see [About the outliers](about-the-outliers)).
+4 outliers in the *C. elegans* data are then removed from the analysis (see [*About the outliers*](about-the-outliers)).
 ```{r sc2_outliers}
 # outlier samples (see below)
 rem <- c(sample_0001 = 53L, sample_0002 = 54L, 
@@ -128,7 +128,7 @@ plot(m_grav2, r_grav2, col=2)
 
 We then stage the *C. elegans* embryos on this adjusted reference.
 
-```{r sc2_cel_dmel2, class.source = "fold-show"}
+```{r sc2_cel_dmel2, class.source = "fold-show", warning=FALSE}
 ae_cel_on_dmel2 <- ae(dslevin2016cel$g_dmel, r_grav2)
 ```
 

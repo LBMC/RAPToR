@@ -18,14 +18,14 @@ transp <- function(col, a=.5){
 ```
 
 In some species, tissues can develop at different rates, and these rates can vary between individuals.
-In *C. elegans*, @perez2017maternal have shown such developmental heterochrony between soma and germline.
+In *C. elegans*, @perez2017maternal have shown such developmental heterochrony between soma and germline tissues.
 
-By restricting genes used by RAPToR for staging to the genes associated with (or expressed in) specific tissues, it is possible to estimate development specific to these tissues.
+By restricting the genes RAPToR uses for staging to those associated with (or expressed in) specific tissues, it is possible to estimate development specific to these tissues.
 
 ## Data and strategy
 
 @rockman2010selection published microarray profiling of 208 recombinant inbred lines of *C. elegans* N2 and Hawaii (CB4856) strains (Accession: [GSE23857](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE23857), `dsrockman2010`). 
-These 208 samples were described as *"developmentally synchronized"* in the original article. 
+These 208 samples were described as "developmentally synchronized" in the original article. 
 However, @francesconi2014effects later showed there is significant developmental spread between samples, spanning around 20 hours of 20°C late-larval development, essentially making this dataset a very high-resolution time course.
 
 <br>
@@ -37,7 +37,7 @@ Staging the samples a third time, with a `soma` set of 2718 genes from the `osc`
 
 <br>
 
-Finally, we can evaluate the results of staging using PCA or ICA components, which summarize the expression dynamics of the data. 
+Finally, we evaluate the results of staging using principal (PCA) or independent (ICA) components, that summarize the expression dynamics of the data. 
 For example, we can expect that components corresponding to particular tissues will have noticeably cleaner dynamics along their respective age estimates (*e.g.* oscillatory molting dynamics would be less noisy with soma age than germline age).
 
 Code to generate `dsrockman2010` (RIL expression data) and `gsubset` (germline/soma gene sets) can be found [at the end of this section](#code-to-generate-objects-2)
@@ -141,7 +141,7 @@ rownames(francesconi_time) <- francesconi_time$geo_accession
 ```
 
 
-### Estimating sample global age
+## Estimating sample global age
 
 We start by applying a quantile-normalization and $log(X+1)$ transformation to the data.
 ```{r sc3_qnorm}
@@ -170,13 +170,14 @@ plot(ae_dsrockman2010, cex = .5, lmar = 7, CIbar.width = .05,
 
 Our estimates confirm the wide developmental spread and match the previously inferred ages by @francesconi2014effects.
 
-```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=5, fig.width=5, out.width="60%"}
+```{r sc3_plot_ae_vs_francesconi, echo = F, fig.height=5.5, fig.width=5.5, out.width="60%"}
+par(pty='s')
 plot(francesconi_time[dsrockman2010$p$geo_accession,"time"], 
      ae_dsrockman2010$age.estimates[,1],
      lwd = 2, col = "black",
      main = "RAPToR vs. Francesconi & Lehner (2014) age",
-     xlab = "Francesconi & Lehner (2014) estimates, h past L4 stage (25°C)",
-     ylab = "RAPToR (global) estimates, h past egg-laying (20°C)")
+     xlab = "Francesconi & Lehner (2014) estimates (h past L4 stage, 25°C)",
+     ylab = "RAPToR (global) estimates (h past egg-laying, 20°C)")
 text(6.5, 67.5, 
      labels=paste0("r = ",round(cor(na.omit(cbind(
        francesconi_time[dsrockman2010$p$geo_accession,"time"],
@@ -186,28 +187,30 @@ text(6.5, 67.5,
 
 ## Caracterization of expression dynamics
 
-Expression dynamics in the data can be observed through ICA components, and enrichment in their gene loadings (or contributions) allows us to associate them to specific processes.
+Expression dynamics in the data can be observed through ICA components, and enrichment in component gene loadings (or contributions) allows us to associate them to specific processes.
 
 We find out how many independent components (IC) to extract from how many principal components are needed to explain $90\%$ of the variance in the data.
 
 ```{r sc3_pca_summary, class.source = "fold-show"}
-pca_rock <- summary(stats::prcomp(t(dsrockman2010$g), rank = 30, center = TRUE, scale = FALSE))
+pca_rock <- summary(stats::prcomp(t(dsrockman2010$g), 
+                                  rank = 30, center = TRUE, scale = FALSE))
 nc <- sum(pca_rock$importance["Cumulative Proportion",] < .90) + 1
 nc
 ```
 Then, we perform an ICA extracting the `r nc` components.
 
 ```{r sc3_ql_ica, class.source = "fold-show"}
-ica_rock <- ica::icafast(t(scale(t(dsrockman2010$g), center = T, scale = F)), nc = nc)
+ica_rock <- ica::icafast(t(scale(t(dsrockman2010$g), center = T, scale = F)), 
+                         nc = nc)
 ```
 
-We can plot the first few independent components (IC) along global estimated age of the samples :
+We can plot the first few independent components along global estimated age of the samples :
 
-```{r sc3_ica_allcomps, echo = F, fig.width=10, fig.height=6}
+```{r sc3_ica_allcomps, echo = F, fig.width=9, fig.height=6}
 par(mfrow = c(3,5), mar = c(4,4,3,1), pty='s')
 invisible(sapply(1L:15L, function(i){
   plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
-       ylab = "IC", xlab = "age", cex = .8)
+       ylab = "IC", xlab = "Global age", cex = .8)
 }))
 ```
 <br>
@@ -232,12 +235,12 @@ gs <- factor(c(rep("All genes", nrow(dsrockman2010$g)),
 cols <- c(1, "royalblue", "royalblue", "firebrick")
 ```
 
-```{r sc3_ql_icaplot, echo = F, fig.height=5, fig.width=15}
+```{r sc3_ql_icaplot, echo = F, fig.height=5, fig.width=14}
 layout(matrix(1:14, nrow=2, byrow = T), heights = c(.45,.55))
-par(pty='s')
+par(pty='s', mar = c(5,4,2,1))
 invisible(sapply(dev_comps, function(i){
   plot(ae_dsrockman2010$age.estimates[,1], ica_rock$M[,i], main = paste("IC", i), 
-       ylab = "IC", xlab = "age")
+       ylab = "IC", xlab = "Global age")
 }))
 par(pty='m')
 invisible(sapply(dev_comps, function(i){
@@ -334,16 +337,21 @@ ae_soma_prior <- ae(
 
 Indeed, the estimate is now shifted to the first (correct) peak. Note that the correlation profile itself (central black line) is unchanged (dotted lines can be different as they are derived from bootstrap estimates with random gene sets).
 
-```{r sc3_cor_ae_prior, echo = F, fig.height=4, fig.width=6, out.width="33%"}
+```{r sc3_cor_ae_prior, echo = F, fig.height=4, fig.width=10, out.width="80%"}
+par(mfrow = c(1,2))
+plot_cor(ae_soma, subset = 80)
+mtext("Soma", side = 3, line = -1.5, col = "firebrick", font = 2)
+box(lwd = 2, col = "firebrick")
+
 plot_cor(ae_soma_prior, subset = 80, show.prior = T)
-mtext("Soma with prior", side = 3, line = -2, col = "firebrick", font = 2)
+mtext("Soma with prior", side = 3, line = -1.5, col = "firebrick", font = 2)
 box(lwd = 2, col = "firebrick")
 ```
 
 At the same time, all the other estimates are essentially unchanged.
 ```{r sc3_testeq, class.source='fold-show'}
-# 80 & 141 correspond the offset samples
-mean(ae_soma$age.estimates[-c(80,141), 1] - ae_soma_prior$age.estimates[-c(80,141), 1])
+# 80 & 141 are the offset samples
+mean((ae_soma$age.estimates[,1] - ae_soma_prior$age.estimates[,1])[-c(80,141)])
 ```
 
 
@@ -366,10 +374,13 @@ par(mfcol = c(2,7), pty='s', mar = c(4,4,2,1))
 ```
 
 
-A expected, components IC1, IC4, IC5, and IC7 that we previously associated with soma are much cleaner along the soma age, but very noisy along germline age. 
+As expected, components IC1, IC4, IC5, and IC7 that we previously associated with soma are much cleaner along the soma age, but very noisy along germline age. 
 
 At the same time, germline-associated components IC2 and IC3 appear quite noisy along soma age, but are very clean along germline age estimates.
 
+This effect is the result of soma-germline heterochrony between the samples.
+
+<br>
 <br>
 
 Note: In this vignette, we use `Cel_YA_1` to stage the samples, which is different from the RAPToR article (@bulteau2022real)  which uses `Cel_larv_YA`. The article shows a combination of soma-germline heterochrony *between* the reference and the samples, as well as among the samples. We shortened the analysis for the vignette to only show heterochrony among RILs (*e.g.* the ICA does not combine reference and samples, so components are different; however, enrichment of soma or germline genes to specific components/dynamics is still clear).
@@ -377,9 +388,6 @@ Note: In this vignette, we use `Cel_YA_1` to stage the samples, which is differe
 
 
 ## Code to generate objects
-
-`dsrockman2010`, `francesconi_time` and `gsubset`.
-
 
 ```{r sc3_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"

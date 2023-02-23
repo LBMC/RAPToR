@@ -22,12 +22,14 @@ In this example, we show that even when chronological age of different time poin
 
 ## Data and strategy
 
-@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/)). Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-objects). 
+@lehrbach2012post profiled *C. elegans* wild-type (`wt`) and *pash-1(mj100)* mutants (`mut`) at 4 time points (0, 6, 12, and 24 hours past the L4 stage), each in triplicate (Accession: [E-MTAB-1333](https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1333/), `dslehrbach2012`). 
 
 Given the time-series experimental design, searching for Differentially Expresses (DE) genes between strains requires including development in the model.
 While true in any time series context, it is particularly important here as late-larval development of *C. elegans* is known for drastic changes in gene expression within short time frames (@snoek2014rapid).
 
 Using identical DE models with either chronological age or RAPToR age estimates as covariates, we can determine which of the two is the best predictor and thus gives more power to detect differential expression. 
+
+Code to generate the `dslehrbach2012` object can be found [at the end of this section](#code-to-generate-objects). 
 
 ```{r sc1_libload, message=FALSE, warning=FALSE}
 library(RAPToR)
@@ -155,7 +157,7 @@ Y & = \beta_0 + \beta_1 I_{strain}\\
 Y & = \beta_0 + (\alpha_1 age_{sp1} + \alpha_2 age_{sp2})
 \end{aligned}
 $$
-Genes will be considered DE with Benjamini-Holm adjusted p-values $ < 0.05$ for the corresponding coefficients.
+Genes will be considered DE with Benjamini-Holm adjusted p-values $< 0.05$ for the corresponding coefficients.
 
 Note: for the purpose of this vignette, we don't consider whether genes are up- or down-regulated, but only if a significant effect is detected. 
 
@@ -198,7 +200,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   
   # build contrast matrices for mut and age tests
   if(df == 2){
-    cm.mut <- makeContrasts(mut = strainmut, #strainwt - strainmut,
+    cm.mut <- makeContrasts(mut = strainmut,
                             mut.i1 = strainmut.a1,
                             mut.i2 = strainmut.a2,
                             levels = d)
@@ -209,7 +211,7 @@ DGE <- function(X, strain, age, df = 2, name = NULL, return.model = FALSE){
   }
   
   if(df == 3){
-    cm.mut <- makeContrasts(mut = strainmut, #strainwt - strainmut,
+    cm.mut <- makeContrasts(mut = strainmut,
                             mut.i1 = strainmut.a1,
                             mut.i2 = strainmut.a2,
                             mut.i3 = strainmut.a3,
@@ -323,16 +325,14 @@ age_dif.ae <- sum(dge.ae$tage$adj.P.Val < 0.05)
 
 # percentage increase of development DE genes
 100 * (age_dif.ae - age_dif.ca) / (age_dif.ca) # age pct increase
-#> [1] 7.674787
-
 ```
 
-Indeed, we detect nearly *twice* as many DE genes for strain using RAPToR age estimates compared to chronological age, and around $8\%$ more genes with development. 
+Indeed, we detect nearly twice as many DE genes for strain using RAPToR age estimates compared to chronological age, and around $8\%$ more genes with development. 
 Furthermore, the large proportion of genes changing with development ($57 - 62\%$) compared to strain ($7-16\%$) also shows how crucial it is to properly model developmental dynamics in DE analyses.
 
 
 
-The increase in DE genes is partially explained by better model fits, shown below by the goodness-of-fit (GoF) distribution across genes. The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
+The increase in detected DE genes is partially explained by better model fits, shown below by the goodness-of-fit (GoF) distribution across genes. The goodness-of-fit (GoF) computed is an $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$ per gene.
 
 ```{r sc1_gof_dist, echo = F, fig.height=4, fig.width=6, out.width="60%"}
 d.ca <- density(dge.ca$gof, from = 0, to = 1)
@@ -357,7 +357,7 @@ set.seed(10) # for reproducibility
 
 age_diffs <- (dslehrbach2012$p$tpastL4 + 50) - ae_lerhbach$age.estimates[,1]
 # Note : we add 50 to shift tpastL4 to the age values and avoid negative 
-#        tpastl4 values. This has no impact on the DGE analysis.
+#        tpastl4 values. This has no impact on the DE analysis.
 
 
 # estimate density function of age_diffs
@@ -371,7 +371,7 @@ rd_ages <- lapply(seq_len(n), function(i){
 })
 ```
 
-As done above, we run identical DE models and compare results with the model goodness-of-fit (GoF) per gene and look at the number of DE genes found for strain and development (DE with BH-adjusted p-value $< 0.05$).
+As done above, we run identical DE models and compare results with the model goodness-of-fit (GoF) per gene and look at the number of DE genes found for strain and development (BH-adjusted p-value $< 0.05$).
 
 ```{r sc1_comp_dge2, eval = F, results='hide', class.source="fold-show"}
 # setup cluster for parallelization
@@ -479,13 +479,13 @@ plot_QQGoFbox(c(gofs), bins = 50, add = T, cex = .2, lwd = 1, boxwex = .8/50)
 ```{r sc1_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
 
-library("biomaRt") # May need to be installed with bioconductor
-library("limma")   # ..
-library("affy")    # ..
-library("gcrma")   # ..
-
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
+
+requireNamespace("biomaRt", quietly = T) # bioconductor
+requireNamespace("limma", quietly = T)   # bioconductor
+requireNamespace("affy", quietly = T)    # bioconductor
+requireNamespace("gcrma", quietly = T)   # bioconductor
 ```
 *Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
 
@@ -500,7 +500,7 @@ Functions to compute predictions (`pred_lmFit()`) and Goodness-of-fit (`GoF()`) 
 ```
 
 
-Function to run DE analysis with `limma`, as described in [Differential Expression analysis](#differential-expression-analysis) (`DGE()`).
+Function to run DE analysis with `limma`, as described in [*Differential Expression analysis*](#differential-expression-analysis) (`DGE()`).
 
 ```{r sc1_dge_main_func, eval=F}
 ```
