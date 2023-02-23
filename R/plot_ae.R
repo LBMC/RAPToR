@@ -227,9 +227,9 @@ plot_cor <- function (ae_obj, subset = 1:ncol(ae_obj$cors),
     if (show.prior&!is.null(ae_obj$prior)) {
       # show initial estimate 
       init.est <- ae_obj$prior[i]
-      graphics::points(init.est, min(ae_obj$cors[, i]), pch = "|", 
+      graphics::points(init.est, yl[1], pch = "|", 
                        col = col.p, cex = bar.size)
-      graphics::text(init.est, min(ae_obj$cors[, i]), pos = 3, offset = 1, 
+      graphics::text(init.est, yl[1], pos = 3, offset = 1, 
                      labels = paste(round(init.est, 2), 
                                     "\n(prior)", sep = ""))
     }
