@@ -1,5 +1,5 @@
 ---
-title: "Correcting for development in differential expression analysis"
+title: "Correcting for age in differential expression analysis"
 output: 
   BiocStyle::html_document:
     toc: true
@@ -116,10 +116,90 @@ gg_logFC <- function(x, y=NULL, rg = range(xy, na.rm = T)*1.02,
 }
 ```
 
+```{r sc4_deseq_ref_function, include=FALSE}
+run_DESeq2_ref <- function(X, p, formula, ref, 
+                           ae_values=NULL, window.extend=1, ns.df=3){
+  # Run DEseq2 wt vs. mutant correcting for development with ref. data.
+  
+  # Do no not specify age in the formula, it is added directly by the function.
+  # Age estimates should either be an 'ae' column of p or given as 'ae_values'.
+  
+  require(DESeq2)
+  
+  if(!any(colnames(p)=='ae') & is.null(ae_values)){
+    stop("Age estimates should either be a column of p, or given to ae_values.")
+  }
+  if(!is.null(ae_values)){
+    p$ae <- ae_values
+  }
+  
+  ## Extract reference expression profiles in sample time window
+  w.rg <- range(p$ae) + c(-window.extend, window.extend)
+  w.idx <- seq(
+    max(c(1, which.min(abs(w.rg[1]-ref$time))-1 )),
+    min(c(length(ref$time), which.min(abs(w.rg[2]-ref$time))+1))
+    )
+  # ref window time values
+  w.ts <- ref$time[w.idx]
+  # ref window expression values
+  w.GE <- ref_2counts(ref = ref, ae_values = w.ts)
+  
+  ## Join ref & sample data
+  nX <- ncol(X)
+  nR <- ncol(w.GE)
+  
+  # get overlapping genes & join expression data
+  ovl <- RAPToR::format_to_ref(samp = X, refdata = w.GE, verbose = F)
+  Xj <- as.matrix(cbind(ovl$refdata, ovl$samp))
+  
+  # get relevant fields from p 
+  f0 <- as.formula(formula)
+  p2 <- p[, attr(terms(f0), "term.labels"), drop=F]
+  # get 1st level of each variable
+  lev0 <- lapply(p2, function(col) levels(col)[1]) 
+  
+  # join p data and add Time and ref/sample Batch
+  pj <- cbind(
+    Time = c(w.ts, p$ae),
+    Batch = factor(rep(c('r', 's'), c(nR, nX))),
+    rbind(do.call(cbind, lapply(lev0, rep, times=nR)), p2) # other terms
+    ) 
+  rownames(pj) <- colnames(Xj)
+  
+  
+  # Estimate dispersions with samples only
+  s0 <- pj$Batch=="s"
+  dds0 <- DESeqDataSetFromMatrix(countData = Xj[,s0],
+                                 colData = pj[s0,],
+                                 design = f0)
+  dds0 <- estimateSizeFactors(dds0)
+  dds0 <- estimateDispersions(dds0, fitType = "local") 
+  dd <- dispersions(dds0) # store dispersions
+  dd[is.na(dd)] <- 0 # remove NAs
+  
+  ## Build full DE model with reference
+  # Add Time and ref/sample batch to model formula
+  f1 <- update.formula(f0, substitute(
+    ~ splines::ns(Time, df = ns.df) + Batch + ., 
+    list(ns.df=ns.df)
+    ))
+  dds <-  DESeqDataSetFromMatrix(countData = Xj,
+                                 colData = pj,
+                                 design = f1)
+  dds <- estimateSizeFactors(dds)
+  # inject dispersions from sample-only model
+  dispersions(dds) <- dd
+  
+  dds <- nbinomWaldTest(dds)
+  
+  return(dds)
+}
+
+```
 
 # Introduction 
 
-The developmental speed of fast-growing organisms such as *C. elegans* is under the influence of many different factors -- including experimental conditions themselves -- making it difficult (or impossible) to collect age-matched individuals between conditions. 
+The developmental speed of fast-growing organisms such as *C. elegans* is influenced by many different factors -- including experimental conditions themselves -- making it difficult or impossible to collect age-matched individuals between conditions. 
 For example, if a mutant has delayed development but controls and mutants are collected at the same chronological (and therefore different physiological) time, the perturbation of interest will be completely confounded with development (**a**).
 Because of this, purely developmental gene expression changes can be mislabeled as the effect of a variable of interest (**b**).
 
@@ -135,14 +215,297 @@ Using `RAPToR` reference data, we can bridge the gap between non-overlapping sam
 
 <br>
 
+# Quickstart
+```{r sc4_load_qs, include=FALSE}
+load("../inst/extdata/sc4_qsdata.RData")
+```
 
-# Data and strategy
+## Quantifying age-driven expression changes with `ref_compare()`
+
+```{r sc4_qsq0.loadlib, class.source="fold-show", message=FALSE, warning=FALSE}
+# load libraries
+library(RAPToR)
+library(wormRef)
+```
+
+Given transcript per million (TPM) expression profiles from 3 control and 3 mutant samples.
+```{r sc4_qsq0.head}
+head(qs$tpm)
+print(qs$pdat)
+```
+
+First, infer sample age with RAPToR.
+```{r sc4_qsq1.1, class.source="fold-show", message=FALSE, warning=FALSE, results='hide'}
+# load reference 
+r_cel <- prepare_refdata("Cel_larv_YA", "wormRef", 600)
+
+# estimate sample age
+ae_qs <- ae(qs$tpm, r_cel)
+```
+```{r sc4_qs1.2, class.source="fold-show", fig.height=3, fig.width=6, out.width="60%"}
+plot(ae_qs, group = qs$pdat$strain, g.line=3, lmar=5)
+```
+
+
+Run `ref_compare()` to estimate developmental expression changes between groups.
+```{r sc4_qsq2, class.source="fold-show"}
+qs_rc <- ref_compare(
+    X      = qs$tpm,        # sample data, log(TPM+1)
+    ref    = r_cel,         # ref object
+    ae_obj = ae_qs,         # ae object
+    group  = qs$pdat$strain # factor defining compared groups (wt/mut)
+)
+```
+
+
+Plot sample log2 fold-changes (logFCs) vs. expected developmental logFCs inferred from the reference.
+
+```{r sc4_qsq3.2, class.source="fold-show", fig.height=3.5, fig.width=3.5, out.width="40%"}
+qs_lfc <- get_logFC(qs_rc)
+
+plot(qs_lfc, cex=.2, asp=1,
+     xlab = "ctr vs. mut log2FCs", xlim = c(-10,10),
+     ylab = "Developmental log2FCs", ylim = c(-10, 10))
+```
+
+Print the correlation between sample and reference logFCs, as well as the average age difference between groups.
+```{r sc4_qsq3.1, class.source="fold-show"}
+print(qs_rc)
+```
+
+In this example, ctr *vs.* mut logFCs have a correlation of $`r round(cor(qs_lfc[,1], qs_lfc[,2]),3)`$ with the expected developmental logFCs computed from the reference data. 
+Using $r^2$, this corresponds to approximately $`r round(100*(cor(qs_lfc[,1], qs_lfc[,2])^2),2)` \%$ of variance explained by development.
+Such a large developmental effect between the control and mutant groups is expected as they don't have any age overlap. 
+
+For an explanation of the analysis, see [*How it works*](#quantifying-age-driven-expression-changes).
+
+A custom `ggplot` function to plot logFCs is also provided in [*Plotting functions*, below](#code-plotting_functions).
+
+```{r sc4_qsq3.3, fig.height=3.5, fig.width=3.5, out.width="40%", class.source = 'fold-show'}
+gg_logFC(qs_lfc, main = "Developmental effect",
+         xlab = "ctr vs. mut log2FC", ylab = "Developmental log2FC")
+```
+
+
+## Correcting for age effects in differential expression analysis
+```{r sc4_qsc0.loadlib, class.source="fold-show", message=FALSE, warning=FALSE}
+# load libraries
+library(RAPToR)
+library(wormRef)
+
+library(DESeq2)
+library(splines)
+```
+
+Given raw counts and transcript per million (TPM) expression profiles from 3 control and 3 mutant samples.
+```{r sc4_qsc0.head}
+head(qs$count)
+head(qs$tpm)
+print(qs$pdat)
+```
+
+First, infer sample age with RAPToR.
+```{r sc4_qsq1.1, class.source="fold-show", eval=F}
+```
+```{r sc4_qsc1.2, class.source="fold-show", fig.height=3, fig.width=6, out.width="60%"}
+plot(ae_qs, group = qs$pdat$strain, g.line=3, lmar=5)
+```
+
+Define a reference window to integrate.
+```{r sc4_qsc2.1, class.source="fold-show"}
+r.window <- range(ae_qs$age.estimates[,1]) + c(1,-1) # +1h margin
+r.idx <- get_refTP(r_cel, ae_values = r.window) # indices in the ref object
+r.idx <- r.idx[1]:r.idx[2]
+
+# extract time and expression values
+r.time <- r_cel$time[r.idx]
+r.tpm <- r_cel$interpGE[,r.idx]
+```
+
+
+Find the optimal spline degree-of-freedom (df) to model expression dynamics in the selected window.
+```{r sc4_qsc2.2, class.source="fold-show", fig.height=3.5, fig.width=5, out.width="40%"}
+dfs <- 1:8
+ssq <- sapply(dfs, function(i){
+  # compute SSQ of linear model on expression data
+  sum(residuals(lm( t(r.tpm) ~ splines::ns(r.time, df=i) ))^2)
+})
+
+plot(dfs, ssq, type='b', lwd=2) 
+r.df <- 3 # select df=3
+```
+
+
+Transform reference TPMs into artificial counts using an arbitrary library size.
+```{r sc4_qsc2.3, class.source="fold-show"}
+# get gene lengths
+g.l <- wormRef::Cel_genes[match(rownames(r.tpm), wormRef::Cel_genes[,"wb_id"]),
+                          "transcript_length"]
+libsize <- 25e6
+
+# convert tpm to artificial counts
+r.count <- t( (t(exp(r.tpm)-1)/1e6) * (libsize/median(g.l))) * g.l
+r.count[r.count < 0] <- 0
+r.count <- round(r.count)
+```
+
+
+Combine sample and reference count matrices and pdata.
+
+```{r sc4_qsc3.1, class.source="fold-show"}
+# filter low expressed genes (at least >5 in one sample)
+qs$count <- qs$count[apply(qs$count, 1, max)>5, ]
+
+# keep overlapping sample and ref genes, and merge in one matrix
+comb.count <- do.call(cbind, format_to_ref(qs$count, r.count)[1:2])
+
+# combine pdata
+comb.p <- data.frame(
+  time = c(ae_qs$age.estimates[,1], r.time),
+  strain = c(qs$pdat$strain, factor(rep('ctr', ncol(r.count)), 
+                                    levels = c('ctr', 'mut'))), # ref is ctr
+  batch = factor(rep(c('samp', 'ref'), c(ncol(qs$count), ncol(r.count))),
+                 levels = c("samp", "ref"))
+)
+```
+
+
+Infer gene dispersions by fitting a model on sample data only.
+```{r sc4_qsc4.1, class.source="fold-show", warnings=F, message=FALSE}
+# build DESeq object
+dd0 <- DESeqDataSetFromMatrix(countData = comb.count[ ,1:6],
+                              colData = comb.p[1:6, ],
+                              design = ~strain) # no age yet
+# compute gene dispersions
+dd0 <- estimateSizeFactors(dd0)
+dd0 <- estimateDispersions(dd0, fitType = "local") 
+d0 <- dispersions(dd0) # store dispersions
+d0[is.na(d0)] <- 0 # remove NAs
+```
+
+Build a model with combined reference and sample data, injecting previously estimated gene dispersions.
+```{r sc4_qsc4.2, class.source="fold-show", warning=FALSE, message=FALSE}
+dd1 <-  DESeqDataSetFromMatrix(
+  countData = comb.count,
+  colData = comb.p,
+  design = ~ splines::ns(time, df=3)+batch+strain # use df found above
+)
+dd1 <- estimateSizeFactors(dd1)
+# inject dispersions from sample-only model
+dispersions(dd1) <- d0
+
+dd1 <- nbinomWaldTest(dd1)
+```
+
+Extract DE results.
+```{r sc4_qsc5.1, class.source="fold-show"}
+res <- results(dd1)
+summary(res)
+```
+
+```{r sc4_qsc5.3, class.source="fold-show", fig.height=3.5, fig.width=6, out.width="60%"}
+DESeq2::plotMA(dd1)
+```
+
+Results are a [standard DESeq2 output](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html) and can be manipulated as such.
+
+For an explanation of the analysis, see [*How it works*](#correcting-for-age-effects-by-integrating-reference-data-in-de-analysis).
+
+Custom functions to transform reference data into artificial counts and run DESeq2 as described above are given in [*DE functions*, below](#de-functions) (please note they may require tweaking). 
+The following is equivalent to the code above.
+
+```{r sc4_qsc5.2, class.source="fold-show", eval=F}
+dd1 <- run_DESeq2_ref(
+  X = qs$count,         # sample counts
+  p = qs$pdat,          # sample pdata
+  formula = "~ strain", # formula (without age)
+  ref = r_cel,          # ref. object
+  ae_values = ae_qs$age.estimates[,1], # sample age estimates
+  window.extend = 1,    # ref. window extension
+  ns.df = 3             # spline df for ref. window
+)
+```
+
+
+
+
+
+
+
+
+
+# How it works
+## Quantifying age-driven expression changes
+
+Between two conditions 'A' and 'B' where the sample groups have developmental differences, the expression changes (or log-fold changes, logFCs) observed between the groups will be a combination of perturbation and developmental effects (**a**).
+
+We can determine the expression changes expected only from the difference in development using reference expression profiles matching the samples (**b**).
+Any correlation between observed (sample) and expected (reference) logFCs will then correspond to the developmental effect, with uncorrelated logFCs corresponding to the perturbation effect (**c**).
+
+
+```{r sc4_include_refcompare_fig, fig.align='center', echo=F}
+knitr::include_graphics(file.path(figpath,"refcompare_method.png"))
+```
+
+The `ref_compare()` function inputs:
+
+ - sample data (expression matrix, expects $log(TPM+1)$ as transcripts per million are more comparable across datasets)
+ - the reference object used for age estimation,
+ - the `ae` object (or age estimate values for the samples),
+ - and a group variable (*e.g.* a factor defining WT and mutant). 
+ 
+```{r sc4_qsq2, class.source="fold-show", eval=F}
+```
+
+The resulting sample and reference (log2) logFCs can be extracted with `get_logFC()` and plotted. 
+When there are more than 2 compared conditions, you can specify the factor levels to compare to the control (with `l`) when extracting the logFCs.
+
+A custom `ggplot2` function for plotting logFCs can be found in the [*Plotting functions* section below](#code-plotting_functions).
+```{r sc4_qsq3.3, fig.height=3.5, fig.width=3.5, out.width="40%", class.source = 'fold-show'}
+```
+
+The $r^2$ between sample and reference logFCs is a rough estimate of the percentage of variance explained by development (`VarDev`, in the bottom right). 
+In this case, over $75\%$ of expression changes can be explained by development, which is expected given the large age difference between the sample groups.
+
+The average age difference between groups and correlation between sample and reference are also given directly in the output of `ref_compare()`.
+
+```{r sc4_refcomp_outex, class.source = 'fold-show'}
+print(qs_rc)
+```
+
+
+
+## Correcting for age effects by integrating reference data in DE analysis
+
+When there is no developmental overlap between the sample groups to compare, integrating reference data in the DE analysis makes it possible to recover truly DE genes by bridging the gap, as shown in the cartoon below.
+
+
+```{r sc4_include_refintegration_fig, fig.align='center', echo=F, out.width="50%"}
+knitr::include_graphics(file.path(figpath,"ref_integration.png"))
+```
+
+Most DE analysis tools input *raw counts* for their particular statistical properties, so the interpolated reference data must be converted from TPM to (artificial) counts assuming an arbitrary fixed library size ($25\times 10^6$ counts).
+Then, because gene dispersions needed for statistical testing cannot be estimated from the noiseless artificial reference, they are inferred from a model without reference data and injected into the model with reference data. 
+
+Thus, resulting model coefficients (logFCs) between sample groups are corrected for development by the reference, and their respective statistical tests use dispersion values inferred only from samples. This approach improves upon what is presented in the RAPToR article (@bulteau2022real), generating valid p-values.
+
+**DISCLAIMER:** we provide the functions `find_df()`, `run_DESeq2_ref()` and sub-functions needed for age correction DE analysis only in this vignette and not as part of the package because (1) they go beyond the scope of RAPToR, and (2) they might need to be tweaked by the user to adapt to their needs and experimental designs (unlike `ref_compare()`). This approach should also work with tools other than `DEseq2` (e.g. [`edgeR`](https://bioconductor.org/packages/edgeR)).
+
+
+
+
+
+
+
+
+
+# Demonstration of DE correction in a controlled case
+## Data and strategy
 
 [@miki2017two](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5695088/) profiled time-series of *C. elegans* wild-type (WT) and *xrn-2* mutants ([GSE97775](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97775)). Code to download this data and generate the `dsmiki2017` object can be found [at the end of this vignette](#code-gen_dsmiki2017)
 
-By selecting specific samples from both time-series, we define a gold-standard of DE genes with samples of matching development.
-By sliding the window of WT samples, we can then evaluate the effect of increasing developmental shifts between the groups on the DE analysis, as well as measure the advantages of integrating reference data in the analysis.
-
+By selecting specific samples of matching development from both time-series, we define a gold-standard of truly DE genes.
+Then, by sliding the window of WT samples we can evaluate the effect of increasing developmental shifts between the groups on the DE analysis, as well as measure the advantages of integrating reference data in the model.
 
 
 ```{r sc4_libload, message=FALSE, warning=FALSE, echo=T}
@@ -168,15 +531,17 @@ load("../inst/extdata/dsmiki2017.RData")
 ```
 
 
-## Estimating sample age
 
-We use RAPToR to infer sample age.
+
+## Defining age-matched and shifted sample sets
+
+We start by infering sample age.
 ```{r sc4_ae_samples, results='hide', message=FALSE, class.source = 'fold-show'}
 # load reference 
-r_cel <- RAPToR::prepare_refdata("Cel_larv_YA", "wormRef", 600)
+r_cel <- prepare_refdata("Cel_larv_YA", "wormRef", 600)
 
 # estimate sample age
-ae_miki <- RAPToR::ae(dsmiki2017$g, r_cel)
+ae_miki <- ae(dsmiki2017$g, r_cel)
 dsmiki2017$p$ae <- ae_miki$age.estimates[, 1]
 ```
 
@@ -186,9 +551,7 @@ plot(ae_miki, main = "Miki et al. (2017) samples",
      color = col.palette1[dsmiki2017$p$strain], lmar = 10, g.line= 1)
 ```
 
-## Defining age-matched and shifted sample sets
-
-We select a set of 3 WT and 3 mutant samples as the age-matched gold-standard, and define sets of 3 WT samples shifted by 1, 2, 3, 5, and 7 time points compared to the mutants.
+We then select a set of 3 WT and 3 mutant samples as the age-matched gold-standard, and define sets of 3 WT samples shifted by 1, 2, 3, 5, and 7 time points compared to the mutants.
 ```{r sc4_gs_def}
 GS_wt <- 8:10 # gold standard WT samples
 GS_mut <- 19:21 # GS mutant samples
@@ -251,55 +614,9 @@ legend("bottomright", bty = "n", lty = 2, pch = 1, lwd = 2,
 
 <br>
 
-# Quantifying expression changes caused by a developmental shift with `ref_compare()`
+## Quantifying age-driven expression changes in the shifted sets
 
-Between two conditions 'A' and 'B' where the sample groups have developmental differences, the expression changes (or log-fold changes, logFCs) observed between the groups will be a combination of perturbation and developmental effects (**a**).
-
-We can determine the expression changes expected only from the difference in development using reference expression profiles matching the samples (**b**).
-Any correlation between observed (sample) and expected (reference) logFCs will then correspond to the developmental effect, with uncorrelated logFCs corresponding to the perturbation effect (**c**).
-
-
-```{r sc4_include_refcompare_fig, fig.align='center', echo=F}
-knitr::include_graphics(file.path(figpath,"refcompare_method.png"))
-```
-
-The `ref_compare()` function inputs:
-
- - sample data (expression matrix, expects $log(TPM+1)$ as transcripts per million are more comparable across datasets)
- - the reference object used for age estimation,
- - the `ae` object (or age estimate values for the samples),
- - and a group variable (*e.g.* a factor defining WT and mutant). 
- 
-```{r sc4_refcompare, class.source = 'fold-show'}
-s <- subs$s3 # selecting WT-3 sample subset for the example
-
-rc <- RAPToR::ref_compare(
-    X = dsmiki2017$g[, s],  # sample data, log(TPM+1)
-    ref = r_cel,            # ref object
-    ae_values = ae_miki$age.estimates[s, 1], # ae values of samples
-    group = dsmiki2017$p$strain[s]           # factor defining compared groups
-)
-```
-
-The resulting sample and reference (log2) logFCs can be extracted with `get_logFC()` and plotted. 
-In this vignette, we use a custom `ggplot2` function which can be found in the [*Plotting functions* section below](#code-plotting_functions).
-
-```{r sc4_plot_lfcexample, fig.height=3.5, fig.width=3.5, out.width="40%", class.source = 'fold-show'}
-gg_logFC(RAPToR::get_logFC(rc), main = "WT-3",
-         xlab = "WT-3 vs. xrn-2 log2FC", ylab = "Age-matched reference log2FC")
-```
-The $r^2$ between sample and reference logFCs is a rough estimate of the percentage of variance explained by development (VarDev, in the bottom right). 
-In this case, over 75% of expression changes can be explained by development, which is expected given the large age difference between WT-3 and the *xrn-2* samples.
-
-The average age difference between groups and correlation between sample and reference are also given directly in the output of `ref_compare()`.
-
-```{r sc4_refcomp_outex, class.source = 'fold-show'}
-rc
-```
-
-
-
-Now, let's run `ref_compare()` for all the sample sets defined previously and plot the reference vs. sample logFCs. 
+With `ref_compare()`, we quantify the effect of development in all the sample sets defined above, and plot the reference vs. sample logFCs. 
 
 ```{r sc4_crefcomp, results='hold'}
 rcs <- lapply(subs, function(s){
@@ -346,13 +663,13 @@ text(ae_dif[-1], r_coef[-1], labels = paste0('WT', shifts), cex = .8, font = 2, 
 
 <br>
 
-# Effect of developmental shifts on DE analysis 
+## Effect of developmental shifts on DE analysis performance
 
-## Gold-standard DE
+### Gold-standard DE
 
-Using the age-matched mutant and WT samples defined as gold-standard, we find a set truly DE genes using the standard [`DESeq2`](https://bioconductor.org/packages/DEseq2) workflow.
+Using the age-matched mutant and WT samples defined as gold-standard, we find a set truly DE genes using a standard [`DESeq2`](https://bioconductor.org/packages/DEseq2) workflow.
 
-We start by filtering genes to keep those overlapping with the reference, and with at least 5 counts in any sample.
+We filter genes to keep those overlapping with the reference, and with at least 5 counts in any sample.
 
 ```{r sc4_filtgenes}
 g.filt <- dsmiki2017$g.raw[apply(dsmiki2017$g.raw, 1, function(r) max(r)>5),]
@@ -389,7 +706,7 @@ get_DEres <- function(dds, coefname="strain_xrn2_vs_wt"){
 }
 ```
 
-```{r sc4_deseq_wotage, echo=F}
+```{r sc4_deseq_wotage, echo=F, include=F}
 # run_DESeq2 <- function(X, p){
 #   # Run DEseq2 wt vs. mutant (without age)
 #   require(DESeq2)
@@ -409,7 +726,7 @@ DE.GS <- run_DESeq2_age(g.filt[, subs$gold.standard],
 res.GS <- get_DEres(DE.GS, coefname = "strain_xrn2_vs_wt") # get results table
 ```
 
-Genes are considered DE with the thresholds below.
+We consider genes as DE with the thresholds below.
 ```{r sc4_define_truth, class.source = 'fold-show'}
 # Define DE (with p < thr AND |logFC| > thr)
 thr.p <- 0.01
@@ -424,7 +741,7 @@ With thresholds of $p.value < `r thr.p`$ and $|logFC| > `r thr.logFC`$, we find 
 <br>
 <br>
 
-## DE with developmental shifts
+### DE with developmental shifts
 
 We now apply the same model as above on the 5 sample subsets with shifted WT.
 
@@ -435,7 +752,7 @@ DE.shifts <- lapply(subs[-1], function(s){
 res.shifts <- lapply(DE.shifts, get_DEres)
 ```
 
-We use [precision and recall (P/R)](https://en.wikipedia.org/wiki/Precision_and_recall) metrics to measure the performance the DE analysis (p-value and logFC) in discriminating truly DE genes (*i.e.* genes found in the gold-standard DE above) from non-DE genes. An area under the P/R curve of 1 is a perfect classifier.
+[Precision and recall (P/R)](https://en.wikipedia.org/wiki/Precision_and_recall) metrics allow us to measure the performance the DE analysis (p-value and logFC) in discriminating truly DE genes (*i.e.* genes found in the gold-standard DE above) from non-DE genes. An area under the P/R curve of 1 is a perfect classifier.
 
 ```{r sc4_ROC_init}
 # compute precision-recall curves
@@ -526,25 +843,10 @@ bpnde(nDEgen, las=2, show_in_gs = T)
 <br>
 <br>
 
-# Integrating reference data to correct for development in DE analysis
 
-When there is no developmental overlap between the sample groups to compare, integrating reference data in the DE analysis makes it possible to recover truly DE genes by bridging the gap, as shown in the cartoon below.
+## DE analysis integrating reference data to correct age effect
 
-
-```{r sc4_include_refintegration_fig, fig.align='center', echo=F, out.width="50%"}
-knitr::include_graphics(file.path(figpath,"ref_integration.png"))
-```
-
-Most DE analysis tools input *raw counts* for their particular statistical properties, so the interpolated reference data must be converted from TPM to (artificial) counts assuming an arbitrary fixed library size ($25\times 10^6$ counts).
-Then, because gene dispersions needed for statistical testing cannot be estimated from the noiseless artificial reference, they are inferred from a model without reference data and injected into the model with reference data. 
-
-Thus, resulting model coefficients (logFCs) between sample groups are corrected for development by the reference, and their respective statistical tests use dispersion values inferred only from samples. This approach improves upon what is presented in the RAPToR article (@bulteau2022real), generating valid p-values.
-
-**DISCLAIMER:** we provide the functions `find_df()`, `run_DESeq2_ref()` and sub-functions needed for age correction DE analysis only in this vignette and not as part of the RAPToR package because they might need to be tweaked by the user to adapt to their needs and experimental designs (unlike `ref_compare()`). This approach should also work with tools other than `DEseq2` (e.g. [`edgeR`](https://bioconductor.org/packages/edgeR)).
-
-
-## Selecting a reference window
-
+### Selecting reference windows
 
 ```{r sc4_ref_functions, echo=F}
 find_df <- function(ref, w, dfs=2:8){
@@ -605,8 +907,8 @@ ref_2counts <- function(ref, ae_values,
 }
 ```
 
-We select a reference window spanning the sample age range with an added margin of 1 hour on either side for each subset.  
-Expression dynamics covered by the reference window will be modeled using splines, so we choose appropriate degrees of freedom (df) for each reference window. 
+We select a reference window spanning the sample age range with an added margin of 1 hour on either side for each subset, and find the optimal spline degree-of-freedom (df) to model expression dynamics covered by the reference window.
+
 We define a `find_df()` function which computes the residual sum of squares for a range of spline dfs and choose the optimal df values where a plateau is reached (see [*DE functions* below for code](#code-de_functions)).
 
 
@@ -639,91 +941,9 @@ legend('topright', legend = c( "GS", paste("WT", shifts), 'Chosen df'), text.fon
 
 The selected df increases with the developmental shift, which is expected since the reference window to include gets larger and may thus contain more complex dynamics.
 
+### DE models with reference data
 
-## DE analysis integrating reference data
-
-```{r sc4_deseq_ref_function, include=FALSE}
-run_DESeq2_ref <- function(X, p, formula, ref, 
-                           ae_values=NULL, window.extend=1, ns.df=3){
-  # Run DEseq2 wt vs. mutant correcting for development with ref. data.
-  
-  # Do no not specify age in the formula, it is added directly by the function.
-  # Age estimates should either be an 'ae' column of p or given as 'ae_values'.
-  
-  require(DESeq2)
-  
-  if(!any(colnames(p)=='ae') & is.null(ae_values)){
-    stop("Age estimates should either be a column of p, or given to ae_values.")
-  }
-  if(!is.null(ae_values)){
-    p$ae <- ae_values
-  }
-  
-  ## Extract reference expression profiles in sample time window
-  w.rg <- range(p$ae) + c(-window.extend, window.extend)
-  w.idx <- seq(
-    max(c(1, which.min(abs(w.rg[1]-ref$time))-1 )),
-    min(c(length(ref$time), which.min(abs(w.rg[2]-ref$time))+1))
-    )
-  # ref window time values
-  w.ts <- ref$time[w.idx]
-  # ref window expression values
-  w.GE <- ref_2counts(ref = ref, ae_values = w.ts)
-  
-  ## Join ref & sample data
-  nX <- ncol(X)
-  nR <- ncol(w.GE)
-  
-  # get overlapping genes & join expression data
-  ovl <- RAPToR::format_to_ref(samp = X, refdata = w.GE, verbose = F)
-  Xj <- as.matrix(cbind(ovl$refdata, ovl$samp))
-  
-  # get relevant fields from p 
-  f0 <- as.formula(formula)
-  p2 <- p[, attr(terms(f0), "term.labels"), drop=F]
-  # get 1st level of each variable
-  lev0 <- lapply(p2, function(col) levels(col)[1]) 
-  
-  # join p data and add Time and ref/sample Batch
-  pj <- cbind(
-    Time = c(w.ts, p$ae),
-    Batch = factor(rep(c('r', 's'), c(nR, nX))),
-    rbind(do.call(cbind, lapply(lev0, rep, times=nR)), p2) # other terms
-    ) 
-  rownames(pj) <- colnames(Xj)
-  
-  
-  # Estimate dispersions with samples only
-  s0 <- pj$Batch=="s"
-  dds0 <- DESeqDataSetFromMatrix(countData = Xj[,s0],
-                                 colData = pj[s0,],
-                                 design = f0)
-  dds0 <- estimateSizeFactors(dds0)
-  dds0 <- estimateDispersions(dds0, fitType = "local") 
-  dd <- dispersions(dds0) # store dispersions
-  dd[is.na(dd)] <- 0 # remove NAs
-  
-  ## Build full DE model with reference
-  # Add Time and ref/sample batch to model formula
-  f1 <- update.formula(f0, substitute(
-    ~ splines::ns(Time, df = ns.df) + Batch + ., 
-    list(ns.df=ns.df)
-    ))
-  dds <-  DESeqDataSetFromMatrix(countData = Xj,
-                                 colData = pj,
-                                 design = f1)
-  dds <- estimateSizeFactors(dds)
-  # inject dispersions from sample-only model
-  dispersions(dds) <- dd
-  
-  dds <- nbinomWaldTest(dds)
-  
-  return(dds)
-}
-
-```
-
-Having defined the appropriate reference fit parameters, we can run DESeq2 while integrating the reference data. We define
+Having defined the appropriate fit parameters for the reference, we can integrate in the DE model. We define
 `run_DESeq2_ref()` to do this (see [*DE functions* below for code](#code-de_functions)).
 
 ```{r sc4_runDEcorr, message=FALSE, warning=FALSE, class.source='fold-show'}
@@ -799,9 +1019,12 @@ legend('topright', legend = c("no correction", "age-corrected"),
 ```
 
 
-Compared to the non-corrected models we have a strong rescue of DE analysis performance when there is no overlap between the compared sample groups (starting at `WT-3`).
+Compared to the non-corrected models we strongly rescue the performance of the analysis when there is no overlap between the compared sample groups (starting at `WT-3`).
 
 In less shifted subsets or in the gold-standard, we see that the performance of the age-corrected DE analysis to find truly DE genes is comparable to applying no correction. This is expected since developmental dynamics can be properly modeled without reference data as long as there is overlap between the compared groups, nullifying the advantage of adding it to the model.
+
+
+
 
 
 
@@ -818,7 +1041,7 @@ Required libraries and variables:
 ```{r sc4_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
 
-library("GEOquery") # May need to be installed with bioconductor
+library("GEOquery") # bioconductor package
 
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
@@ -831,6 +1054,25 @@ requireNamespace("utils", quietly = T)
 
 <br>
 ```{r sc4_load_dsmiki_c, code = readLines("load_dsmiki2017.R"), echo = TRUE, eval = FALSE}
+```
+
+## Code to generate quickstart data
+Given the `dsmiki2017` data generated above:
+```{r sc4_load_qsdata, echo=TRUE, eval=FALSE}
+sel <- c(5:7, 19:21) # select 3 WT and 3 mut
+
+qs <- list(
+  tpm = dsmiki2017$g[, sel],
+  count = dsmiki2017$g.raw[, sel],
+  pdat = data.frame( 
+    sname = paste0(rep(c('ctr', 'mut'), e=3), rep(1:3,2)),
+    strain = factor(rep(c('ctr', 'mut'), e=3)),
+    stringsAsFactors = F)
+)
+colnames(qs$tpm) <- qs$pdat$sname
+colnames(qs$count) <- qs$pdat$sname
+
+save(qs, file = file.path(data_folder, 'sc4_qsdata.RData'), compress = "xz")
 ```
 
 <br>
@@ -882,7 +1124,7 @@ Integrating reference data in a DESeq model (`run_DESeq2_ref()`).
 options(width = 80)
 ```
 
-```{r sc4_sessInfo, collapse=FALSE}
+```{r sc4_sessInfo, collapse=FALSE, class.source = 'fold-show'}
 sessionInfo()
 ```
 
