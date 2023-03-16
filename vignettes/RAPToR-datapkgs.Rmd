@@ -1,16 +1,23 @@
 ---
 title: "`RAPToR` - Data-packages"
-output: 
-  rmarkdown::html_document :
+output:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    code_folding: hide
+  rmarkdown::pdf_document:
+    toc: true
+    number_sections: yes
+    includes:
+      in_header: "../inst/tex/preamble.tex"
+subtitle: "`r BiocStyle::pkg_ver('RAPToR')`"
 vignette: >
   %\VignetteIndexEntry{RAPToR-datapkgs}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 bibliography: ../inst/REFERENCES.bib
 author: Romain Bulteau
-date: "`r format(Sys.Date(), '%B %Y')`"
+date: "`r Sys.setlocale('LC_TIME', 'C'); format(Sys.Date(), '%B %Y')`"
 ---
 
 ```{r, include = FALSE}
@@ -20,97 +27,84 @@ knitr::opts_chunk$set(
   fig.align = "center",
   out.width = '100%'
 )
-options(width=100)
 
-library(RAPToR)
+options(width=70)
 ```
 
-# Who is this vignette for ?
+
+
+# Introduction
 
 This vignette is aimed at those who've already familiarized themselves with [`RAPToR` reference building](RAPToR-refbuilding.html).
-It's also for us to keep track of how to continue improving `RAPToR` with new references.
+It's also for us to keep track of guidelines to continue improving `RAPToR` with new references.
 
-If you've already built a few references and want to make them available to the world (or use them more easily yourself), you're in the right place.
-
+If you've already built some references and want to make them available to the world (or use them more easily yourself), you're in the right place.
 You will need some basic knowledge of R package development. Data-packages are, after all, *packages*. 
 This document only details how to set up your data-package to interact properly with `RAPToR`.
 
 
 # What's a data-package ?
 
-By definition, a "data-package" is an R package in which one stores large datasets (over a few Mo, at least).
+By definition, a "data-package" is an R package in which one stores large datasets (over a few Mo).
 This is a good practice for several reasons. 
 
  1. If your data rarely or never changes, updates to the data-package (and thus, download of the data) will be minimal. If included in a standard package, large data can be a burden during install.
  1. The data may never be used. Why have users download data they won't need ?
- 1. CRAN standards limit package size to 5MB (documentation included). A large dataset is better off when separated from methods and functions that may need it.
+ 1. CRAN standards limit package size to 5MB (documentation included). A large dataset is better off separated from methods and functions that may need it.
  
 Hadley Wickam gives thorough advice on organizing data in packages in his [*R packages* book](http://r-pkgs.had.co.nz/data.html).
 
 
-# RAPToR data-packages
 
-`RAPToR` relies on references to operate. 
-These can sometimes be tedious to build, so we want to give users access to pre-built references.
-A reference can be boiled down to :
+
+# Reference data
+`RAPToR` uses references which can sometimes be tedious to build, so we want to give users access to pre-built references as much as possible.
+References are stored as `.RData` objects, which must include everything needed to make the interpolated reference:
 
  - gene expression data, 
- - optimal interpolation parameters, and
- - some metadata.
-
-To avoid overcharging the end user, we split references to data-packages.
-The data is then used through the `RAPToR` interface described below.
-
-## Reference data
-Reference data are stored as `.RData` objects, which should
-include everything needed to construct the interpolated reference (as listed above).
-There can be as many as you like in one data-package. We keep one organism per data-package.
-
+ - optimal interpolation parameters,
+ - some metadata (*e.g.* time units).
+ 
+There can be as many references as needed in a data-package; we group packages by organism.
 
 Being consistent, clear and concise with naming can help users (or yourself !) find their way around references.
 For example, `wormRef` references are named with an organism code `Cel` (*C. elegans*) followed by the developmental period covered by the reference *e.g.* `larval`.
 
+Document the references. It is standard practice to document data.
+What is the data? Where is the data from? Publication? etc.
+
 
 The structure of the `Cel_larval` reference object is detailed below as an example.
 
-A list with
+```{r cel_larv_structure}
+str(wormRef::Cel_larval, vec.len = 2)
+```
+With
 
- * `$ g` The gene expression matrix (genes as rows, samples as columns).
- * `$ p` A dataframe of phenotypic data on the samples :
+ * `g` The gene expression matrix (genes as rows, samples as columns).
+ * `p` A dataframe of phenotypic data on the samples :
    * `sname` sample names,
    * `age`   *developmental* age of the samples (scaled),
    * `cov`   covariate, factor indicating which of 3 time series,
    * `age_ini`  *chronological* age of the samples,
    * `accession` sample accession ID for GEO.
- * `$ geim_params`  A list with necessary parameters for interpolation :
-   * `$ formula = "X ~ s(age, bs = 'ds') + cov"`
-   * `$ method = "gam"`
-   * `$ dim_red = "pca"`
-   * `$ nc = 40`
- * `$ t.unit = "h past egg-laying (20C)"` the time unit.
- * `$ cov.levels` A named list with covariate levels to interpolate as.
-   *`$ cov = "O.20"`
- * `$ metadata` A named list with any extra metadata
-   * `$ organism = "C. elegans"`
-   * `$ profiling = "whole-organism, bulk"`
-   * `$ technology = "RNAseq"`
+ * `geim_params`  A list with necessary parameters for interpolation
+ * `t.unit` the time unit.
+ * `cov.levels` A named list with covariate levels to interpolate as.
+ * `metadata` A named list with any extra metadata
 
+The documentation for `Cel_larval` can be accessed with `?Cel_larval`.
 
+# Data-package interface with RAPToR
 
-**Document the references.** It is standard practice to document data.
-*What is the data? Where is the data from?* etc.
+For a user to access data-package information and references directly from `RAPToR`, we've set up a standard system using reference names.
 
-## Data-package interface with RAPToR
+A few objects are *necessary* for this interface to work.
 
-To have users access data-package information and references directly from `RAPToR`, we've set up a standard system using reference names.
-
-A few objects are **necessary** for this interface to work.
-
-
-### `.prepref_` functions
+## `.prepref_` functions
 
 `.prepref_` functions (note the "dot") are the key of the interface : they **prep**are the **ref**erence for the user.
-They must respect the naming convention `.prepref_ref_name()` (*e.g.* `.prepref_Cel_larval()`) *and* take `n.inter` and/or `by.inter` as arguments.
+They must respect the naming convention `.prepref_ref_name()` (*e.g.* `.prepref_Cel_larval()`) and take `n.inter` and/or `by.inter` as arguments.
 
 These functions are the backbone called by `prepare_refdata()` when fetching a reference, and thus should
 output the reference `ref` object with the specified parameters.
@@ -118,7 +112,7 @@ This means building the GEIM model, and calling `make_ref()` with the appropriat
 
 We have made a [function factory](https://adv-r.hadley.nz/function-factories.html) to generate these functions. 
 It inputs the reference data object described above, and returns the corresponding prepref function. 
-```{r prepref, eval = F}
+```{r prepref, eval = F, class.source="fold-show"}
 .prepref_skel <- function(data, from=NULL, to=NULL){
   # .prepref function factory
   f <- function(n.inter=NULL, by.inter=NULL){
@@ -146,17 +140,20 @@ It inputs the reference data object described above, and returns the correspondi
 
 To make `.prepref_Cel_larval()`, we simply include the following code in the data-package, along with the function factory.
 
-```{r prepref_larv, eval=F}
+```{r prepref_larv, eval=F, class.source="fold-show"}
 .prepref_Cel_larval <- .prepref_skel(wormRef::Cel_larval)
 ```
 
 
-### `ref_list` object
+## `ref_list` object
 
 `RAPToR` expects a `ref_list` object in the data-package. 
 This is what's displayed when calling the `list_refs(datapkg)` function.
 
-```{r list_ref, results='markup'}
+```{r list_ref, results='markup', class.source="fold-show"}
+library(RAPToR)
+library(wormRef)
+
 list_refs(datapkg = "wormRef")
 ```
 
@@ -164,21 +161,22 @@ The form/layout of this object is free, but reference names should be included s
 
 
 
-### `.plot_refs()` function
+## `.plot_refs()` function
 
 This function is optional, but very useful to guide users to the correct reference for their samples.
 Including a `.plot_refs()` function (note the “dot”) in a data-package will allow it to be called by the `plot_refs(datapkg)` function in `RAPToR`.
 
-```{r plot_ref, fig.width = 8, fig.height=6, out.width="75%"}
+```{r plot_ref, fig.width = 8, fig.height=6, out.width="75%", class.source="fold-show"}
 plot_refs(datapkg = "wormRef")
 ```
 
-### Other objects
+## Other objects
 
 You're free to include any extra objects in your data-package that may be useful.
-For example, the `wormRef` package has a `Cel_devstages` object with information on key developmental stages of *C. elegans*, which is used for building the plot in `.plot_refs()` (*cf.* above).
+For example, the `wormRef` package has a `Cel_devstages` object with information on key developmental stages of *C. elegans* (which is used for building the plot in `.plot_refs()` above).
 
+# SessionInfo {.unnumbered}
 
-<br>
-<br>
-<br>
+```{r sessionInfo, collapse=FALSE, class.source = 'fold-show'}
+sessionInfo()
+```
