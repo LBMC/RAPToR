@@ -45,10 +45,10 @@ requireNamespace("limma", quietly = T)
 
 With `RAPToR` and the inferred age of your samples, you can
 
- - precisely estimate the effect of perturbations on developmental timing, 
+ - precisely estimate the effect of perturbations on developmental timing (including in a tissue-specific way), 
  - increase power in differential expression analyses, 
- - estimate differential expression due to uncontrolled development and,
- - recover perturbation-specific effects on gene expression even when the perturbation is completely confounded by development. 
+ - quantify differential expression due to uncontrolled development and,
+ - recover perturbation-specific effects on gene expression even when completely confounded by development. 
 
 
 <br>
@@ -97,22 +97,19 @@ Extract age estimates.
 ae_X$age.estimates[,1]
 ```
 
-
-# Why use `RAPToR` ?
+# About `RAPToR`
+## Why use `RAPToR` ?
 
 In gene expression data, unknown and unintended developmental variation among biological samples can obscure and confound the effect of variables of interest. 
-As many factors can influence growth speed, synchronizing samples is particularly challenging, but failing to do so can strongly impact gene expression.
+As many factors influence growth speed (including experimental conditions), synchronizing samples can be challenging but failing to do has a strong impact on gene expression.
 
-Aware of the problem, studies with large scale developmental profiling generally re-order or rank the samples post-profiling with methods that combine dimension-reduction (*e.g* PCA, Diffusion Map) and a trajectory-finding method.
-Unfortunately, this is only feasible for experiments with hundreds of samples and/or time-series designs, which the overwhelming majority of expression profiling studies are not. 
+Aware of this problem, studies with large scale developmental profiling generally re-order or rank the samples post-profiling with methods such as BLIND (@anavy2014blind) that combine dimension-reduction (PCA, Diffusion Map, ...) and a trajectory-finding method.
+Unfortunately, this only works with hundreds of samples and/or time-series designs and thus doesn't apply to the overwhelming majority of expression profiling studies. 
 
-The problem we are faced with is not limited to large scale experiments, so why should we only address it in such scenarios ? 
-
-`RAPToR` provides a way to precisely determine the real age of *single samples* from their expression profile.
+Overcoming this limitation, `RAPToR` provides a way to precisely determine the real age of *single samples* from their expression profile.
 
 
-
-# How does it work ?
+## How does it work ?
 
 `RAPToR` is a 2-step process:
 
@@ -120,28 +117,26 @@ The problem we are faced with is not limited to large scale experiments, so why 
  1. A **correlation profile** against this reference is dressed for of each of your samples, and the timing of the correlation peak is the estimated age.  **Bootstrapping on genes** then gives a confidence interval of the estimates.
 
 
-```{r fig_tool_overview, echo=F}
-knitr::include_graphics(file.path(figpath,"tool_overview.jpg"))
+```{r fig_tool_overview, echo=F, fig.wide=TRUE}
+knitr::include_graphics(file.path(figpath,"tool_overview.jpg"), auto_pdf = T)
 ```
 
-# What type of data can be used ?
+## What type of data can be used ?
 
-`RAPToR` can stage samples from any genome-wide gene expression profiling method  : RNA-seq (preferably TPM), MicroArray...
+`RAPToR` can stage samples from any genome-wide gene expression profiling method  : RNA-seq (preferably as TPM), MicroArray, ...
 
 Note that the references provided in the data-packages are $log(X+1)$ of expression values, so applying this transformation to your data is important if comparing expression changes with the reference (but is not required for staging).  
 
 ***Data must not be gene-centered***, as this destroys the relationship between gene levels within a sample.
 
 
-
-
-# General structure of `RAPToR`
+## General structure of the package
 
 The main package (`RAPToR`) holds the functions needed for staging samples and building references.
 
-To provide a quick and easy way to predict the age of samples, we pre-built several references for commonly used organisms from available data in the literature.
+To provide a quick and easy way to infer the age of samples, we pre-built several references for commonly used organisms from available data in the literature.
 References are voluminous for an R package, so they are stored in separate "data-packages". 
-For example, `wormRef` holds the *C. elegans* references.
+For example, `wormRef` stores the *C. elegans* references.
 
 References available in a data-package are listed with the `list_refs()` function (you must have the data-package installed for this, 
 [`wormRef` can be installed from here.](https://github.com/LBMC/wormRef))
