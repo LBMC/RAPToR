@@ -208,9 +208,9 @@ RNASeq expression data should ideally be sum-aggregated at the count level, and 
 `RAPToR` estimates sample age using correlation with a reference time-series, meaning you must select the proper reference to compare your samples with. 
 
 If we haven't built references for your favorite organism yet, you can take a look at [the *Building your own references* section](#building-your-own-references) in this vignette for a quick-start guide or [the dedicated reference-building vignette](RAPToR-refbuilding.html) for an in-depth explanation.
-For species without available time-series data (*e.g* non-model), samples can still be staged using ortholog genes and a reference from a related specie.
+For species without available time-series data (*e.g.* non-model), samples can still be staged using ortholog genes and a reference from a related specie.
 
-To determine if an existing reference in a data-package cover the appropriate development for your samples, use `list_refs()` like above, or the `plot_refs()` function which shows the references available in the data-package (in this case, `wormRef`) along with landmark developmental stages. 
+To determine if an existing data-package reference covers the appropriate development span for your samples, use `list_refs()` like above, or the `plot_refs()` function which shows the references available in the data-package (in this case, `wormRef`) along with landmark developmental stages. 
 
 ```{r plot_refs, fig.height=5, fig.width=9, class.source="fold-show", out.width="80%"}
 plot_refs("wormRef")
