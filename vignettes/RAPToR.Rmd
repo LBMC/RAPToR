@@ -123,7 +123,7 @@ knitr::include_graphics(file.path(figpath,"tool_overview.jpg"), auto_pdf = T)
 
 ## What type of data can be used ?
 
-`RAPToR` can stage samples from any genome-wide gene expression profiling method  : RNA-seq (preferably as TPM), MicroArray, ...
+`RAPToR` can stage samples from any genome-wide gene expression profiling method  : RNA-seq (preferably as TPM), microarray, ...
 
 Note that the references provided in the data-packages are $log(X+1)$ of expression values, so applying this transformation to your data is important if comparing expression changes with the reference (but is not required for staging).  
 
@@ -151,17 +151,14 @@ You can also build your own reference data-packages following guidelines given i
 
 # Detailed usage example
 
-In this part, we show how to stage two *C. elegans* time-series datasets using references from `wormRef` (which you will need installed to use its references, [see here for installation](https://github.com/LBMC/RAPToR)).
+In this part, we show how to stage two *C. elegans* time-series datasets using pre-built references from `wormRef` (which must be installed to use its references, [see here for installation](https://github.com/LBMC/RAPToR)).
 
  1. A larval development time-series of 4 different strains published by @aeschimann2017lin41, hereafter called `dsaeschimann2017`.
  1. A high-resolution time-series of late larval development published by @hendriks2014extensive, hereafter called `dshendriks2014`
 
 Both datasets are available on GEO 
 ([GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157), 
-[GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)).
-
-
-Code to create the `dsaeschimann2017` and `dshendriks2014` objects can be found [at the end of this vignette](#load_dsaeschimann2017_dshendriks2014).
+[GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)), and code to create the `dsaeschimann2017` and `dshendriks2014` objects can be found [at the end of this vignette](#code-to-generate-data-objects).
 
 
 ```{r load_ds, include=FALSE, eval=gen_figs}
@@ -186,48 +183,41 @@ head(dshendriks2014$p, n = 5)
 
 We quantile-normalize and log the expression data (this is not required for staging, but is useful for plotting the expression data).
 ```{r quantile_norm_log, class.source="fold-show"}
-dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
+dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, 
+                                                    method = "quantile")
 dsaeschimann2017$g <- log1p(dsaeschimann2017$g) # log1p(x) = log(x + 1)
 
-dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, method = "quantile")
+dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, 
+                                                  method = "quantile")
 dshendriks2014$g <- log1p(dshendriks2014$g)
 ```
 
 
 You may need to convert probe IDs or gene IDs of your data to match those of the reference series.
-For example, all the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
+All the references included in the `wormRef` data-package use WormBase Gene IDs (*e.g.* `WBGene00016153`).
+To help with this conversion, we provide the `format_ids()` function and gene ID reference tables are included in the data-packages (built directly from [`biomaRt`](https://www.ensembl.org/index.html) queries).
 
 Transcript-level data is aggregated into gene-level expression in our references for a broader usage (since it is possible to compute gene-level expression from transcripts, but not the other way around).
 RNASeq expression data should ideally be sum-aggregated at the count level, and other types of data -- such as microarray, or RNASeq TPM (if counts are unavailable) -- are mean-aggregated.
 
-To help with this conversion, we provide the `format_ids()` function and gene ID reference tables are included in the data-packages (built directly from [`biomaRt`](https://www.ensembl.org/index.html) queries).
 
 
 
-## Choosing a reference dataset
+## Choosing and loading a reference
 
 `RAPToR` estimates sample age using correlation with a reference time-series, meaning you must select the proper reference to compare your samples with. 
-You can determine which reference of a data-package covers appropriate development for your samples from the list with `list_refs()` like above, or by using the `plot_refs()` function.
 
-If we haven't built references for your favorite organism yet, you can take a look at [the *Building your own references* section](#building-your-own-references) in this vignette for a quick-start guide or [the dedicated reference-building vignette](RAPToR-refbuilding.html) for a more in-depth explanation.
+If we haven't built references for your favorite organism yet, you can take a look at [the *Building your own references* section](#building-your-own-references) in this vignette for a quick-start guide or [the dedicated reference-building vignette](RAPToR-refbuilding.html) for an in-depth explanation.
+For species without available time-series data (*e.g* non-model), samples can still be staged using ortholog genes and a reference from a related specie.
 
-The chart below shows the references available in the `wormRef` data-package, along with landmark developmental stages. 
+To determine if an existing reference in a data-package cover the appropriate development for your samples, use `list_refs()` like above, or the `plot_refs()` function which shows the references available in the data-package (in this case, `wormRef`) along with landmark developmental stages. 
 
-```{r plot_refs, fig.height=6, fig.width=9, class.source="fold-show"}
+```{r plot_refs, fig.height=5, fig.width=9, class.source="fold-show", out.width="80%"}
 plot_refs("wormRef")
 ```
 
-
-
-## Loading the reference
-
-To increase the accuracy of age estimates beyond the temporal resolution of time-series profiling experiments, we interpolate on gene expression dynamics of the reference with respect to time.
-Pre-built references with optimal interpolation parameters can be loaded using `prepare_refdata()`.
-
-The `Cel_larval` reference would be appropriate for both example datasets since their samples range from mid-larval to early young adult.
-Interpolation resolution is given through either `n.inter` (number of interpolated points) or `by.inter` (interpolation step in reference time units). 
+The `Cel_larval` reference is appropriate for both example datasets since their samples range from mid-larval to early young adult. We load it using `prepare_refdata()`, specifying an interpolation resolution through either `n.inter` (number of interpolated points) or `by.inter` (interpolation step in reference time units). 
 In the interest of lightening the computational load (each interpolated timepoint is compared to the samples) you can choose smaller `n.inter` or larger `by.inter` values. We find having `n.inter` > 500 gets the most out of interpolation.
-
 
 ```{r prep_ref, class.source="fold-show"}
 r_larv <- prepare_refdata("Cel_larval", "wormRef", n.inter = 600)
@@ -250,18 +240,17 @@ set.seed(1) # for reproducibility
 ```
 
 
-```{r ae_dsaeschimann2017, class.source="fold-show", results='hold'}
-ae_dsaeschimann2017 <- ae(dsaeschimann2017$g,      # input gene expression matrix
-                          r_larv)                  # reference object
+```{r ae_dsaeschimann2017, class.source="fold-show", results='hold', warning=FALSE}
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, # input gene expression matrix
+                          r_larv)             # reference object
 ```
 
-```{r ae_dshendriks2014, class.source="fold-show", results='hold'}
-ae_dshendriks2014 <- ae(samp = dshendriks2014$g,      # input gene expression matrix
-                        r_larv)                       # reference object
+```{r ae_dshendriks2014, class.source="fold-show", results='hold', warning=FALSE}
+ae_dshendriks2014 <- ae(dshendriks2014$g, # input gene expression matrix
+                        r_larv)           # reference object
 ```
 
 Let's look at the results.
-
 
 ```{r plot_ae1, class.source="fold-show", fig.height=9, fig.width=8, out.width="80%"}
 plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain, 
@@ -273,15 +262,18 @@ plot(ae_dsaeschimann2017, groups = dsaeschimann2017$p$strain,
 plot(ae_dshendriks2014)
 ```
 At 25$^\circ$C, *C. elegans* worms develop 1.5 times faster than worms at 20$^\circ$C.
-Since the worms we staged were grown at 25°C, but the reference -- and thus, the inferred age -- corresponds to 20$^\circ$C development,
-we can see this 1.5 factor by fitting a simple linear model between chronological and estimated age.
+Since the worms we staged were grown at 25°C, but the reference -- and thus, the inferred age -- corresponds to 20$^\circ$C development, we can see this 1.5 factor by fitting a simple linear model between chronological and estimated age.
 
 
 ```{r lm_ds, class.source="fold-show"}
-lm_dsaeschimann2017 <- lm(ae_dsaeschimann2017$age.estimates[,1] ~ dsaeschimann2017$p$age)
+# extract age estimates
+dsaeschimann2017$p$age_est <- ae_dsaeschimann2017$age.estimates[,1]
+dshendriks2014$p$age_est <- ae_dshendriks2014$age.estimates[,1]
+
+lm_dsaeschimann2017 <- lm(age_est ~ age, data = dsaeschimann2017$p)
 summary(lm_dsaeschimann2017)$coefficients
 
-lm_dshendriks2014 <- lm(ae_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age)
+lm_dshendriks2014 <-  lm(age_est ~ age, data = dshendriks2014$p)
 summary(lm_dshendriks2014)$coefficients
 ```
 
@@ -289,13 +281,13 @@ summary(lm_dshendriks2014)$coefficients
 par(mfrow = c(1,2), pty='s', mar=c(5,5,4,1))
 
 # plot first dataset
-plot(ae_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
+plot(age_est~age, data = dsaeschimann2017$p, 
      xlab = "Chronological age (25C)", ylab = "RAPToR age estimates (20C)", 
      main = "Chronological vs estimated age\nfor dsaeschimann2017", lwd = 2, 
      col = factor(dsaeschimann2017$p$strain))
 invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
   s <- dsaeschimann2017$p$strain == l
-  points(ae_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], 
+  points(age_est~age, data = dsaeschimann2017$p[s,], 
          type = 'l', 
          lty = 2, col = which(l==levels(factor(dsaeschimann2017$p$strain))))
 }))
@@ -307,10 +299,10 @@ legend("bottomright",
        pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 1))
 
 # plot second dataset
-plot(ae_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
+plot(age_est~age, data = dshendriks2014$p,
      xlab = "Chronological age (25C)", ylab = "RAPToR age estimates (20C)", 
      main = "Chronological vs estimated age\nfor dshendriks2014", lwd = 2)
-points(ae_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
+points(age_est~age, data = dshendriks2014$p, 
        type = 'l', lty = 2)
 abline(lm_dshendriks2014, lwd=2, col=2)
 
@@ -331,8 +323,8 @@ summary(ae_dshendriks2014)
 <br>
 Age estimates and their confidence intervals are accessible through `$age.estimates`, a table with
 
- - `age.estimate`, the global estimate for the sample (whole gene set).
- - `lb`, `ub`, the lower and upper bounds of the bootstrapped age estimates' confidence interval (Median Absolute Deviation).
+ - `age.estimate`, age estimate for the sample.
+ - `lb`, `ub`, the lower and upper bounds of the bootstrap confidence interval (Median Absolute Deviation of bootstrapped estimated).
  - `cor.score`, the correlation score between the sample and reference at the age estimate.
 
 ```{r show_ae, class.source="fold-show",}
@@ -346,7 +338,7 @@ Estimates and confidence intervals can be displayed in the form of a 'dotchart' 
 The `ae` object also holds record of correlation scores of each samples with the full reference span (for bootstrap estimates as well). 
 These correlation profiles can be plotted with `plot_cor()`
 
-```{r plot_cor_print, class.source="fold-show", fig.height=5, fig.width=8, out.width="80%"}
+```{r plot_cor_print, class.source="fold-show", fig.height=5.5, fig.width=8, out.width="80%"}
 par(mfrow=c(2,2))
 plot_cor(ae_dshendriks2014, subset = c(1,4,9,14))
 ```
@@ -402,11 +394,11 @@ When performing PCA (or ICA) on gene expression data, $S$ is what's usually plot
 We use this property through GEIMs.
 We fit a model on the columns of $S^T$ (eigengenes), predict in the component space, and reconstruct the gene expression data by a matrix product with the gene loadings. 
 
-We've implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
-GAMs rely on the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs on the `glm()` function of the `stats` core package. 
-The specified model formula can make use of all the tools one can use with `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
+We implemented 2 model types : Generalized Additive Models (GAMs, the default) and Generalized Linear Models (GLMs). 
+GAMs use the `gam()` function of the [`mgcv`](https://cran.r-project.org/web/packages/mgcv/index.html) package, and GLMs use the `glm()` function of the `stats` core package. 
+The specified model formula can include the usual tools of `gam()` or `glm()`, most notably the variety of polynomial or smoothing splines implemented through the `s()` function for GAMs.
 
-If you are unfamiliar with the `mgcv` package or GLMs in R, we recommend you look at their function documentations (especially `s()` for GAMs) to understand what terms can be included in the formulas to model non-linear dynamics.
+If you are unfamiliar with the `mgcv` package or GLMs in R, we recommend you look at their documentation (especially `s()` for GAMs) to understand the terms included in formulas to model non-linear dynamics.
 
 Note that a single model formula is specified and applied to all the components, but models are fitted independently on the components.
 
@@ -474,9 +466,8 @@ We choose `ts` (a thin-plate regression spline), as it minimizes CV error withou
 
 ## Building a reference object from a model
 
-A `ref` object is built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata.
+A `ref` object is built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata:
 
-On our `dsaeschimann2017` example :
 ```{r pred_dsaeschimann2017, class.source="fold-show"}
 r_dsaeschimann2017 <- make_ref(
   m = m_dsaeschimann2017,
@@ -491,28 +482,33 @@ r_dsaeschimann2017 <- make_ref(
 ```
 
 
-## Checking/Validating the interpolation
+## Validating the interpolation
 
-After building a reference, we can check interpolation results by: 
+After building a reference, we check interpolation results by: 
 
  - Checking model fits on components (plots)
  - Staging the samples on their interpolated reference, or better (if possible) stage another independent time-series on your reference for external validation.
 
-We can do both with our example, using the `dshendriks2014` dataset for external validation.
+We can do both with our example data, using `dshendriks2014` for external validation.
 
-Plotting the model with the reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component. The fit values are also returned by the plot function.
+Plotting the model and reference object (or equivalent metadata) shows component interpolation, with deviance explained (DE) and relative error (RE) for each component. 
 
-```{r plot_pca_dsaeschimann2017, class.source="fold-show", warning=FALSE, message=FALSE, fig.width=10, fig.height=5, out.width="80%"}
+```{r plot_pca_dsaeschimann2017, class.source="fold-show", warning=FALSE, message=FALSE, fig.width=10, fig.height=5.5, out.width="100%"}
 par(mfrow = c(2,4))
 fit_vals <- plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=1:8, 
                  col = dsaeschimann2017$p$strain, col.i = 'royalblue')
+```
 
+Of note, we are predicting model values as `N2` (lightblue). While all strains are shown on the plots, some model parameters depend on the selected `N2` strain. 
+
+
+The fit values are also returned by the plot function.
+```{r pca_fit_dsaeschimann2017, class.source="fold-show"}
 head(fit_vals)
 ```
 
 
-Of note, we are predicting model values as `N2` (lightblue). While all strains are shown on the plots, some model parameters depend on the selected `N2` strain. 
-
+Staging the samples and external validation dataset.
 ```{r ae_dsaeschimann2017_test, class.source="fold-show", message=FALSE, warning=FALSE, results='hide'}
 ae_test_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
 ae_test_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
@@ -548,30 +544,30 @@ abline(a = 0, b = 1, lty = 3, lwd = 2)
 legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 ```
 
-
+Staging results are excellent, validating the reference which can now be used to stage any samples within its developmental span.
 <br>
 
 
-# Using a prior
+# Staging with a prior
 
 When few genes are available for staging (e.g. for [tissue-specific staging](RAPToR-showcase.html#capturing-tissue-specific-development)), it may be appropriate to give RAPToR a prior to help age estimation.
-In the `ae()` function, priors work by giving the parameters for gaussian distributions of time (for each sample). The correlation peaks are then ranked according to the prior's density.
+In the `ae()` function, priors are parameters for gaussian distributions of time (for each sample). The correlation peaks are then ranked according to the prior's density.
 The correlation profile is unaffected by the prior, only the choice of the correlation peak is.
 
 **This implies that with a prior which is completely off, the estimate may also be wrong ; use with care.**
 
-Priors are given *in the time scale of the reference*, so beware of growth speed difference with temperature or different time origins (fertilization, egg-laying, hatching...). 
+Priors must be given *in the time scale of the reference*, so beware of growth speed difference with temperature or different time origins (fertilization, egg-laying, hatching...). 
 For example, the `dshendriks2014` *C. elegans* data used above is grown at 25$^\circ$C, resulting in a different growth speed than the reference which is at 20$^\circ$C development. 
 
-We insist on careful use due to these possible differences and bias introduced by the prior. 
+We insist on careful use due to these possible differences and biases introduced by the prior. 
 
-A first run without priors will give a general idea of the difference between the chronological and developmental age of your samples.
+A first run without priors will give a general idea of the difference between the chronological age of samples and their developmental age in the reference time scale.
 
-Once the priors are determined, you will need to set the standard deviation of the gaussian centered on the sample with the `prior.params` argument. 
-This parameter will also indirectly change the weight of the prior over the correlation score for estimate selection.
+Once priors (means of the gaussian) are determined, the standard deviation is specified with the `prior.params` argument. 
+This parameter will also indirectly change the weight of the prior over the correlation score for peak selection.
 
-On our `dshendriks2014` example, we can use adjusted known chronological ages for 20$^\circ$C.
-```{r hend_prior, class.source="fold-show"}
+On the `dshendriks2014` example, we can use adjusted known chronological ages for 20$^\circ$C.
+```{r hend_prior, class.source="fold-show", warning=FALSE}
 # rough approximation based on our previous lm
 priors <- dshendriks2014$p$age * 1.6 - 5 
 
@@ -588,37 +584,35 @@ plot(ae_dshendriks2014_prior,
      show.prior = T, col.p = 'red', l.pos = 'bottomright')
 
 # check prior estimates are equal to previous ones
-all(ae_dshendriks2014_prior$age.estimates[,1]==ae_dshendriks2014$age.estimates[,1])
+all(ae_dshendriks2014_prior$age.estimates[,1] == 
+      ae_dshendriks2014$age.estimates[,1])
 ```
 
 As expected, here the estimates are identical to those without priors. 
 
 
-# Code to generate `dsaeschimann2017` and `dshendriks2014`
+# Code to generate data objects
 
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
-
+Required libraries and variables.
 ```{r load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
 
 requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
-requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
-requireNamespace("Biobase", quietly = T) # same
+requireNamespace("GEOquery", quietly = T) # bioconductor
+requireNamespace("Biobase", quietly = T) # bioconductor
 ```
 
-**Utility functions**
+*Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
 
 ```{r c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
 ```
 
-**dsaeschimann2017**
-
+Generating `dsaeschimann2017`.
 ```{r load_dsaeschimann2017_c, code = readLines("load_dsaeschimann2017.R"), echo = TRUE, eval=FALSE}
 ```
 
-**dshendriks2014**
-
+Generating `dshendriks2014`.
 ```{r load_dshendriks2014_c, code = readLines("load_dshendriks2014.R"), echo = TRUE, eval=FALSE}
 ```
 
@@ -630,6 +624,10 @@ requireNamespace("Biobase", quietly = T) # same
 
 <hr>
 # SessionInfo {.unnumbered}
-```{r sessInfo, collapse=FALSE, class.source = 'fold-show'}
+```{r sesssinforestrictwidth, include=FALSE}
+options(width = 80)
+```
+
+```{r sessionInfo, collapse=FALSE, class.source = 'fold-show'}
 sessionInfo()
 ```
