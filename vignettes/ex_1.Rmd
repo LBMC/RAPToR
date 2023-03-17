@@ -1,290 +1,234 @@
 
-```{r, include = FALSE, eval = F}
-knitr::opts_knit$set(out.format = "html")
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.align = "center",
-  out.width = '100%'
-)
-options(width=100)
+### Data
 
-gen_figs <- F
-figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
-if(!file.exists(figpath)){
-  dir.create(figpath)
-}
+In this example, we use two *C. elegans* RNAseq time-series:
 
+ 1. A high-resolution time series of late larval development published by @hendriks2014extensive, `dshendriks2014`, used to build the reference. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
+ 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, `dsaeschimann2017`, used for external validation. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
 
-library(RAPToR)
-library(RColorBrewer)
-library(beeswarm)
-
-requireNamespace("limma", quietly = T)
-requireNamespace("stats")
-
-transp <- function(col, a=.5){
-  colr <- col2rgb(col)
-  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
-}
-
-png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 150, ...){
-  png(filename = paste0(path, figname, ".png"), 
-      width = fig.width, height = fig.height, res = res, units = "in")
-}
-
-show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
-  if(gen_figs){
-    png_custom(figname = figname, path = figpath, ...)
-    eval(expr = expr)
-    dev.off()
-  }
-  else{
-    knitr::include_graphics(paste0(path, figname, ".png"))
-  }
-}
-```
-
-### The data
-
-**The data of this example is used for the *in-text* examples throughout the reference-building vignette.**
-
-Here, we use two *C. elegans* RNAseq time-series:
-
- 1. A time series of larval development in 4 different strains published by @aeschimann2017lin41, `dsaeschimann2017`. This is the data we use to build the reference. (Accession : [GSE80157](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80157))
- 1. A high-resolution time series of late larval development published by @hendriks2014extensive, `dshendriks2014`. This data is used for external validation. (Accession : [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861))
-
-#### {.tabset}
-
-<a name="code-gen_dsaeschimann2017-dshendriks2014"></a>
-
-Code to generate `dsaeschimann2017` and `dshendriks2014` :
-
-##### Hide
-
-##### Show
-
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
-
-```{r ex1_load_namespaces, eval = F}
-data_folder <- "../inst/extdata/"
-
-requireNamespace("wormRef", quietly = T)
-requireNamespace("utils", quietly = T)
-requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
-requireNamespace("Biobase", quietly = T)
-```
-
-```{r ex_1_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
-```
-
-<br>
-
-###### `dsaeschimann2017`
-```{r ex1_load_dsaeschimann2017_c, code = readLines("load_dsaeschimann2017.R"), echo = TRUE, eval=FALSE}
-```
-
-<br>
-
-###### `dshendriks2014`
-```{r ex1_load_dshendriks2014_c, code = readLines("load_dshendriks2014.R"), echo = TRUE, eval=FALSE}
-```
+The data is the same used in the vignette above, but we flip which dataset is the reference and which is used for external validation. Code to generate `dsaeschimann2017` and `dshendriks2014` can be found [at the end of this section](#code-to-generate-objects)
 
 
 
-#### Normalization & Quick look
-```{r ex1_load, include=FALSE, eval = gen_figs}
+### Normalization & Exploration
+
+We start by normalizing the data.  
+```{r ex1_load, include=FALSE}
 load("../inst/extdata/dsaeschimann2017.RData")
 load("../inst/extdata/dshendriks2014.RData")
 ```
 
-```{r ex1_qnorm_log, eval = gen_figs}
-dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, method = "quantile")
-dsaeschimann2017$g <- log1p(dsaeschimann2017$g)
+```{r ex1_qnorm_log, class.source='fold-show', message=FALSE, warning=FALSE}
+library(RAPToR)
+library(limma)
 
-dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, method = "quantile")
+dshendriks2014$g <- limma::normalizeBetweenArrays(dshendriks2014$g, 
+                                                  method = "quantile")
 dshendriks2014$g <- log1p(dshendriks2014$g)
+
+dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, 
+                                                    method = "quantile")
+dsaeschimann2017$g <- log1p(dsaeschimann2017$g)
 ```
 
-```{r ex1_ql_c1, results='markup', eval = gen_figs}
-dsaeschimann2017$g[1:5,1:4]
-#>                let.7.n2853._18hr let.7.n2853._20hr let.7.n2853._22hr let.7.n2853._24hr
-#> WBGene00007063         2.1206604          2.469532          2.373273          2.175924
-#> WBGene00007064         2.1621558          2.260804          2.661102          2.354485
-#> WBGene00007065         2.7763061          2.847833          2.727037          2.960098
-#> WBGene00003525         0.9434159          2.466223          2.609585          1.313603
-#> WBGene00007067         1.0787531          1.081964          1.350796          1.236899
+Check the contents of the expression matrix and pheno data.
+```{r ex1_ql_c1, results='markup', class.source='fold-show'}
+dshendriks2014$g[1:5,1:3]
 
-head(dsaeschimann2017$p, n = 5)
-#>                        title geo_accession           organism_ch1       strain
-#> GSM2113587 let.7.n2853._18hr    GSM2113587 Caenorhabditis elegans let-7(n2853)
-#> GSM2113588 let.7.n2853._20hr    GSM2113588 Caenorhabditis elegans let-7(n2853)
-#> GSM2113589 let.7.n2853._22hr    GSM2113589 Caenorhabditis elegans let-7(n2853)
-#> GSM2113590 let.7.n2853._24hr    GSM2113590 Caenorhabditis elegans let-7(n2853)
-#> GSM2113591 let.7.n2853._26hr    GSM2113591 Caenorhabditis elegans let-7(n2853)
-#>            time in development:ch1 age
-#> GSM2113587                18 hours  18
-#> GSM2113588                20 hours  20
-#> GSM2113589                22 hours  22
-#> GSM2113590                24 hours  24
-#> GSM2113591                26 hours  26
+head(dshendriks2014$p, n = 5)
 ```
 
-##### Correlation Matrix
-```{r ex1_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
-show_fig(expr = {
-  cor_dsaeschimann2017 <- cor(dsaeschimann2017$g, method = "spearman")
-  ord <- order(dsaeschimann2017$p$age)
-  heatmap(cor_dsaeschimann2017[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(1,5),
-          RowSideColors = transp(as.numeric(dsaeschimann2017$p$strain[ord])), labRow = "", labCol = "")
-  par(xpd = T)
-  mtext(text = unique(dsaeschimann2017$p$age), side = 1, line = 4, at = seq(-.1,.915, l = 11))
-  
-  # color key
-  image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
-        z = matrix(seq(min(cor_dsaeschimann2017), max(cor_dsaeschimann2017), l = 10), ncol = 10),
-        col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-  
-  strain_legend <- c("let-7", "lin-41", "let-7/lin-41", "N2")
-  text(.975, 1, pos = 3, labels = expression(rho), font = 2)
-  text(1, y = seq(0.6,1, l = 10), pos = 4, 
-       labels = round(seq(min(cor_dsaeschimann2017), max(cor_dsaeschimann2017), l = 10), 2), cex = .6)
-  
-  xlp <- 1.025
-  text(xlp, .5, labels = "Strain", font = 2, cex = .8, adj = .5)
-  text(xlp, seq(.3,.48, l = 4), labels = strain_legend, adj = 1, pos = 1,
-       col = 1:4, font = 2, cex = .7)
-  
-  mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
-}, fig.height=5, fig.width=5)
+Correlation between the samples.
+```{r ex1_ql_c2, fig.height=5, fig.width=5, out.width="60%"}
+cor_dshendriks <- cor(dshendriks2014$g, method = "spearman")
+ord <- order(dshendriks2014$p$age)
+heatmap(cor_dshendriks[ord, ord], 
+        Colv = NA, Rowv = NA, scale = "none", 
+        keep.dendro = F, margins = c(1,5),
+        labRow = "", labCol = "")
+# add time labels
+par(xpd = T)
+mtext(text = paste0(dshendriks2014$p$age), 
+      side = 1, line = 4.1, at = seq(-.17,.86, l = 16), cex = .8)
 
+# add color legend
+l.values <- seq(min(cor_dshendriks), max(cor_dshendriks), l = 10)
+image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
+      z = matrix(l.values, ncol = 10),
+      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+text(.975, 1, pos = 3, labels = expression(rho), font = 2)
+text(1, y = seq(0.6,1, l = 10), pos = 4, 
+     labels = round(l.values, 2), cex = .6)
+
+mtext(at = 1.0, line = 4.1, side = 1, text = "(hours)", cex = .8)
 ```
 
-##### Plotting components
+```{r ex1_boxplot_cor, fig.height=4, fig.width=7, out.width="80%"}
+boxplot(cor_dshendriks, names = paste0(dshendriks2014$p$age,'h'), 
+        boxwex=.5, las=1)
+```
+Everything looks good, no outliers. 
 
-```{r ex1_ql_c3, eval = gen_figs}
-pca_dsaeschimann2017 <- stats::prcomp(t(dsaeschimann2017$g), rank = 25,
-                                      center = TRUE, scale = FALSE)
+
+Now, plotting principal components.
+
+```{r ex1_ql_c3, class.source='fold-show'}
+pca_dshendriks <- summary(stats::prcomp(t(dshendriks2014$g), rank = 25,
+                                        center = TRUE, scale = FALSE))
 ```
 
-```{r ex1_ql_c4, echo = F, fig.height=6, fig.width=12}
-show_fig(expr = {
-  par(mfrow = c(2,4))
-  invisible(sapply(seq_len(8), function(i){
-    plot(dsaeschimann2017$p$age, pca_dsaeschimann2017$x[,i], lwd = 2, col = dsaeschimann2017$p$strain,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-    sapply(seq_along(levels(dsaeschimann2017$p$strain)), function(l){
-      s <- which(dsaeschimann2017$p$strain == levels(dsaeschimann2017$p$strain)[l])
-      points(dsaeschimann2017$p$age[s], pca_dsaeschimann2017$x[s,i], col = l, 
-             type = 'l', lty = 2)
-    })
-    if(i == 1)
-      legend("topleft", bty = 'n', legend = strain_legend,
-             pch = c(rep(1, 4)), lty = c(rep(NA, 4)), col = c(1:4), lwd = 3)
-  }))
-}, fig.height=6, fig.width=12)
+```{r ex1_ql_c4, fig.height=5, fig.width=7}
+par(mfrow = c(2,3), pty='s')
+invisible(sapply(1:6, function(i){
+  plot(dshendriks2014$p$age, pca_dshendriks$x[,i], lwd = 2, type = 'b',
+       xlab = "Chronological age", ylab = "PC", main = paste0("PC", i))
+}))
 ```
 
 
 ### Model fitting
 
-#### Component number
-
-```{r ex1_mf_c1, eval = gen_figs}
-nc <- sum(summary(pca_dsaeschimann2017)$importance[3,] < .99) + 1
+We keep enough components to explain $99\%$ of the variance in the data, since is is very clean.
+```{r ex1_mf_c1, class.source='fold-show'}
+nc <- sum(pca_dshendriks$importance[3,] < .99) + 1
 nc
-#> [1] 32
 ```
 
-#### Model
-
-```{r ex1_mf_c2, eval = gen_figs}
-m_dsaeschimann2017 <- ge_im(X = dsaeschimann2017$g, p = dsaeschimann2017$p, 
-                            formula = "X ~ s(age, bs = 'ts') + strain", nc = nc)
-```
-
-```{r ex1_mf_c3, echo = F, eval=gen_figs}
-mp_dsaeschimann2017 <- mperf(dsaeschimann2017$g, predict(m_dsaeschimann2017), is.t = T)
-as.data.frame(mp_dsaeschimann2017, row.names = "")
-```
-
-```{r ex1_print_mf}
-#>       aCC       aRE        MSE     aRMSE
-#> 0.7977299 0.1301014 0.01431891 0.1196617
+We then fit a GAM model with a cubic spline on age on PCA components.
+```{r ex1_mf_c2, class.source='fold-show'}
+m_dshendriks2014 <- ge_im(X = dshendriks2014$g, p = dshendriks2014$p, 
+                          formula = "X ~ s(age, bs = 'cr')", nc = nc)
 ```
 
 
+### Validation
 
-#### Validation
-
-##### Build ref object
-
-```{r ex1_vd_c1, results='markup', eval = gen_figs}
-r_dsaeschimann2017 <- make_ref(m = m_dsaeschimann2017,
-                               n.inter = 100,                    # interpolation resolution
-                               t.unit = "h past egg-laying",     # time unit
-                               cov.levels = list("strain" = "N2"), # covariate levels to use for interpolation
-                               metadata = list("organism" = "C. elegans", # any metadata
-                                               "profiling" = "whole-organism, bulk",
-                                               "technology" = "RNAseq")) 
+First, check global model performance.
+```{r ex1_mf_c3, class.source='fold-show'}
+# global model performance
+mp_hendriks <- mperf(dshendriks2014$g, predict(m_dshendriks2014), is.t = T)
+print(do.call(cbind, mp_hendriks))
 ```
 
-##### Plot component predictions
-
-```{r ex1_vd_c2, echo = F, fig.width=12, fig.height=6}
-show_fig(expr = {
-  par(mfrow = c(2,4))
-  invisible(sapply(seq_len(8), function(i){
-    suppressWarnings(plot(m_dsaeschimann2017, r_dsaeschimann2017, ncs=i, col.i = 'royalblue',
-                          col = dsaeschimann2017$p$strain, show.legend = F))
-    if(i == 1)
-      legend("topleft", bty = 'n', legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "pred"),
-             pch = c(rep(1, 4), NA), lty = c(rep(NA, 4), 1), col = c(1:4, "royalblue"), lwd = 3)
-  }))
-}, fig.width=12, fig.height=6)
-```
-
-##### Stage samples
-
-```{r ex1_vd_c3, eval = F}
-ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017)
-ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017)
-```
-
-```{r ex1_vd_c3bis, include = F, eval = gen_figs}
-# speed up w/ no bootstrap
-ae_dsaeschimann2017 <- ae(dsaeschimann2017$g, r_dsaeschimann2017, bootstrap.n = 1)
-ae_dshendriks2014 <- ae(dshendriks2014$g, r_dsaeschimann2017, bootstrap.n = 1)
+And then per gene.
+```{r ex1_mperf_ng, class.source='fold-show'}
+ng_mp_hendriks <-  mperf(dshendriks2014$g, predict(m_dshendriks2014), 
+                         is.t = T, global = F)
+# remove NAs (eg. 0 variance genes) and Inf values (/0)
+ng_mp_hendriks <- lapply(ng_mp_hendriks, na.omit)
+ng_mp_hendriks$aRE <- ng_mp_hendriks$aRE[ng_mp_hendriks$aRE < Inf] 
 ```
 
 
-```{r ex1_vd_c4, echo=F, fig.height=6, fig.width=12}
-show_fig(expr = {
-  par(mfrow = c(1,2))
-  rg <- range(c(ae_dsaeschimann2017$age.estimates[,1], dsaeschimann2017$p$age))
-  plot(ae_dsaeschimann2017$age.estimates[,1]~dsaeschimann2017$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
-       xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dsaeschimann2017\n(on dsaeschimann2017 reference)", lwd = 2, col = factor(dsaeschimann2017$p$strain))
-  invisible(sapply(levels(factor(dsaeschimann2017$p$strain)), function(l){
-    s <- dsaeschimann2017$p$strain == l
-    points(ae_dsaeschimann2017$age.estimates[s,1]~dsaeschimann2017$p$age[s], type = 'l', 
-           lty = 2, col = which(l==levels(factor(dsaeschimann2017$p$strain))))
-  }))
-  
-  abline(a = 0, b = 1, lty = 3, lwd = 2)
-  legend("bottomright", legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
-         lwd=3, col=c(1:4, 1), bty='n', pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
-  
-  rg <- range(c(ae_dshendriks2014$age.estimates[,1], dshendriks2014$p$age))
-  plot(ae_dshendriks2014$age.estimates[,1]~dshendriks2014$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsaeschimann2017)", 
-       xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dshendriks2014\n(on dsaeschimann2017 reference)", lwd = 2)
-  points(ae_dshendriks2014$age.estimates[,1] ~ dshendriks2014$p$age, type = 'l', lty = 2)
-  abline(a = 0, b = 1, lty = 3, lwd = 2)
-  
-  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
-}, fig.height=6, fig.width=12)
+```{r ex1_mperf_ngplot, fig.height=4.5, fig.width=7}
+par(mfrow = c(2,2), mar=c(4,4,2,1))
+invisible(sapply(names(ng_mp_hendriks), function(idx){
+  rg <- range(na.omit(ng_mp_hendriks[[idx]]))
+  # estimate density curve
+  d <- density(na.omit(ng_mp_hendriks[[idx]]), from = rg[1], to = rg[2])
+  plot(d, main = paste0(gsub("a", "", idx, fixed = T), 
+                        " density (", length(ng_mp_hendriks[[idx]]), " genes)"), 
+       xlab = idx, lwd = 2)
+  # add global value
+  abline(v = mp_hendriks[[idx]], lty = 2, lwd = 2, col = "firebrick")
+  text(mp_hendriks[[idx]], .9*max(d$y), pos = 4, labels = idx, 
+       font = 2, col = "firebrick")
+}))
 ```
+
+Excellent fits.
+
+
+Then, build the `ref` object.
+```{r ex1_vd_c1, class.source='fold-show'}
+r_dshendriks2014 <- make_ref(
+  m = m_dshendriks2014,
+  n.inter = 100,                  # interpolation resolution
+  t.unit = "h past egg-laying",   # time unit
+  metadata = list("organism" = "C. elegans", # any metadata
+                  "profiling" = "whole-organism, bulk",
+                  "technology" = "RNAseq")) 
+```
+
+Plot model predictions on components.
+```{r ex1_vd_c2, fig.width=12, fig.height=5, out.width="120%"}
+par(mfrow = c(2,5), pty='s', mar = c(4,4,3,1))
+plot(m_dshendriks2014, r_dshendriks2014, ncs = 1:10)
+```
+No overfitting, good fits on the components explaining most of the variance. Some components flattened, but minimal associated variance.
+
+
+
+
+Finally, we stage the samples from the reference, as well as the external validation data (`dsaeschimann2017`). 
+We exclude the earliest `dsaeschimann2017` samples (under 22h) from staging since they are outside the span covered by the reference
+```{r ex1_vd_c3, class.source='fold-show', warning=FALSE, message=FALSE}
+ae_dshendriks2014 <- ae(dshendriks2014$g, r_dshendriks2014)
+too_young <- dsaeschimann2017$p$age <= 22
+ae_dsaeschimann2017 <- ae(dsaeschimann2017$g[,!too_young], r_dshendriks2014)
+```
+
+
+```{r ex1_vd_c4, fig.height=5, fig.width=10}
+par(mfrow = c(1,2), mar = c(4,5,3,1))
+# dshendriks2014
+dshendriks2014$p$age_est <- ae_dshendriks2014$age.estimates[,1]
+rg <- range(c(dshendriks2014$p$age_est, dshendriks2014$p$age))
+plot(age_est~age, data = dshendriks2014$p, 
+     xlab = "Chronological age", ylab = "Estimated age (r_dshendriks2014)", 
+     xlim = rg, ylim = rg,
+     main = "Staging dshendriks2014 
+on r_dshendriks2014", lwd = 2)
+points(age_est~age, data = dshendriks2014$p, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2) # x=y
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+
+# dsaeschimann2017
+dsaeschimann2017$p[!too_young, "age_est"] <- 
+  ae_dsaeschimann2017$age.estimates[,1]
+rg <- range(c(dsaeschimann2017$p$age_est[!too_young], dsaeschimann2017$p$age[!too_young]))
+plot(age_est~age, data = dsaeschimann2017$p[!too_young,], 
+     xlab = "Chronological age", ylab = "Estimated age (r_dshendriks2014)", 
+     xlim = rg, ylim = rg,
+     main = "Staging dsaeschimann2017 
+on r_dshendriks2014", 
+     lwd = 2, col = factor(dsaeschimann2017$p$strain))
+invisible(sapply(levels(dsaeschimann2017$p$strain), function(l){
+  s <- dsaeschimann2017$p$strain == l & !too_young
+  points(age_est~age, data = dsaeschimann2017$p[s,], 
+         type = 'l', lty = 2, 
+         col = which(l==levels(factor(dsaeschimann2017$p$strain))))
+}))
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+legend("bottomright", bty='n',
+       legend = c("let-7", "lin-41", "let-7/lin-41", "N2", "x = y"), 
+       lwd=3, col=c(1:4, 1), pch = c(1,1,1,1,NA), lty = c(rep(NA, 4), 3))
+```
+
+
+
+### Code to generate objects
+
+Required packages and variables:
+```{r ex1_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # bioconductor
+requireNamespace("Biobase", quietly = T)  # bioconductor
+```
+
+*Note : set `data_folder` to an existing path on your system where you want to store the objects.*
+
+```{r ex_1_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
+```
+
+To build `dshendriks2014`, *C. elegans* late larval development time series from @hendriks2014extensive
+```{r ex1_load_dshendriks2014_c, code = readLines("load_dshendriks2014.R"), echo = TRUE, eval=FALSE}
+```
+
+To build `dsaeschimann2017`, *C. elegans* larval development time series of 4 strains from @aeschimann2017lin41
+```{r ex1_load_dsaeschimann2017_c, code = readLines("load_dsaeschimann2017.R"), echo = TRUE, eval=FALSE}
+```
+
