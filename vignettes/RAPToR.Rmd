@@ -34,7 +34,6 @@ figpath <- "../inst/cdoc/RAPToR_figs/"
 
 library(ggplot2)
 library(ggpubr)
-requireNamespace("limma", quietly = T)
 ```
 
 
@@ -183,6 +182,8 @@ head(dshendriks2014$p, n = 5)
 
 We quantile-normalize and log the expression data (this is not required for staging, but is useful for plotting the expression data).
 ```{r quantile_norm_log, class.source="fold-show"}
+library(limma)
+
 dsaeschimann2017$g <- limma::normalizeBetweenArrays(dsaeschimann2017$g, 
                                                     method = "quantile")
 dsaeschimann2017$g <- log1p(dsaeschimann2017$g) # log1p(x) = log(x + 1)
