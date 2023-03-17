@@ -88,7 +88,7 @@ invisible(sapply(1:6, function(i){
 
 ### Model fitting
 
-We keep enough components to explain $99\%$ of the variance in the data, since is is very clean.
+We keep enough components to explain $99\%$ of the variance in the data, since it is very clean.
 ```{r ex1_mf_c1, class.source='fold-show'}
 nc <- sum(pca_dshendriks$importance[3,] < .99) + 1
 nc
@@ -164,6 +164,7 @@ Finally, we stage the samples from the reference, as well as the external valida
 We exclude the earliest `dsaeschimann2017` samples (under 22h) from staging since they are outside the span covered by the reference
 ```{r ex1_vd_c3, class.source='fold-show', warning=FALSE, message=FALSE}
 ae_dshendriks2014 <- ae(dshendriks2014$g, r_dshendriks2014)
+
 too_young <- dsaeschimann2017$p$age <= 22
 ae_dsaeschimann2017 <- ae(dsaeschimann2017$g[,!too_young], r_dshendriks2014)
 ```
