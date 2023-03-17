@@ -689,8 +689,7 @@ Here you will find a few examples of reference building on different organisms.
 <br>
 
 ## *D. melanogaster* embryonic development
-```{r ex_2}
-#, child = "ex_2.Rmd"}
+```{r ex_2, child = "ex_2.Rmd"}
 
 ```
 

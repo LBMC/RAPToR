@@ -11,12 +11,13 @@ Code to generate `dsgraveley2011` and `dslevin2016dmel` can be found [at the end
 
 
 ### Normalization & exploration
-```{r ex2_load, include=FALSE, eval=gen_figs}
+```{r ex2_load, include=FALSE}
 load("../inst/extdata/dsgraveley2011.RData")
 load("../inst/extdata/dslevin2016dmel.RData")
 ```
 
-```{r ex2_qnorm_log, eval=gen_figs}
+We start by normalizing the data.
+```{r ex2_qnorm_log, class.source='fold-show'}
 library(RAPToR)
 library(limma)
 
@@ -27,199 +28,207 @@ dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "
 dslevin2016dmel$g <- log1p(dslevin2016dmel$g)
 ```
 
-```{r ex2_ql_c1, results='markup', eval=gen_figs}
+Check the contents of the expression matrix and pheno data.
+```{r ex2_ql_c1, class.source='fold-show'}
 dsgraveley2011$g[1:5, 1:5]
-#>               em0.2hr   em2.4hr   em4.6hr   em6.8hr  em8.10hr
-#> FBgn0000003 3.9651391 4.2738527 3.3174101 4.5644242 4.6982706
-#> FBgn0000008 1.2949845 0.9215699 0.6958672 0.6476801 0.7445991
-#> FBgn0000014 0.5099295 0.9512866 1.3952815 1.8610406 1.8421960
-#> FBgn0000015 0.2435639 0.6423988 1.0511912 1.1094674 1.0194280
-#> FBgn0000017 1.7968429 2.0901351 1.3389420 1.5336183 1.6777064
-
 
 head(dsgraveley2011$p, n = 5)
-#>      sname age
-#> 1  em0.2hr   0
-#> 2  em2.4hr   2
-#> 3  em4.6hr   4
-#> 4  em6.8hr   6
-#> 5 em8.10hr   8
 ```
 
-##### Correlation Matrix
-```{r ex2_ql_c2, echo = F, fig.height=5, fig.width=5, out.width="60%"}
-show_fig(expr = {
-  cor_dsgraveley2011 <- cor(dsgraveley2011$g, method = "spearman")
-  ord <- order(dsgraveley2011$p$age)
-  heatmap(cor_dsgraveley2011[ord, ord], Colv = NA, Rowv = NA, scale = "none", keep.dendro = F, margins = c(2,5),
-          labRow = "", labCol = "")
-  par(xpd = T)
-  mtext(text = unique(dsgraveley2011$p$age), side = 1, line = 4, at = seq(-.16,.85, l = 12))
-  
-  # color key
-  image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
-        z = matrix(seq(min(cor_dsgraveley2011), max(cor_dsgraveley2011), l = 9), ncol = 9),
-        col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-  text(.975, 1, pos = 3, labels = expression(rho), font = 2)
-  text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
-       labels = round(seq(min(cor_dsgraveley2011), max(cor_dsgraveley2011), l = 9)[c(T,F)], 2), cex = .6)
-  
-  
-  xlp <- 1.025
-  mtext(at = xlp, line = 4, side = 1, text = "(hours)", cex = .8)
-}, fig.height=5, fig.width=5)
+Correlation between the samples for outliers.
+```{r ex2_ql_c2, fig.height=5, fig.width=5, out.width="60%"}
+cor_dsgraveley2011 <- cor(dsgraveley2011$g, method = "spearman")
+ord <- order(dsgraveley2011$p$age)
+
+heatmap(cor_dsgraveley2011[ord, ord], Colv = NA, Rowv = NA, 
+        scale = "none", keep.dendro = F, margins = c(2,5),
+        labRow = "", labCol = "")
+# add time label
+par(xpd = T)
+mtext(text = dsgraveley2011$p$age, side = 1, 
+      line = 4, at = seq(-.16,.85, l = 12))
+mtext(at = 1, line = 4, side = 1, text = "(hours)", cex = .8)
+
+# add color legend
+l.values <- seq(min(cor_dsgraveley2011), max(cor_dsgraveley2011), l = 9)
+image(x = c(.95,1), y = seq(0.6,1, l = 9), useRaster = T,
+      z = matrix(l.values, ncol = 9),
+      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+text(.975, 1, pos = 3, labels = expression(rho), font = 2)
+text(1, y = seq(0.6,1, l = 9)[c(T,F)], pos = 4, 
+     labels = round(l.values[c(T,F)], 2), cex = .6)
 ```
 
-##### Plotting components
+```{r ex2_boxplot_cor, fig.height=4, fig.width=7, out.width="80%"}
+boxplot(cor_dsgraveley2011, names = paste0(dsgraveley2011$p$age,'h'), 
+        boxwex=.5, las=1)
+```
+No outliers.
 
-```{r ex2_ql_c3, eval=gen_figs}
-pca_dsgraveley2011 <- stats::prcomp(t(dsgraveley2011$g), rank = 12,
-                                    center = TRUE, scale = FALSE)
+Plotting principal components.
+
+```{r ex2_ql_c3, class.source='fold-show'}
+pca_dsgraveley2011 <- summary(stats::prcomp(t(dsgraveley2011$g), rank = 12,
+                                            center = TRUE, scale = FALSE))
 ```
 
-```{r ex2_ql_c4, echo = F, fig.height=6, fig.width=12}
-show_fig(expr = {
-  par(mfrow = c(2,4))
-  invisible(sapply(seq_len(8), function(i){
-    plot(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], lwd = 2,
-         xlab = "age", ylab = "PC", main = paste0("PC", i))
-  
-    points(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], type = 'l', lty = 2)
-  }))
-}, fig.height=6, fig.width=12)
+```{r ex2_ql_c4, fig.height=6, fig.width=12}
+par(mfrow = c(2,4), pty = 's')
+invisible(sapply(seq_len(8), function(i){
+  plot(dsgraveley2011$p$age, pca_dsgraveley2011$x[,i], type = 'b', lwd = 2,
+       xlab = "Chronological age", ylab = "PC", main = paste0("PC", i))
+}))
 ```
 
 
 ### Model fitting
 
-#### Component number
+We keep enough components to explain $99\%$ of the variance in the data.
 
-```{r ex2_mf_c1, eval=gen_figs}
-nc <- sum(summary(pca_dsgraveley2011)$importance[3,] < .99) + 1
+```{r ex2_mf_c1, class.source='fold-show'}
+nc <- sum(pca_dsgraveley2011$importance[3,] < .99) + 1
 nc
-#> [1] 8
 ```
 
-#### Model
-
-```{r ex2_mf_c2, eval=gen_figs}
-m_dsgraveley2011 <- ge_im(X = dsgraveley2011$g, p = dsgraveley2011$p, formula = "X ~ s(age, bs = 'cr')", nc = nc)
+We then fit a GAM on PCA components with a cubic spline on age.
+```{r ex2_mf_c2, class.source='fold-show'}
+m_dsgraveley2011 <- ge_im(X = dsgraveley2011$g, 
+                          p = dsgraveley2011$p, 
+                          formula = "X ~ s(age, bs = 'cr')", nc = nc)
 ```
 
-```{r ex2_mf_c3, echo = F, eval=gen_figs}
-mp_dsgraveley2011 <- mperf(dsgraveley2011$g, predict(m_dsgraveley2011), is.t = T)
-as.data.frame(mp_dsgraveley2011, row.names = "")
+### Validation
+
+First, check global model performance.
+```{r ex2_mf_c3, echo = F, class.source='fold-show'}
+# global model performance
+mp_grav <- mperf(dsgraveley2011$g, predict(m_dsgraveley2011), is.t = T)
+print(do.call(cbind, mp_grav))
 ```
 
-```{r ex2_mf_print}
-#>        aCC       aRE         MSE      aRMSE
-#>  0.9400274  0.4040618 0.009908293 0.09954041
+And then per gene.
+```{r ex2_mperf_ng, class.source='fold-show'}
+ng_mp_grav <-  mperf(dsgraveley2011$g, predict(m_dsgraveley2011), 
+                     is.t = T, global = F)
+# remove NAs (eg. 0 variance genes) and Inf values (/0)
+ng_mp_grav <- lapply(ng_mp_grav, na.omit)
+ng_mp_grav$aRE <- ng_mp_grav$aRE[ng_mp_grav$aRE < Inf] 
 ```
 
 
-#### Validation
+```{r ex2_mperf_ngplot, fig.height=4.5, fig.width=7}
+par(mfrow = c(2,2), mar=c(4,4,2,1))
+invisible(sapply(names(ng_mp_grav), function(idx){
+  rg <- range(na.omit(ng_mp_grav[[idx]]))
+  # estimate density curve
+  d <- density(na.omit(ng_mp_grav[[idx]]), from = rg[1], to = rg[2])
+  plot(d, main = paste0(gsub("a", "", idx, fixed = T), 
+                        " density (", length(ng_mp_grav[[idx]]), " genes)"), 
+       xlab = idx, lwd = 2)
+  # add global value
+  abline(v = mp_grav[[idx]], lty = 2, lwd = 2, col = "firebrick")
+  text(mp_grav[[idx]], .9*max(d$y), pos = 4, labels = idx, 
+       font = 2, col = "firebrick")
+}))
+```
+Excellent fits.
 
-##### Build ref object
 
+Then, build the `ref` object.
 
-```{r ex2_vd_c1, results='markup', eval = gen_figs}
-r_dsgraveley2011 <- make_ref(m = m_dsgraveley2011,
-                             n.inter = 100,                    # interpolation resolution
-                             t.unit = "h past egg-laying",     # time unit
-                             metadata = list("organism" = "D. melanogaster", # any metadata
-                                             "profiling" = "whole-organism, bulk",
-                                             "technology" = "RNAseq")) 
+```{r ex2_vd_c1, class.source='fold-show'}
+r_dsgraveley2011 <- make_ref(
+  m = m_dsgraveley2011,
+  n.inter = 100,                # interpolation resolution
+  t.unit = "h past egg-laying", # time unit
+  metadata = list("organism" = "D. melanogaster", # any metadata
+                  "profiling" = "whole-organism, bulk",
+                  "technology" = "RNAseq")) 
 ```
 
-##### Plot component predictions
-
-```{r ex2_vd_c2, echo = F, fig.width=12, fig.height=6}
-show_fig(expr = {
-  
-  par(mfrow = c(2,4))
-  plot(m_dsgraveley2011, r_dsgraveley2011, col.i = 'royalblue')
-
-}, fig.width=12, fig.height=6)
+Plot model predictions on components.
+```{r ex2_vd_c2, fig.width=12, fig.height=6}
+par(mfrow = c(2,4), pty='s', mar = c(4,4,3,1))
+plot(m_dsgraveley2011, r_dsgraveley2011, col.i = 'royalblue')
 ```
 
-##### Stage samples
+No overfitting, good fits on the components explaining most of the variance. 
+Some components flattened, but minimal associated variance.
 
-```{r ex2_vd_c3, eval = F}
+
+Finally, we stage the samples from the reference, as well as the external validation data (`dslevin2016dmel`).
+```{r ex2_vd_c3, class.source='fold-show', warning=FALSE, warning=FALSE}
 ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011)
 ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011)
 ```
 
-```{r ex2_vd_c3bis, include = F, eval = gen_figs}
-# speed up w/ no bootstrap
-ae_dsgraveley2011 <- ae(dsgraveley2011$g, r_dsgraveley2011, bootstrap.n = 1)
-ae_dslevin2016dmel <- ae(dslevin2016dmel$g, r_dsgraveley2011, bootstrap.n = 1)
+
+```{r ex2_vd_c4, fig.height=5, fig.width=10}
+par(mfrow = c(1,2), mar = c(4,5,3,1))
+# dsgraveley2011
+dsgraveley2011$p$age_est <- ae_dsgraveley2011$age.estimates[,1]
+rg <- range(c(dsgraveley2011$p$age_est, dsgraveley2011$p$age))
+plot(age_est~age, data = dsgraveley2011$p, 
+     xlab = "Chronological age", ylab = "Estimated age (r_dsgraveley2011)", 
+     xlim = rg, ylim = rg, lwd = 2,
+     main = "Staging dsgraveley2011
+on r_dsgraveley2011")
+points(age_est~age, data = dsgraveley2011$p, type = 'l', lty = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2) # x=y
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
+
+# dslevin2016dmel
+dslevin2016dmel$p$age_est <- ae_dslevin2016dmel$age.estimates[,1]
+rg <- range(c(dslevin2016dmel$p$age_est , dslevin2016dmel$p$age))
+plot(age_est~age, data = dslevin2016dmel$p, 
+     xlab = "Chronological age", ylab = "Estimated age (r_dsgraveley2011)", 
+     xlim = rg, ylim = rg, lwd = 2,
+     main = "Staging dslevin2016dmel
+on r_dsgraveley2011")
+abline(a = 0, b = 1, lty = 3, lwd = 2) #x=y
+legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 ```
 
 
-```{r ex2_vd_c4, echo=F, fig.height=6, fig.width=12}
-show_fig(expr = {
-  par(mfrow = c(1,2))
-  rg <- range(c(ae_dsgraveley2011$age.estimates[,1], dsgraveley2011$p$age))
-  plot(ae_dsgraveley2011$age.estimates[,1] ~ dsgraveley2011$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
-       xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dsgraveley2011\n(on dsgraveley2011 reference)", lwd = 2)
-  points(ae_dsgraveley2011$age.estimates[,1]~dsgraveley2011$p$age, type = 'l', lty = 2)
-  
-  abline(a = 0, b = 1, lty = 3, lwd = 2)
-  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
-  
-  rg <- range(c(ae_dslevin2016dmel$age.estimates[,1], dslevin2016dmel$p$age))
-  plot(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, 
-       xlab = "Chronological age", ylab = "Estimated age (dsgraveley2011)", 
-       xlim = rg, ylim = rg,
-       main = "Chron. vs Estimated ages for dslevin2016dmel\n(on dsgraveley2011 reference)", lwd = 2)
-  # points(ae_dslevin2016dmel$age.estimates[,1] ~ dslevin2016dmel$p$age, type = 'l', lty = 2)
-  abline(a = 0, b = 1, lty = 3, lwd = 2)
-  
-  legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
-}, fig.height=6, fig.width=12)
-```
+We see that the validation data age estimates vary from their chronological age, particularly in later stages.
+However, this is not due to errors in the reference or staging, but instead to the fact this data is single-embryo profiling. 
+Indeed, inter-individual variation in developmental speed results in striking differences with expected age, where it would otherwise be averaged out in bulk data.
 
-
-We notice here that our validation data age estimates vary from chronological age.
-However, this is due to the single-embryo nature of the data. 
-Indeed, inter-individual variability is shown clearly, where it would otherwise be averaged out in bulk data.
-Furthermore, if we look at the dynamics of the `dslevin2016dmel` data, we'll see that chronological age specified for the samples is erroneous, as reflected by noisy expression dynamics.
-
-```{r ex2_vd_c5, eval=gen_figs}
+The dynamics of the `dslevin2016dmel` data further confirm this. 
+```{r ex2_vd_c5, class.source='fold-show'}
 pca_dslevin2016dmel <- stats::prcomp(t(dslevin2016dmel$g), rank = 20,
                                      center = TRUE, scale = FALSE)
 ```
 
-```{r ex2_vd_c6, echo = F, fig.height=12, fig.width=12}
-show_fig(expr = {
-  par(mfrow = c(4,4))
-  invisible(sapply(c(0,4), function(ipp){
-    sapply(seq_len(4), function(i){
-      i <- i + ipp
-      plot(dslevin2016dmel$p$age, pca_dslevin2016dmel$x[,i], lwd = 2,
-           xlab = "age", ylab = "PC", main = paste0("PC", i))
-    })
-    sapply(seq_len(4), function(i){
-      i <- i + ipp
-      plot(ae_dslevin2016dmel$age.estimates[,1], pca_dslevin2016dmel$x[,i], lwd = 2, col = "firebrick",
-           xlab = "ae", ylab = "PC", main = paste0("PC", i, " (estimated age)"))
-      box(col = "firebrick", lwd = 2)
-    })
-  }))
-}, fig.height=12, fig.width=12)
+```{r ex2_vd_c6, fig.height=2.5, fig.width=12}
+par(mfrow = c(1,5), pty='s')
+invisible(sapply(1:5, function(i){
+    plot(dslevin2016dmel$p$age, pca_dslevin2016dmel$x[,i], lwd = 2,
+         xlab = "Chronological age", ylab = "PC", main = paste0("PC", i))
+}))
+```
+Chronological age specified for the samples is inaccurate, and does not properly reflect developmental gene expression dynamics, as evidenced by noisy components. 
+
+Inferred age however, clearly restores the dynamics cleanly.
+
+```{r ex2_vd_c7, fig.height=2.5, fig.width=12}
+par(mfrow = c(1,5), pty='s')
+invisible(sapply(1:5, function(i){
+    plot(dslevin2016dmel$p$age_est, pca_dslevin2016dmel$x[,i], lwd = 2,
+         xlab = "Estimated age", ylab = "PC", main = paste0("PC", i),
+         col = 'firebrick')
+  box(col = 'firebrick', lwd=2)
+}))
 ```
 
-This shows how inter-individual variation in developmental speed makes it difficult to profile high-temporal-resolution time series.
-
-Furthermore, the temporal resolution difference between the reference and validation data demonstrates the effectiveness of gene expression interpolation.
+This example shows how inter-individual variation in developmental speed makes it difficult to profile high-temporal-resolution time series.
+Furthermore, the temporal resolution difference between the reference and validation data also demonstrates the effectiveness of gene expression interpolation.
 
 
 ### Code to generate objects
 
 Required packages and variables:
-```{r ex1_load_namespaces, eval = F}
+```{r ex2_load_namespaces, eval = F}
 data_folder <- "../inst/extdata/"
 
 requireNamespace("utils", quietly = T)
