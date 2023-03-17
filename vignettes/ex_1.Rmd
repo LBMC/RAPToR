@@ -10,7 +10,7 @@ The data is the same used in the vignette above, but we flip which dataset is th
 
 
 
-### Normalization & Exploration
+### Normalization & exploration
 
 We start by normalizing the data.  
 ```{r ex1_load, include=FALSE}
