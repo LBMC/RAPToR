@@ -200,6 +200,7 @@ requireNamespace("wormRef", quietly = T)
 requireNamespace("utils", quietly = T)
 requireNamespace("GEOquery", quietly = T) # bioconductor
 requireNamespace("Biobase", quietly = T)  # bioconductor
+requireNamespace("biomaRt", quietly = T)  # bioconductor
 ```
 *Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.*
 

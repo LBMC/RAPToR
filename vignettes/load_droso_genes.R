@@ -1,5 +1,3 @@
-requireNamespace("biomaRt", quietly = TRUE)
-
 mart <- biomaRt::useMart("ensembl", dataset = "dmelanogaster_gene_ensembl")
 droso_genes <- biomaRt::getBM(attributes = c("ensembl_gene_id", 
                                              "ensembl_transcript_id",
