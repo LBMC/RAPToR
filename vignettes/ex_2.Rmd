@@ -1,109 +1,25 @@
-```{r, include = FALSE, eval = F}
-knitr::opts_knit$set(out.format = "html")
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.align = "center",
-  out.width = '100%'
-)
-options(width=100)
+### Data
 
-gen_figs <- F
-figpath <- "../inst/cdoc/RAPToR-refbuilding_figs/"
-if(!file.exists(figpath)){
-  dir.create(figpath)
-}
+In this example, we build a reference for *Drosophila melanogaster* embryo development. We use the following time-series:
+
+1. A bulk embryo development time-series, part of the modENCODE project and published by @graveley2011developmental, `dsgraveley2011`, used to build the reference. (Data from [fruitfly.org](https://fruitfly.org/sequence/download.html))
+ 1. A high-resolution time-series of single embryos published by @levin2016mid, `dslevin2016dmel`, used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
+
+Code to generate `dsgraveley2011` and `dslevin2016dmel` can be found [at the end of this section](#code-to-generate-objects-1)
 
 
-library(RAPToR)
-library(RColorBrewer)
-library(beeswarm)
-
-requireNamespace("limma", quietly = T)
-requireNamespace("stats")
-
-transp <- function(col, a=.5){
-  colr <- col2rgb(col)
-  return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
-}
-
-png_custom <- function(figname, path = "", 
-                       fig.width = 7, fig.height = 5, res = 150, ...){
-  png(filename = paste0(path, figname, ".png"), 
-      width = fig.width, height = fig.height, res = res, units = "in")
-}
-
-show_fig <- function(figname = knitr::opts_current$get("label"), expr, path = figpath, ...){
-  if(gen_figs){
-    png_custom(figname = figname, path = figpath, ...)
-    eval(expr = expr)
-    dev.off()
-  }
-  else{
-    knitr::include_graphics(paste0(path, figname, ".png"))
-  }
-}
-```
-
-### The data
-
-Here, we use two *Drosophila melanogaster* embryo development time-series. 
-
-1. An embryo development time-series, part of the modENCODE project and published by @graveley2011developmental, hereafter called `dsgraveley2011`. This is the data used to build the reference. (Data downloaded from [fruitfly.org](https://fruitfly.org/sequence/download.html))
- 1. A high-resolution time-series of single embryos published by @levin2016mid, called `dslevin2016dmel`. This data is used for external validation. (Accession : [GSE60471](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60471))
-
-Of note, the reference data has a low time resolution, which displays the effectiveness of gene expression interpolation.
-
-#### {.tabset}
-Code to generate `dsgraveley2011` and `dslevin2016dmel` :
-
-##### Hide
-
-##### Show
-**Note : set the `data_folder` variable to an existing path on your system where you want to store the objects.**
-
-```{r ex2_load_namespaces, eval = F}
-data_folder <- "../inst/extdata/"
-
-requireNamespace("utils", quietly = T)
-requireNamespace("GEOquery", quietly = T) # May need to be installed with bioconductor
-requireNamespace("Biobase", quietly = T)
-```
 
 
-```{r ex2_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
-```
-
-
-```{r ex2_load_droso_genes, code = readLines("load_droso_genes.R"), echo = TRUE, eval=FALSE}
-```
-
-<br>
-
-###### `dsgraveley2011`
-
-```{r ex2_load_dsgraveley2011_c, code = readLines("load_dsgraveley2011.R"), echo = TRUE, eval=FALSE}
-```
-
-
-<br>
-
-###### `dslevin2016dmel`
-```{r ex2_load_dslevin2016dmel_c, code = readLines("load_dslevin2016dmel.R"), echo = TRUE, eval=FALSE}
-```
-
-```{r cleanup_genes, eval = F}
-rm(droso_genes, raw2tpm, fpkm2tpm)
-```
-
-
-#### Normalization & Quick look
+### Normalization & exploration
 ```{r ex2_load, include=FALSE, eval=gen_figs}
 load("../inst/extdata/dsgraveley2011.RData")
 load("../inst/extdata/dslevin2016dmel.RData")
 ```
 
 ```{r ex2_qnorm_log, eval=gen_figs}
+library(RAPToR)
+library(limma)
+
 dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
 dsgraveley2011$g <- log1p(dsgraveley2011$g)
 
@@ -295,4 +211,38 @@ show_fig(expr = {
 }, fig.height=12, fig.width=12)
 ```
 
-This demonstrates a difficulty of producing high-resolution time series due to developmental asynchronicity between samples.
+This shows how inter-individual variation in developmental speed makes it difficult to profile high-temporal-resolution time series.
+
+Furthermore, the temporal resolution difference between the reference and validation data demonstrates the effectiveness of gene expression interpolation.
+
+
+### Code to generate objects
+
+Required packages and variables:
+```{r ex1_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # bioconductor
+requireNamespace("Biobase", quietly = T)  # bioconductor
+requireNamespace("biomaRt", quietly = T)  # bioconductor
+```
+
+*Note : set `data_folder` to an existing path on your system where you want to store the objects.*
+
+```{r ex2_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
+```
+
+
+Get *Drosophila* gene ID table from ensembl.
+```{r ex2_load_droso_genes, code = readLines("load_droso_genes.R"), echo = TRUE, eval=FALSE}
+```
+
+To build `dsgraveley2011`, bulk *D. melanogaster* embryo time series from @graveley2011developmental
+```{r ex2_load_dsgraveley2011_c, code = readLines("load_dsgraveley2011.R"), echo = TRUE, eval=FALSE}
+```
+
+
+To build `dslevin2016dmel`, single-embryo *D. melanogaster* embryo time series from @levin2016mid
+```{r ex2_load_dslevin2016dmel_c, code = readLines("load_dslevin2016dmel.R"), echo = TRUE, eval=FALSE}
+```
