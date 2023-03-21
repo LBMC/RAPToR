@@ -17,14 +17,16 @@ load("../inst/extdata/dslevin2016dmel.RData")
 ```
 
 We start by normalizing the data.
-```{r ex2_qnorm_log, class.source='fold-show'}
+```{r ex2_qnorm_log, class.source='fold-show', message=FALSE, warning=FALSE}
 library(RAPToR)
 library(limma)
 
-dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, method = "quantile")
+dsgraveley2011$g <- limma::normalizeBetweenArrays(dsgraveley2011$g, 
+                                                  method = "quantile")
 dsgraveley2011$g <- log1p(dsgraveley2011$g)
 
-dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, method = "quantile")
+dslevin2016dmel$g <- limma::normalizeBetweenArrays(dslevin2016dmel$g, 
+                                                   method = "quantile")
 dslevin2016dmel$g <- log1p(dslevin2016dmel$g)
 ```
 
@@ -100,7 +102,7 @@ m_dsgraveley2011 <- ge_im(X = dsgraveley2011$g,
 ### Validation
 
 First, check global model performance.
-```{r ex2_mf_c3, echo = F, class.source='fold-show'}
+```{r ex2_mf_c3, class.source='fold-show'}
 # global model performance
 mp_grav <- mperf(dsgraveley2011$g, predict(m_dsgraveley2011), is.t = T)
 print(do.call(cbind, mp_grav))
