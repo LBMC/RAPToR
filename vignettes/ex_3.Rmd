@@ -2,11 +2,13 @@
 
 This example uses two *Danio rerio* (zebrafish) embryo development time-series:
 
- 1. An embryo time-series of zebrafish embryonic development (with uneven sampling) published by @white2017high, hereafter called `dswhite2017`. This data is used to build the reference. ([Data accessible in the publication](https://elifesciences.org/articles/30860))
- 1. A high-resolution time-series of embryonic development published by @levin2016mid, hereafter `dslevin2016zeb`. This data is used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
+ 1. A time-series of zebrafish embryonic development (with uneven time sampling) published by @white2017high, `dswhite2017`, used to build the reference. ([Data accessible from the publication](https://elifesciences.org/articles/30860))
+ 1. A high-resolution time-series of embryonic development published by @levin2016mid, `dslevin2016zeb`, used for external validation. (Accession : [GSE60619](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60619))
 
-The reference data (`dswhite2017`) has uneven time sampling, as can often be the case to account for differences in dynamic ranges of expression.
-We can apply a transformation on the time values (using `asinh()` in this case) to render them more uniform and thus avoid interpolation bias. 
+Code to generate `dswhite2017` and `dslevin2016zeb` can be found [at the end of this section](#code-to-generate-objects-2)
+
+The reference data (`dswhite2017`) has uneven time sampling, as can often be the case to account for differences in dynamic ranges of expression: later time points are more sparse.
+We can apply a transformation on the time values (using `asinh()` in this case) so they become more uniform and thus avoid interpolation bias. 
 
 
 
@@ -17,7 +19,8 @@ transp <- function(col, a=.5){
   return(rgb(colr[1,], colr[2,], colr[3,], a*255, maxColorValue = 255))
 }
 ```
-```{r ex3_load, include=FALSE, eval=gen_figs}
+
+```{r ex3_load, include=FALSE}
 load("../inst/extdata/dswhite2017.RData")
 load("../inst/extdata/dslevin2016zeb.RData")
 ```
@@ -117,7 +120,7 @@ invisible(sapply(1:8, function(i){
 ```
 
 Sampling is sparser towards the end of the time series, and expression dynamics are also "wider".
-Because of this, fitting splines along age on these components poorly fit the earlier time points in particular.
+Because of this, fitting splines along age on these components poorly fit the earlier time points.
 
 To bypass this, we can use `asinh(age)`, which has a similar effect to a logarithm to stretch the age values closer to a uniform scale. We also add an intercept to avoid overstretching the first few time points. 
 The relationship between `age` and `asinh(1+age)` is shown below.
@@ -163,7 +166,7 @@ nc
 
 We will fit a GAM on PCA components. 
 The type of spline to fit as well as the value of the intercept in `asinh()` will be determined using cross-validation.
-Since sample batch is clearly absent from the components, we can exclude it for a more parsimonious model.
+Since sample batch is clearly absent from the components, we exclude it for a more parsimonious model.
 
 ```{r ex3_mf_CV, class.source='fold-show'}
 set.seed(3)
@@ -211,14 +214,14 @@ m_dswhite2017 <- ge_im(X = dswhite2017$g,
                        nc = nc)
 ```
 
-```{r ex3_mf_c3, echo = F, eval=gen_figs}
+```{r ex3_mf_c3, echo = F, class.source="fold-show"}
 # global model performance
 mp_white <- mperf(dswhite2017$g, predict(m_dswhite2017), is.t = T)
 print(do.call(cbind, mp_white))
 ```
 
 And then per gene.
-```{r ex2_mperf_ng, class.source='fold-show'}
+```{r ex3_mperf_ng, class.source='fold-show'}
 ng_mp_white <-  mperf(dswhite2017$g, predict(m_dswhite2017), 
                      is.t = T, global = F)
 # remove NAs (eg. 0 variance genes) and Inf values (/0)
@@ -316,7 +319,7 @@ m_dswhite2017_nT <- ge_im(X = dswhite2017$g,
                           nc = nc)
 ```
 
-```{r ex3_vd_c5bis, echo=F, eval=gen_figs}
+```{r ex3_vd_c5bis, echo=F, class.source="fold-show"}
 mp_dswhite2017_nT <- mperf(scale(dswhite2017$g), predict(m_dswhite2017_nT), is.t = T)
 print(do.call(cbind, mp_dswhite2017_nT))
 ```
@@ -346,7 +349,7 @@ We can see that the model has trouble predicting the dynamics accurately.
 
 PC3 and PC4 have flattened early dynamics, and overfitting around 40hpf.
 
-```{r ex3_vd_c6, fig.width=7, fig.height=3.5, out.width="50%"}
+```{r ex3_vd_c6bis, fig.width=7, fig.height=3.5, out.width="80%"}
 par(mfrow = c(1,2), pty='s')
 plot(m_dswhite2017_nT, r_dswhite2017_nT, ncs=3:4, show.legend = F,
      xlim = c(0,50))
@@ -381,7 +384,7 @@ abline(a = 0, b = 1, lty = 3, lwd = 2)
 legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 ```
 
-The "gaps" or "steps" seen on the validation data estimates caused by interpolation bias (overfitting and poorly fit dynamics mentioned above).
+The "gaps" or "steps" in the validation data estimates are caused by interpolation bias (overfitting and poorly fit dynamics mentioned above).
 These model errors create local "unlikely/unrealistic" gene expression areas in the interpolation, which do not correlate with the samples of corresponding age. 
 
 Gaps will most often be in-between original time points of the reference data, meaning the effect can't be seen by staging reference samples.
@@ -415,12 +418,12 @@ requireNamespace("Biobase", quietly = T)  # bioconductor
 
 
 To build `dswhite2017`, *D. rerio* embryo time series from @white2017high
-```{r ex2_load_dswhite2017_c, code = readLines("load_dswhite2017.R"), echo = TRUE, eval=FALSE}
+```{r ex3_load_dswhite2017_c, code = readLines("load_dswhite2017.R"), echo = TRUE, eval=FALSE}
 ```
 
 
 To build `dslevin2016zeb`, *D. rerio* embryo time series from @levin2016mid
-```{r ex2_load_dslevin2016zeb_c, code = readLines("load_dslevin2016zeb.R"), echo = TRUE, eval=FALSE}
+```{r ex3_load_dslevin2016zeb_c, code = readLines("load_dslevin2016zeb.R"), echo = TRUE, eval=FALSE}
 ```
 
 Function to make a color transparent (`transp()`)
