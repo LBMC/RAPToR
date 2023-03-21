@@ -14,4 +14,6 @@ rmarkdown::render(input = 'RAPToR-datapkgs.Rmd', output_format = "all", clean = 
 # DE correction vignette
 rmarkdown::render(input = 'RAPToR-DEcorrection.Rmd', output_format = "all", clean = TRUE)
 
+# Refbuilding vignette
+rmarkdown::render(input = 'RAPToR-refbuilding.Rmd', output_format = "all", clean = TRUE)
 
