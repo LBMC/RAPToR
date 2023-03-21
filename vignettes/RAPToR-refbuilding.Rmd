@@ -55,29 +55,29 @@ Building references is a key aspect of `RAPToR`, as samples need an appropriate 
 References are broadly usable once built, so they are worth the trouble to set up.
 This vignette, will go through the general workflow of building a reference from selecting an appropriate dataset, to validating a model for interpolation. 
 
-Along the explanations, examples will be given using *C. elegans* larval development time-series data published by @aeschimann2017lin41 and @hendriks2014extensive, stored in `dsaeschimann2017` and `dshendriks2014` respectively.  [Code to create these objects can be found at the end of this vignette](#code-to-generate-data-objects).
+Along the explanations, examples will be given using *C. elegans* larval development time-series data published by @aeschimann2017lin41 and @hendriks2014extensive, stored in `dsaeschimann2017` and `dshendriks2014` respectively.  [Code to create these objects can be found at the end of this vignette](#code-to-generate-objects).
 
-Finally, a few more examples of building references are given at the end for broader coverage of reference-building needs. 
+Further examples are given at the end for broader coverage of reference-building needs. 
 
 
 # Selecting / Preparing a dataset
 
-We need to start from a gene expression profiling time-series that spans the developmental stages of interest for your organism.
-Thankfully, these time-series experiments are (increasingly) numerous in the literature and most model organisms will already have some kind of useable data. 
+We start from a gene expression profiling time-series spanning the developmental stages of interest for your organism.
+Thankfully, these time-series experiments are increasingly numerous in the literature and many models will already have some kind of useable data. 
 You may also make (or already have) your own time-series on hand.
 
 ## Databases
-There are a few databases you can search for and download data from. 
+There are a few expression profiling databases to search in and download data from. 
 The most well-known are the [Gene Expression Omnibus (GEO)](https://www.ncbi.nlm.nih.gov/geo/) and the [Array Express](https://www.ebi.ac.uk/arrayexpress/).
 
-Both of these databases have APIs to get their data directly from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), as shown in the example dataset loading scripts). 
+Both of these databases have APIs to get their data directly from R (*e.g* [the `GEOquery` package](https://bioconductor.org/packages/release/bioc/html/GEOquery.html), used in multiple data loading scripts of the RAPToR vignettes). 
 
 ## What to look out for
 Several points of the experimental design should be kept in mind when selecting data for a reference.
 
-   * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in the data are not noise. A slightly sparser time-series with replicates could be a better candidate to build a reference than a higher-resolution experiment with one batch.
-   * ***Is the time point sampling even ?*** Profiling is still expensive, so time courses experiments usually account for dynamic ranges of development (*i.e*, early or fast-changing stages are more sampled). We ideally want even sampling (which is better for spline fitting).  However, if a dataset's sampling respects dynamic ranges, you can still use it for interpolation as-is, or interpolate with a trick using ranks.
-   * ***What's the developmental range ?*** The bigger, the better!
+   * ***Are there replicates ?*** If so, good. This means you can confirm the dynamics in the data are not noise. A slightly sparser time-series with replicates could be a better candidate to build a reference than an experiment with one batch.
+   * ***Is the time point sampling even ?*** Profiling is still expensive, so time-series sometimes account for dynamic ranges of development (*i.e.* early or fast-changing stages are more sampled). Even sampling is better for spline fitting, but data can still otherwise be used by transforming time values so they are more uniform (see [*Example 3*](#example-3---uneven-sampling-of-d.-rerio-embryo).
+   * ***What's the developmental range ?*** Usually, the bigger, the better! Aging (as opposed to development) references need special handling (see [*About aging references*](#about-aging-references), and [*Example 4*](#example-4---c.-elegans-aging))
    * ***Is the profiling done on whole-organism, dissected parts, single-cells ?*** You should aim for profiling that matches your sample type. Whole-organism reference for whole-organism samples, dissected tissue/organ reference for similar samples. Dissected tissue (or single-cell) samples are often sparser than whole-organism for biological and technical reasons. To account for this, we recommend to filter out genes with median $log(TPM+1)<0.5$ across reference samples. 
    * ***What's the profiling technology ?*** RNA-seq is much, *much* cleaner than microarray data, so it's preferable. There is however no trouble staging RNA-seq samples on microarray references and vice-versa. RNA-seq counts should have some within-sample normalization (*e.g.* TPM) to reflect gene expression accurately across samples.
    
@@ -167,7 +167,7 @@ cor_dsaeschimann2017 <- cor(dsaeschimann2017$g, method = "spearman")
 ord <- order(dsaeschimann2017$p$age) # order by development
 heatmap(cor_dsaeschimann2017[ord, ord], Colv = NA, Rowv = NA, 
         scale = "none", keep.dendro = F, margins = c(1,1),
-        # see 'Useful functions' for transp() function.
+        # see Example 3 for transp() function.
         RowSideColors = transp(as.numeric(dsaeschimann2017$p$strain[ord])), 
         labRow = "", labCol = "")
 # add time labels
@@ -178,7 +178,7 @@ mtext(text = paste0(unique(dsaeschimann2017$p$age), 'h'), side = 1, line = 4,
 ```{r bxplot_cor, fig.height=4.5, fig.width=8}
 boxplot(cor_dsaeschimann2017~interaction(dsaeschimann2017$p$strain, 
                                          dsaeschimann2017$p$age), 
-        col = transp(1:4), # see 'Useful functions' for transp() function.
+        col = transp(1:4), # see Example 3 for transp() function.
         xaxt = "n", at = seq(1,44, l = 55)[c(T,T,T,T,F)],
         ylab = "Spearman correlation", xlab = "Chronological age (h)")
 #add time labels
@@ -443,7 +443,7 @@ In very noisy data, you may have to keep very few components (or even a single c
 ### Comparing formulas
 
 Choosing from different splines (and/or parameters) can be done with cross-validation (CV).
-The `ge_imCV()` function inputs the `X`, `p` and a `formula_list` to test, as well as other potential CV parameters (*e.g.* training set size).
+The `ge_imCV()` function inputs the `X`, `p`, and a `formula_list` to test, as well as other potential CV parameters (*e.g.* training set size).
 
 The default training/validation set ratio is `cv.s=0.8`, so $80\%$ of the data is used to build the model and the remainder for validation. 
 When including (factor) covariates in the model, the training set is built such that all groups are proportionately represented in the training set (based on terms of the first formula in the list).
@@ -466,8 +466,8 @@ set.seed(2)
 cv_dsaeschimann2017 <- ge_imCV(X = dsaeschimann2017$g, 
                                p = dsaeschimann2017$p, 
                                formula_list = flist,
-                               cv.n = 20, nc = nc, 
-                               nb.cores = 3)
+                               cv.n = 10, nc = nc, 
+                               nb.cores = 4)
 ```
 
 ```{r plot_cv_dsaeschimann2017_show, class.source='fold-show', fig.height=6, fig.width=9, out.width="80%"}
@@ -498,8 +498,8 @@ cat(unlist(flistk), sep = '\n')
 cv_dsaeschimann2017k <- ge_imCV(X = dsaeschimann2017$g, 
                                 p = dsaeschimann2017$p, 
                                 formula_list = flistk,
-                                cv.n = 20, nc = nc, 
-                                nb.cores = 3)
+                                cv.n = 10, nc = nc, 
+                                nb.cores = 4)
 ```
 
 ```{r plot_cv_dsaeschimann2017k, fig.width=12, fig.height=9}
@@ -667,20 +667,35 @@ abline(a = 0, b = 1, lty = 3, lwd = 2)
 legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 ```
 
+## About aging references
+
+Unlike development, where gene expression changes are robust across individuals (and to an extent across species), expression changes along aging are much more subtle, more variable and noisier across experiments. 
+Individuals can age at different rates, in different ways, and the process of aging itself is also still poorly understood.
+This makes it difficult for RAPToR to work with aging data "as is", and we recommend to strengthen the aging signal by restricting genes to an informative set.
+
+Empirically, we have found that genes with monotonous trends along aging make for a robust choice. 
+Genes whose expression correlates with age values above a given threshold can thus be selected to build a reference from a single component. 
+This strategy is what we use in our article (@bulteau2022real).
+
+A more robust approach is to look for genes that change consistently along aging between multiple independent time-series. 
+This can for example be done with an ICA joining multiple datasets, selecting genes with high loadings on components which behave the same across all included datasets.
+Of course, this requires multiple independent aging time-series for an organism of interest (the more, the better), which is rarely found.
+
+
 
 # Reference-Building examples
 
-Here you will find a few examples of reference building on different organisms.
+Here are a few examples of reference building and validation on different organisms.
 
- - [*C. elegans* larval development](#c.-elegans-larval-development)
- - [*D. melanogaster* embryonic development](#d.-melanogaster-embryonic-development) 
- - [*Danio rerio* embryonic development](#danio-rerio-embryonic-development)
+ - [*C. elegans* larval development](#example-1---c.-elegans-larval-development)
+ - [*D. melanogaster* embryonic development](#example-2---d.-melanogaster-embryonic-development) 
+ - [*Danio rerio* embryonic development with uneven sampling](#example-3---uneven-sampling-of-d.-rerio-embryo)
 
 <br>
 <br>
 
 
-## *C. elegans* larval development
+## Example 1 - *C. elegans* larval development
 
 ```{r ex_1, child = "ex_1.Rmd"}
 ```
@@ -688,7 +703,7 @@ Here you will find a few examples of reference building on different organisms.
 <br>
 <br>
 
-## *D. melanogaster* embryonic development
+## Example 2 - *D. melanogaster* embryonic development
 ```{r ex_2, child = "ex_2.Rmd"}
 
 ```
@@ -697,9 +712,8 @@ Here you will find a few examples of reference building on different organisms.
 <br>
 <br>
 
-## *Danio rerio* embryonic development
-```{r ex_3}
-#, child = "ex_3.Rmd", include=FALSE}
+## Example 3 - Uneven sampling of *D. rerio* embryos
+```{r ex_3, child = "ex_3.Rmd"}
 
 ```
 
