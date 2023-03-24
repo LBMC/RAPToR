@@ -119,8 +119,7 @@ We only keep the first component, which explains $`r round(100*summary(pca_dsbyr
 Given the previous selection of genes, this component is monotonous.
 
 
-We will fit a GAM on PCA components. 
-
+We fit a GAM on the component. 
 ```{r ex4_mf_c2, class.source="fold-show"}
 m_dsbyrne2020 <- ge_im(X = dsbyrne2020$g[selg,], 
                        p = dsbyrne2020$p, 
@@ -128,6 +127,10 @@ m_dsbyrne2020 <- ge_im(X = dsbyrne2020$g[selg,],
                        nc = 1)
 ```
 
+
+### Validation
+
+Check global model performance.
 ```{r ex4_mf_c3, echo = F, class.source="fold-show"}
 # global model performance
 mp_hou <- mperf(dsbyrne2020$g[selg, ], predict(m_dsbyrne2020), is.t = T)
@@ -178,7 +181,7 @@ r_dsbyrne2020 <- make_ref(
 
 Plot component interpolation.
 
-```{r ex4_vd_c2, fig.width=5, fig.height=4, out.width="50%"}
+```{r ex4_vd_c2, fig.width=5, fig.height=4, out.width="40%"}
 par(mfrow = c(1,1), pty='s')
 plot(m_dsbyrne2020, r_dsbyrne2020, l.pos = 'bottomright')
 ```

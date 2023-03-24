@@ -710,12 +710,15 @@ Here are a few examples of reference building and validation on different organi
 
 ```
 
+<br>
+<br>
+
 ## Example 4 - *C. elegans* aging
 ```{r ex_4, child = "ex_4.Rmd"}
 
 ```
 
-<a href="#top">Back to top</a>
+[Back to top](#top)
 
 <hr>
 # References {.unnumbered}
