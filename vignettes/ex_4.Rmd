@@ -1,0 +1,276 @@
+### Data
+
+Two *C. elegans* aging time-series are used in this example:
+
+ 1. An unpublished time-series of an RNAi-hypersensitive strain produced by Byrne *et al.*, `dsbyrne2020`, used to build the reference. (Accession : [GSE93826](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE93826))
+ 1. A time-series of aging in 3 diet conditions published @hou2016systems, `dshou2016`, used for validation. (Accession : [GSE77110](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE77110))
+
+Code to generate `dsbyrne2020` and `dshou2016` can be found [at the end of this section](#code-to-generate-objects-3)
+
+
+
+
+
+### Normalization & Quick look
+```{r ex4_load, include=FALSE}
+load("../inst/extdata/dsbyrne2020.RData")
+load("../inst/extdata/dshou2016.RData")
+```
+
+We start by normalizing the data.
+```{r ex4_qnorm_log, class.source='fold-show', warning=FALSE, message=FALSE}
+library(RAPToR)
+library(limma)
+
+dsbyrne2020$g <- limma::normalizeBetweenArrays(dsbyrne2020$g, 
+                                               method = "quantile")
+dsbyrne2020$g <- log1p(dsbyrne2020$g)
+
+dshou2016$g <- limma::normalizeBetweenArrays(dshou2016$g, 
+                                             method = "quantile")
+dshou2016$g <- log1p(dshou2016$g)
+```
+
+Check the contents of the expression matrix and pheno data.
+```{r ex4_ql_c1, class.source='fold-show'}
+dsbyrne2020$g[1:5, 1:4]
+
+head(dsbyrne2020$p, n = 5)
+```
+
+Correlation between samples for outliers.
+```{r ex4_ql_c2, fig.height=5, fig.width=5, out.width="60%"}
+cor_dsbyrne2020 <- cor(dsbyrne2020$g, method = "spearman")
+diag(cor_dsbyrne2020) <- NA
+ord <- order(dsbyrne2020$p$age)
+cols <- as.character(1:3)
+heatmap(cor_dsbyrne2020[ord, ord], Colv = NA, Rowv = NA, 
+        scale = "none", keep.dendro = F, margins = c(1,5),
+        # RowSideColors = cols[as.numeric(dsbyrne2020$p$diet[ord])], 
+        labRow = "", labCol = "")
+par(xpd = T)
+agetab <- table(dsbyrne2020$p$age)
+mtext(text = names(agetab), side = 1, line = c(4), 
+      at = seq(-.17, .86, l = length(dsbyrne2020$p$age))[
+        round(cumsum(agetab) - agetab/2 +0.1)
+      ], cex = .6)
+
+# color key
+l.values <- seq(min(cor_dsbyrne2020, na.rm = T), 
+                max(cor_dsbyrne2020, na.rm = T), l = 10)
+image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
+      z = matrix(l.values, ncol = 10),
+      col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
+
+text(.975, 1, pos = 3, labels = expression(rho), font = 2)
+text(1, y = seq(0.6,1, l = 10), pos = 4, 
+     labels = round(l.values, 2), cex = .6)
+
+xlp <- 1.025
+mtext(at = xlp, line = 4, side = 1, text = "(days)", cex = .8)
+```
+
+```{r ex4_corboxplot, fig.height=5, fig.width=8}
+boxplot(cor_dsbyrne2020, xaxt="n",
+        lwd=2, boxwex=.5, 
+        col = 0, at = 1:sum(agetab)+rep(1:length(agetab), agetab),
+        ylab = "Spearman correlation", xlab = "Chronological age (days of adulthood)", las=1)
+#add time labels
+axis(side = 1, at = (1:sum(agetab)+rep(1:length(agetab), agetab))[
+  round(cumsum(agetab) - agetab/2 +0.1)], 
+  labels = paste0(unique(dsbyrne2020$p$age), 'd'))
+
+```
+
+No outliers.
+We note the overall sample-sample correlation is lower than with development time-series experiments. 
+
+### Filtering genes
+We will keep genes with a strong monotonic aging signal, which we define as those with absolute spearman correlation with age $> \sqrt(1/3)$. 
+This roughly corresponds to monotonous genes for which aging explains over $1/3$ of the variance.
+
+```{r ex4_filtergenes, class.source='fold-show'}
+# compute correlation
+gn_cor <- apply(dsbyrne2020$g, 1, cor, y=dsbyrne2020$p$age, method = "spearman")
+
+selg <- (abs(gn_cor)>sqrt(1/3))
+table(selg)
+```
+
+
+
+Plotting principal components.
+```{r ex4_ql_c3, class.source='fold-show'}
+pca_dsbyrne2020 <- stats::prcomp(t(dsbyrne2020$g[selg,]), 
+                                 center = TRUE, scale = FALSE)
+```
+
+```{r ex4_ql_c4, fig.height=3, fig.width=12}
+par(mfrow = c(1,4), pty='s')
+invisible(sapply(1:4, function(i){
+  plot(dsbyrne2020$p$age, pca_dsbyrne2020$x[,i], 
+       lwd = 2, xlab = "Chronological age (days)", ylab = "PC", 
+       main = paste0("PC", i))
+}))
+```
+
+
+
+### Model fitting
+
+We only keep the first component, which explains $`r round(100*summary(pca_dsbyrne2020)$importance[2,1],2)` \%$ of the variance in the data. 
+Given the previous selection of genes, this component is monotonous.
+
+
+We will fit a GAM on PCA components. 
+
+```{r ex4_mf_c2, class.source="fold-show"}
+m_dsbyrne2020 <- ge_im(X = dsbyrne2020$g[selg,], 
+                       p = dsbyrne2020$p, 
+                       formula = "X ~ s(age, bs = 'cr', k=4)", 
+                       nc = 1)
+```
+
+```{r ex4_mf_c3, echo = F, class.source="fold-show"}
+# global model performance
+mp_hou <- mperf(dsbyrne2020$g[selg, ], predict(m_dsbyrne2020), is.t = T)
+print(do.call(cbind, mp_hou))
+```
+
+And then per gene.
+```{r ex4_mperf_ng, class.source='fold-show'}
+ng_mp_hou <-  mperf(dsbyrne2020$g[selg, ], predict(m_dsbyrne2020), 
+                     is.t = T, global = F)
+# remove NAs (eg. 0 variance genes) and Inf values (/0)
+ng_mp_hou <- lapply(ng_mp_hou, na.omit)
+ng_mp_hou$aRE <- ng_mp_hou$aRE[ng_mp_hou$aRE < Inf] 
+```
+
+
+```{r ex4_mperf_ngplot, fig.height=4.5, fig.width=7}
+par(mfrow = c(2,2), mar=c(4,4,2,1))
+invisible(sapply(names(ng_mp_hou), function(idx){
+  rg <- range(na.omit(ng_mp_hou[[idx]]))
+  # estimate density curve
+  d <- density(na.omit(ng_mp_hou[[idx]]), from = rg[1], to = rg[2])
+  plot(d, main = paste0(gsub("a", "", idx, fixed = T), 
+                        " density (", length(ng_mp_hou[[idx]]), " genes)"), 
+       xlab = idx, lwd = 2)
+  # add global value
+  abline(v = mp_hou[[idx]], lty = 2, lwd = 2, col = "firebrick")
+  text(mp_hou[[idx]], .9*max(d$y), pos = 4, labels = idx, 
+       font = 2, col = "firebrick")
+}))
+```
+Given the selection of genes, we expect and find good fits.
+
+
+Then, build the `ref` object.
+
+```{r ex4_buildref, class.source="fold-show"}
+# make a 'ref' object'
+r_dsbyrne2020 <- make_ref(
+  m_dsbyrne2020, 
+  by.inter = .01, 
+  t.unit = "days of adulthood, 20C",     # time unit
+  metadata = list("organism" = "C. elegans", # any metadata
+                  "profiling"="bulk RNAseq",
+                  "condition"="rrf-3 mutant, liquid culture"))
+```
+
+
+Plot component interpolation.
+
+```{r ex4_vd_c2, fig.width=5, fig.height=4, out.width="50%"}
+par(mfrow = c(1,1), pty='s')
+plot(m_dsbyrne2020, r_dsbyrne2020, l.pos = 'bottomright')
+```
+
+Looks good.
+
+
+```{r ex4_vd_c3, class.source="fold-show", warning=FALSE, message=FALSE}
+# stage samples
+ae_dsbyrne2020 <- ae(dsbyrne2020$g, r_dsbyrne2020)
+ae_dshou2016 <- ae(dshou2016$g, r_dsbyrne2020)
+```
+
+
+```{r ex4_vd_c4, fig.height=5, fig.width=10}
+par(mfrow = c(1,2), mar = c(4,5,3,1), pty='s')
+rg <- range(c(ae_dsbyrne2020$age.estimates[,1], dsbyrne2020$p$age))
+plot(ae_dsbyrne2020$age.estimates[,1]~dsbyrne2020$p$age, 
+     xlab = "Chronological age (d of adulthood)", 
+     ylab = "Estimated age (r_dsbyrne2020)", 
+     xlim = rg, ylim = rg,
+     main = "Chron. vs Estimated ages for dsbyrne2020
+(on r_dsbyrne2020)", 
+     lwd = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 1)
+legend("topleft", legend = c("x = y"), lwd=3, col=1, lty = 3, bty='n')
+
+rg <- range(c(ae_dshou2016$age.estimates[,1], dshou2016$p$age))
+plot(ae_dshou2016$age.estimates[,1]~dshou2016$p$age, 
+     col = dshou2016$p$diet, xlim = rg, ylim = rg,
+     xlab = "Chronological age (d of adulthood)", 
+     ylab = "Estimated age (r_dsbyrne2020)", 
+     main = "Chron. vs Estimated ages for dshou2016
+(on r_dsbyrne2020)", lwd = 2)
+abline(a = 0, b = 1, lty = 3, lwd = 2)
+legend("topleft", lty=NA, lwd=3, pch=1, col=1:3, bty='n',
+       legend = c("ad ilibitum", "carloric restriction", 
+                  "intermittent fasting"))
+
+```
+
+We expected the youngest 2-day-old samples of `dshou2016` to be outside the scope of the reference, which starts at 3 days of adulthood.
+However, beyond this we also note a consistent difference of around 3 days between chronological and estimated age.
+
+This offset could be explained by a combination of many factors, such as the few listed below.
+```{r ex4_intercept_causes, echo=F}
+knitr::kable(data.frame(
+  factor = c("Strain", "Embryo signal", "Culture medium", "Food source"),
+  dsbyrne2020 = c("rrf-3 (RNAi hyper-sensitive)", 
+                  "fertile", 
+                  "liquid culture",
+                  "EV HT115 (E. coli)"),
+  dshou2016 = c("N2", 
+                "sterile (FUDR treatment)",
+                "NGM plates",
+                "UV-killed OP50 (E. coli)"),
+  row.names = "factor"), align = "cc")
+```
+
+The difference could also come from unknown differences in experimental procedures between labs, or even from a difference in their definition of *"days of adulthood"*, as @lithgow2017long have previously shown.
+
+
+
+### Code to generate objects
+
+Required packages and variables:
+```{r ex4_load_namespaces, eval = F}
+data_folder <- "../inst/extdata/"
+
+requireNamespace("RAPToR", quietly = T)
+requireNamespace("wormRef", quietly = T)
+requireNamespace("utils", quietly = T)
+requireNamespace("GEOquery", quietly = T) # bioconductor
+requireNamespace("Biobase", quietly = T)  # bioconductor
+requireNamespace("biomaRt", quietly = T)  # bioconductor
+requireNamespace("affy", quietly = T)  # bioconductor
+```
+
+*Note : set `data_folder` to an existing path on your system where you want to store the objects.*
+
+```{r ex4_c2tpm_func, code = readLines("convert2tpm.R"), echo = TRUE, eval=FALSE}
+```
+
+
+To build `dsbyrne2020`, *C. elegans* unpublished aging time-series by Byrne et al.,  [GSE93826](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE93826)
+```{r ex4_load_dsbyrne2020_c, code = readLines("load_dsbyrne2020.R"), echo = TRUE, eval=FALSE}
+```
+
+
+To build `dshou2016`, *C. elegans* aging time-series from @hou2016
+```{r ex4_load_dshou2016_c, code = readLines("load_dshou2016.R"), echo = TRUE, eval=FALSE}
+```
