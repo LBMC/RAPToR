@@ -373,7 +373,7 @@ rd_ages <- lapply(seq_len(n), function(i){
 
 As done above, we run identical DE models and compare results with the model goodness-of-fit (GoF) per gene and look at the number of DE genes found for strain and development (BH-adjusted p-value $< 0.05$).
 
-```{r sc1_comp_dge2, eval = F, results='hide', class.source="fold-show"}
+```{r sc1_comp_dge2, results='hide', class.source="fold-show"}
 # setup cluster for parallelization
 cl <- parallel::makeCluster(6, "FORK")
 
