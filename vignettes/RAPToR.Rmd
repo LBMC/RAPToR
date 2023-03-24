@@ -63,6 +63,7 @@ Given an expression matrix `X` of transcripts per million (TPM) with samples as 
 ```{r qs_load_data, include=FALSE}
 load("../inst/extdata/dshendriks2014.RData")
 X <- dshendriks2014$g[, 1:6]
+colnames(X) <- paste0("sample", 1:6)
 ```
 
 ```{r qs_1, class.source="fold-show", message=FALSE, warning=FALSE}
@@ -160,7 +161,7 @@ Both datasets are available on GEO
 [GSE52861](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52861)), and code to create the `dsaeschimann2017` and `dshendriks2014` objects can be found [at the end of this vignette](#code-to-generate-data-objects).
 
 
-```{r load_ds, include=FALSE, eval=gen_figs}
+```{r load_ds, include=FALSE}
 load("../inst/extdata/dsaeschimann2017.RData")
 load("../inst/extdata/dshendriks2014.RData")
 ```
