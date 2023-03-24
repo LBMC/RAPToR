@@ -257,8 +257,7 @@ r_dswhite2017 <- make_ref(
   n.inter = 500, 
   t.unit = "h post-fertilization",     # time unit
   metadata = list("organism" = "D. rerio", # any metadata
-                  "profiling" = "whole-organism, single-embryo",
-                  "technology" = "RNAseq",
+                  "profiling" = "single-embryo RNAseq",
                   "note" = "asinh(1+age) interpolation"))
 ```
 
@@ -333,9 +332,8 @@ r_dswhite2017_nT <- make_ref(
   n.inter = 500, 
   t.unit = "h post-fertilization",     # time unit
   metadata = list("organism" = "D. rerio", # any metadata
-                  "profiling" = "whole-organism, single-embryo",
-                  "technology" = "RNAseq",
-                  "note" = "Not the best model"))
+                  "profiling" = "single-embryo RNAseq",
+                  "note" = "Not the best model!"))
 ```
 
 
@@ -345,9 +343,8 @@ Plot component interpolation.
 par(mfrow = c(1,4), pty='s')
 plot(m_dswhite2017_nT, r_dswhite2017_nT, ncs=1:4, l.pos = 'bottomright')
 ```
-We can see that the model has trouble predicting the dynamics accurately.
-
-PC3 and PC4 have flattened early dynamics, and overfitting around 40hpf.
+The model has trouble predicting the dynamics accurately:
+PC3 and PC4 have flattened early dynamics and overfitting around 40hpf.
 
 ```{r ex3_vd_c6bis, fig.width=7, fig.height=3.5, out.width="80%"}
 par(mfrow = c(1,2), pty='s')
@@ -358,7 +355,7 @@ plot(m_dswhite2017_nT, r_dswhite2017_nT, ncs=3:4, show.legend = F,
 Consequences can be seen on when staging external data (*i.e.* the validation data), *but not necessarily when staging the reference data* as we'll see below. 
 Validating references with independent/external data is thus highly recommended.
 
-```{r ex3_vd_c8, class.source="fold-show", warning=FALSE, message=FALSE}
+```{r ex3_vd_c8, class.source="fold-show", warning=FALSE, message=FALSE, results='hide'}
 ae_dswhite2017_nT <- ae(dswhite2017$g, r_dswhite2017_nT)
 ae_dslevin2016zeb_nT <- ae(dslevin2016zeb$g, r_dswhite2017_nT)
 ```

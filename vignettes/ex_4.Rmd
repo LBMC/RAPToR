@@ -173,7 +173,7 @@ r_dsbyrne2020 <- make_ref(
   m_dsbyrne2020, 
   by.inter = .01, 
   t.unit = "days of adulthood, 20C",     # time unit
-  metadata = list("organism" = "C. elegans", # any metadata
+  metadata = list("organism" ="C. elegans", # any metadata
                   "profiling"="bulk RNAseq",
                   "condition"="rrf-3 mutant, liquid culture"))
 ```
@@ -189,7 +189,7 @@ plot(m_dsbyrne2020, r_dsbyrne2020, l.pos = 'bottomright')
 Looks good.
 
 
-```{r ex4_vd_c3, class.source="fold-show", warning=FALSE, message=FALSE}
+```{r ex4_vd_c3, class.source="fold-show", warning=FALSE, message=FALSE, results='hide'}
 # stage samples
 ae_dsbyrne2020 <- ae(dsbyrne2020$g, r_dsbyrne2020)
 ae_dshou2016 <- ae(dshou2016$g, r_dsbyrne2020)
@@ -271,6 +271,6 @@ To build `dsbyrne2020`, *C. elegans* unpublished aging time-series by Byrne et a
 ```
 
 
-To build `dshou2016`, *C. elegans* aging time-series from @hou2016
+To build `dshou2016`, *C. elegans* aging time-series from @hou2016systems
 ```{r ex4_load_dshou2016_c, code = readLines("load_dshou2016.R"), echo = TRUE, eval=FALSE}
 ```

@@ -144,10 +144,9 @@ Then, build the `ref` object.
 r_dshendriks2014 <- make_ref(
   m = m_dshendriks2014,
   n.inter = 100,                  # interpolation resolution
-  t.unit = "h past egg-laying",   # time unit
+  t.unit = "h past egg-laying, 25C",   # time unit
   metadata = list("organism" = "C. elegans", # any metadata
-                  "profiling" = "whole-organism, bulk",
-                  "technology" = "RNAseq")) 
+                  "profiling" = "bulk RNAseq")) 
 ```
 
 Plot model predictions on components.
@@ -162,7 +161,7 @@ No overfitting, good fits on the components explaining most of the variance. Som
 
 Finally, we stage the samples from the reference, as well as the external validation data (`dsaeschimann2017`). 
 We exclude the earliest `dsaeschimann2017` samples (under 22h) from staging since they are outside the span covered by the reference
-```{r ex1_vd_c3, class.source='fold-show', warning=FALSE, message=FALSE}
+```{r ex1_vd_c3, class.source='fold-show', warning=FALSE, message=FALSE, results='hide'}
 ae_dshendriks2014 <- ae(dshendriks2014$g, r_dshendriks2014)
 
 too_young <- dsaeschimann2017$p$age <= 22
@@ -187,7 +186,8 @@ legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 # dsaeschimann2017
 dsaeschimann2017$p[!too_young, "age_est"] <- 
   ae_dsaeschimann2017$age.estimates[,1]
-rg <- range(c(dsaeschimann2017$p$age_est[!too_young], dsaeschimann2017$p$age[!too_young]))
+rg <- range(c(dsaeschimann2017$p$age_est[!too_young], 
+              dsaeschimann2017$p$age[!too_young]))
 plot(age_est~age, data = dsaeschimann2017$p[!too_young,], 
      xlab = "Chronological age", ylab = "Estimated age (r_dshendriks2014)", 
      xlim = rg, ylim = rg,
