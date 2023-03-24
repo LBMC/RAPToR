@@ -46,7 +46,6 @@ ord <- order(dsbyrne2020$p$age)
 cols <- as.character(1:3)
 heatmap(cor_dsbyrne2020[ord, ord], Colv = NA, Rowv = NA, 
         scale = "none", keep.dendro = F, margins = c(1,5),
-        # RowSideColors = cols[as.numeric(dsbyrne2020$p$diet[ord])], 
         labRow = "", labCol = "")
 par(xpd = T)
 agetab <- table(dsbyrne2020$p$age)
@@ -55,26 +54,24 @@ mtext(text = names(agetab), side = 1, line = c(4),
         round(cumsum(agetab) - agetab/2 +0.1)
       ], cex = .6)
 
-# color key
+# color key and labels
 l.values <- seq(min(cor_dsbyrne2020, na.rm = T), 
                 max(cor_dsbyrne2020, na.rm = T), l = 10)
 image(x = c(.95,1), y = seq(0.6,1, l = 10), useRaster = T,
       z = matrix(l.values, ncol = 10),
       col = hcl.colors(12, "YlOrRd", rev = TRUE), add = T)
-
 text(.975, 1, pos = 3, labels = expression(rho), font = 2)
 text(1, y = seq(0.6,1, l = 10), pos = 4, 
      labels = round(l.values, 2), cex = .6)
-
-xlp <- 1.025
-mtext(at = xlp, line = 4, side = 1, text = "(days)", cex = .8)
+mtext(at = 1.025, line = 4, side = 1, text = "(days)", cex = .8)
 ```
 
 ```{r ex4_corboxplot, fig.height=5, fig.width=8}
 boxplot(cor_dsbyrne2020, xaxt="n",
-        lwd=2, boxwex=.5, 
-        col = 0, at = 1:sum(agetab)+rep(1:length(agetab), agetab),
-        ylab = "Spearman correlation", xlab = "Chronological age (days of adulthood)", las=1)
+        lwd=2, boxwex=.5, las=1, col = 0, 
+        at = 1:sum(agetab)+rep(1:length(agetab), agetab),
+        ylab = "Spearman correlation", 
+        xlab = "Chronological age (days of adulthood)")
 #add time labels
 axis(side = 1, at = (1:sum(agetab)+rep(1:length(agetab), agetab))[
   round(cumsum(agetab) - agetab/2 +0.1)], 

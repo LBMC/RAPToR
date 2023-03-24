@@ -399,12 +399,7 @@ Model performance is reflected by the distributions of prediction indices over a
 par(mfrow = c(2,2))
 invisible(sapply(names(ng_mp), function(idx){
   rg <- range(na.omit(ng_mp[[idx]]))
-  # label position
-  if(idx == "aCC"){
-    pos <- 2
-  } else {
-    pos <- 4
-  }
+
   # estimate density curve
   d <- density(na.omit(ng_mp[[idx]]), from = rg[1], to = rg[2])
   
@@ -413,7 +408,7 @@ invisible(sapply(names(ng_mp), function(idx){
        xlab = idx, lwd = 2)
   # display global value
   abline(v = g_mp[[idx]], lty = 2, lwd = 2, col = "firebrick")
-  text(g_mp[[idx]], .9*max(d$y), pos = pos, labels = idx, 
+  text(g_mp[[idx]], .9*max(d$y), pos = 4, labels = idx, 
        font = 2, col = "firebrick")
 }))
 ```
@@ -460,7 +455,6 @@ Below we choose between 4 available GAM smooth terms on the `dsaeschimann2017` G
 smooth_methods <- c("tp", "ts", "cr", "ps")
 flist <- as.list(paste0("X ~ s(age, bs = \'", smooth_methods, "\') + strain"))
 cat(unlist(flist), sep = '\n')
-
 
 set.seed(2)
 cv_dsaeschimann2017 <- ge_imCV(X = dsaeschimann2017$g, 
@@ -516,7 +510,7 @@ This confirms the parameters estimated by GAM (in blue) are optimal.
 
 ## Building a Reference object 
 
-A `ref` object can be built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata.
+A `ref` object can be built from a GEIM using `make_ref()`, specifying interpolation resolution and relevant metadata (see `?plot.geim`).
 
 On our `dsaeschimann2017` example :
 ```{r pred_dsaeschimann2017, class.source='fold-show'}
@@ -526,14 +520,13 @@ r_dsaeschimann2017 <- make_ref(
   t.unit = "h past egg-laying (25°C)", # time unit
   cov.levels = list("strain"= "N2"),  # covariate lvls to use for interpolation
   metadata = list("organism"= "C. elegans", # any metadata
-                  "profiling"= "whole-organism, bulk",
-                  "technology"= "RNAseq")) 
+                  "profiling"= "bulk RNAseq"))
 
 ```
 
 
-As any R model, GEIMs also have a `predict()` function, which can used to manually output predictions either in component space or at the gene level. 
-Doing so manually instead of through `make_ref()` can be useful for a deeper look at the model.
+As any R model, GEIMs have a `predict()` function (called internally by `make_ref()`) which can be used to manually get predictions either in component space or at the gene level. 
+This can be useful for a deeper look at the model.
 
 ```{r ndat_mdsaeschimann2017, class.source='fold-show'}
 # first generate the new predictor data
@@ -544,7 +537,6 @@ newdat <- data.frame(
   strain = rep("N2", n.inter) # we want to predict as N2 
   )
 head(newdat)
-
 
 # predict at gene level
 pred_m_dsaeschimann2017 <- predict(m_dsaeschimann2017, 
