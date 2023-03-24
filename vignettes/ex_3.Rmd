@@ -120,7 +120,7 @@ invisible(sapply(1:8, function(i){
 ```
 
 Sampling is sparser towards the end of the time series, and expression dynamics are also "wider".
-Because of this, fitting splines along age on these components poorly fit the earlier time points.
+Because of this, fitting splines along age on these components will poorly fit the earlier time points.
 
 To bypass this, we can use `asinh(age)`, which has a similar effect to a logarithm to stretch the age values closer to a uniform scale. We also add an intercept to avoid overstretching the first few time points. 
 The relationship between `age` and `asinh(1+age)` is shown below.
@@ -214,7 +214,11 @@ m_dswhite2017 <- ge_im(X = dswhite2017$g,
                        nc = nc)
 ```
 
-```{r ex3_mf_c3, echo = F, class.source="fold-show"}
+
+### Validation
+
+First, check global model performance.
+```{r ex3_mf_c3, class.source="fold-show"}
 # global model performance
 mp_white <- mperf(dswhite2017$g, predict(m_dswhite2017), is.t = T)
 print(do.call(cbind, mp_white))
@@ -403,6 +407,7 @@ data_folder <- "../inst/extdata/"
 requireNamespace("utils", quietly = T)
 requireNamespace("GEOquery", quietly = T) # bioconductor
 requireNamespace("Biobase", quietly = T)  # bioconductor
+requireNamespace("biomaRt", quietly = T)  # bioconductor
 ```
 
 *Note : set `data_folder` to an existing path on your system where you want to store the objects.*
