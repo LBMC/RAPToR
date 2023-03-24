@@ -675,12 +675,12 @@ This makes it difficult for RAPToR to work with aging data "as is", and we recom
 
 Empirically, we have found that genes with monotonous trends along aging make for a robust choice. 
 Genes whose expression correlates with age values above a given threshold can thus be selected to build a reference from a single component. 
-This strategy is what we use in our article (@bulteau2022real).
+We use this strategy in our article (@bulteau2022real), and replicate it in [*Example 4*](#example-4---c.-elegans-aging).
 
-A more robust approach is to look for genes that change consistently along aging between multiple independent time-series. 
-This can for example be done with an ICA joining multiple datasets, selecting genes with high loadings on components which behave the same across all included datasets.
-Of course, this requires multiple independent aging time-series for an organism of interest (the more, the better), which is rarely found.
-
+Aging profiling data is particularly tricky to use for reference-building because on top of the many known factors that biologically influence aging, unknown differences in experimental procedures between labs can also influence aging, as evidenced by @lithgow2017long. 
+They further show that the t-zero can be different between labs (*e.g.* egg-laying, hatching, feeding), some start counting at "day 1", others at "day 0".
+It is therefore likely that inferred age units will differ from known chronological age of staged samples. 
+Time-series should however show clear correlation between chronological and estimated age.
 
 
 # Reference-Building examples
@@ -690,6 +690,7 @@ Here are a few examples of reference building and validation on different organi
  - [*C. elegans* larval development](#example-1---c.-elegans-larval-development)
  - [*D. melanogaster* embryonic development](#example-2---d.-melanogaster-embryonic-development) 
  - [*Danio rerio* embryonic development with uneven sampling](#example-3---uneven-sampling-of-d.-rerio-embryo)
+ - [*C. elegans* aging](#example-4---c.-elegans-aging)
 
 <br>
 <br>
@@ -714,6 +715,11 @@ Here are a few examples of reference building and validation on different organi
 
 ## Example 3 - Uneven sampling of *D. rerio* embryos
 ```{r ex_3, child = "ex_3.Rmd"}
+
+```
+
+## Example 4 - *C. elegans* aging
+```{r ex_4, child = "ex_4.Rmd"}
 
 ```
 
