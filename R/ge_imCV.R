@@ -108,12 +108,14 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
                 }
                 
                 res <- lapply(seq_along(formula_list), function(j){
-                  m <- ge_im(X = Xr, p = plist[[j]][tset,], 
+                  m <- RAPToR::ge_im(X = Xr, p = plist[[j]][tset,], 
                              formula = formula_list[[j]], 
                              method = method, dim_red = dim_red, drX = TRUE, nc = nc)
-                  pred <- predict(m, newdata = plist[[j]])
-                  cve <- mperf(X[, -tset, drop=F], pred[, -tset, drop=F], to_compute = to_compute, is.t = T)
-                  mpf <- mperf(X[, tset, drop=F], pred[, tset, drop=F], to_compute = to_compute, is.t = T)
+                  pred <- RAPToR::predict.geim(m, newdata = plist[[j]])
+                  cve <- RAPToR::mperf(X[, -tset, drop=F], pred[, -tset, drop=F], 
+                                       to_compute = to_compute, is.t = T)
+                  mpf <- RAPToR::mperf(X[, tset, drop=F], pred[, tset, drop=F], 
+                                       to_compute = to_compute, is.t = T)
                   return(list(cve = cve, mpf = mpf))
                 })
                 cve <- do.call(rbind, lapply(res, function(elt){ unlist(elt[["cve"]]) }))
