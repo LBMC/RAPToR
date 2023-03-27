@@ -1,6 +1,6 @@
 
 #' @importFrom stats prcomp as.formula update
-#' @import mgcv
+#' @importFrom mgcv gam
 .model_gam_pca <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     pca <- X
@@ -25,9 +25,9 @@
   return(m)
 }
 
-#' @import mgcv
+#' @importFrom mgcv predict.gam
 .predict_gam_pca <- function(m, newdata, as.pc = FALSE){
-  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  preds <- do.call(cbind, lapply(m$model, predict.gam, newdata = newdata))
   
   if(!as.pc)
     return(apply(tcrossprod(m$pca$rotation, preds), 2, function(co) co + m$pca$gcenters))
@@ -38,7 +38,7 @@
 
 #' @importFrom stats as.formula update 
 #' @importFrom ica icafast
-#' @import mgcv
+#' @importFrom mgcv gam 
 .model_gam_ica <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     ica <- X
@@ -63,9 +63,9 @@
   return(m)
 }
 
-#' @import mgcv
+#' @importFrom mgcv predict.gam
 .predict_gam_ica <- function(m, newdata, as.ic = FALSE){
-  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  preds <- do.call(cbind, lapply(m$model, mgcv::predict.gam, newdata = newdata))
   
   if(!as.ic)
     return(apply(tcrossprod(m$ica$S, preds), 2, function(co) co + m$ica$gcenters))
@@ -74,7 +74,7 @@
 
 
 
-#' @importFrom stats prcomp as.formula update glm
+#' @importFrom stats prcomp as.formula update glm predict
 .model_glm_pca <- function(X, p, formula, nc = ncol(X), drX = F){
   if(drX){
     pca <- X
@@ -98,8 +98,9 @@
   return(m)
 }
 
+#' @importFrom stats predict
 .predict_glm_pca <- function(m, newdata, as.pc = FALSE){
-  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  preds <- do.call(cbind, lapply(m$model, stats::predict, newdata = newdata))
   
   if(!as.pc)
     return(apply(tcrossprod(m$pca$rotation, preds), 2, function(co) co + m$pca$gcenters))
@@ -133,8 +134,9 @@
   return(m)
 }
 
+#' @importFrom stats predict
 .predict_glm_ica <- function(m, newdata, as.ic = FALSE){
-  preds <- do.call(cbind, lapply(m$model, predict, newdata = newdata))
+  preds <- do.call(cbind, lapply(m$model, stats::predict, newdata = newdata))
   
   if(!as.ic)
     return(apply(tcrossprod(m$ica$S, preds), 2, function(co) co + m$ica$gcenters))
