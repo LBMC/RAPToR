@@ -216,6 +216,8 @@ plot.geimCV <- function(x, join.plots = TRUE,
 #' 
 #' @export
 #' 
+#' @importFrom stats median
+#' 
 print.geimCV <- function(x, ...){
   
   nf <- length(x$formula_list)
@@ -237,7 +239,7 @@ print.geimCV <- function(x, ...){
   
   cat("Median CV errors:\n")
   cve <- do.call(rbind, lapply(seq_len(nf), function(i){
-    apply(x$cve[[i]], 2, median)
+    apply(x$cve[[i]], 2, stats::median)
   }))
   rownames(cve) <- paste0(as.character(x$formula_list), "  ")
   print(cve, ...)
