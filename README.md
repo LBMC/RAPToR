@@ -120,12 +120,13 @@ We recommend you get our data-packages with pre-built references of common organ
   - `ref_compare()` gets matching reference time points to the samples and compares logFCs between given sample groups, and between matching reference time points (giving an estimate of development logFCs between groups).
   - `get_logFC()` extracts sample and reference logFCs between specified groups from the output of `ref_compare()`.
  - Renamed `plot_cor.ae()` to `plot_cor()`.
- - Updated documentation:
+ - Removed deprecated plotting function for `df_CV`
+ - Updated vignette documentation:
   - Added a vignette on correcting DE analysis for development `vignette("RAPToR-DEcorrection")`
   - Updated vignette sections related to reference-building with the new objects.
-  - Added a reference-building section and examples for aging references
+  - Added a reference-building section and example for aging references
   - Re-formatted vignettes with Bioconductor style
-  - Added PDF versions of all vignettes
+  - Added PDF versions of all vignettes (index entries with `-pdf`, *e.g.* `vignette("RAPToR-pdf")`)
 
 ### v1.1
 #### v1.1.6 (used in Bulteau & Francesconi 2022 publication)
