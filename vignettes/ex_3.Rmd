@@ -313,7 +313,7 @@ legend("bottomright", legend = "x = y", lwd=3, col=1, lty = 3, bty='n')
 ### Model fitting without age transformation
 
 We'll build the same model without considering uneven sampling, for comparison. 
-This is purposely not the optimal model, and will show interpolation issues to look out for.
+This is purposely not the optimal model and will show interpolation issues to look out for.
 
 ```{r ex3_vd_c5, class.source='fold-show'}
 m_dswhite2017_nT <- ge_im(X = dswhite2017$g, 

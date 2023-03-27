@@ -241,7 +241,7 @@ knitr::kable(data.frame(
   row.names = "factor"), align = "cc")
 ```
 
-The difference could also come from unknown differences in experimental procedures between labs, or even from a difference in their definition of *"days of adulthood"*, as @lithgow2017long have previously shown.
+The difference could also come from unknown differences in experimental procedures between labs, or even from a difference in their definition of *"days of adulthood"*, as @lithgow2017long have previously discussed.
 
 
 
