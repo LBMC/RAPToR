@@ -134,7 +134,7 @@ ref_compare <- function(X, ref, group,
 #' 
 #' Fetches the log2-fold change (logFC) values for a given group comparison in the samples or in the reference.
 #' 
-#' @param rc an rcmp object, as returned by \link{\code{ref_compare}}
+#' @param rc an rcmp object, as returned by \code{\link{ref_compare}}
 #' @param l,l0 sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{group} respectively.
 #' @param verbose if TRUE (default), prints warnings and selected factor levels.
 #'
