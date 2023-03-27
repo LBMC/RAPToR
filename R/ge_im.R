@@ -252,7 +252,7 @@ plot.geim <- function(x, ref=NULL, ncs=NULL,
   }
   
   xl <- paste0("Reference time, ", t.unit)
-  y1df <- predict(x, ndat, as.c=T)
+  y1df <- RAPToR::predict.geim(x, ndat, as.c=T)
   
   m_stats <- do.call(rbind, lapply(x$model, function(m){
     c(r2 = 1 - sum(m$residuals^2)/sum(m$y**2),

@@ -91,7 +91,7 @@ make_ref <- function(m,
   }
   
   # build ref. object
-  ref <- list(interpGE = predict(m, ndat),
+  ref <- list(interpGE = RAPToR::predict.geim(m, ndat),
               time = ts)
   
   # get geim params
