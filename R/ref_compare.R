@@ -71,7 +71,7 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' @eval rc_example()
 #' 
 #' @importFrom Rdpack reprompt
-#' @importFrom stats lm
+#' @importFrom stats lm sd coef 
 #' 
 ref_compare <- function(X, ref, group, 
                         ae_obj=NULL, ae_values=NULL){
@@ -111,10 +111,10 @@ ref_compare <- function(X, ref, group,
   lm_samp <- stats::lm(log2(exp(t(ovl$samp)))~group)
   lm_ref <-stats::lm(log2(exp(t(ovl$ref)))~group)
   
-  coefs <- list(samp = t(coef(lm_samp)), ref = t(coef(lm_ref))) 
+  coefs <- list(samp = t(stats::coef(lm_samp)), ref = t(stats::coef(lm_ref))) 
   
   group_stats <- list(ae_avg = tapply(ae_values, group, mean),
-                    ae_sd = tapply(ae_values, group, sd),
+                    ae_sd = tapply(ae_values, group, stats::sd),
                     ae_range = as.data.frame(
                       do.call(cbind, tapply(ae_values, group, range)),
                       row.names = c("min", "max")
@@ -191,12 +191,13 @@ get_logFC <- function(rc, l = levels(rc$group)[2], l0 = levels(rc$group)[1],
 #' 
 #' @export
 #' 
+#' @importFrom stats cor
 #' 
 print.rcmp <- function(x, ...){
   lfcs <- lapply(levels(x$group)[-1],  RAPToR::get_logFC, rc=x, l0=levels(x$group)[1], verbose=F)
-  rs <- unlist(lapply(lfcs, function(lfci) cor(lfci$samp, lfci$ref)))
+  rs <- unlist(lapply(lfcs, function(lfci) stats::cor(lfci$samp, lfci$ref)))
   ae_avg <- attr(x, "group.stats")$ae_avg
-  df <- as.data.frame(cbind(#group = levels(x$group),,
+  df <- as.data.frame(cbind(
               ref.logFC.r = c(NA, rs),
               ref.logFC.r2 = c(NA, rs^2),
               ae.avg.dif = c(NA, ae_avg[-1] - ae_avg[1])
