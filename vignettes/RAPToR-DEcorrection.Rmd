@@ -10,11 +10,11 @@ output:
     number_sections: yes
     includes:
       in_header: "../inst/tex/preamble.tex"
-subtitle: "`r BiocStyle::pkg_ver('RAPToR')`"
 vignette: >
   %\VignetteIndexEntry{RAPToR-DEcorrection}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
+subtitle: "`r BiocStyle::pkg_ver('RAPToR')`"
 bibliography: ../inst/REFERENCES.bib
 author: Romain Bulteau
 date: "`r Sys.setlocale('LC_TIME', 'C'); format(Sys.Date(), '%B %Y')`"
