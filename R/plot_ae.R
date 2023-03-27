@@ -238,7 +238,7 @@ plot_cor <- function (ae_obj, subset = 1:ncol(ae_obj$cors),
 
 #' (DEPRECATED) Plot an ae object
 #' 
-#' This function has been renamed. Please use \link{\code{plot_cor}} instead. 
+#' This function has been renamed. Please use \code{\link{plot_cor}} instead. 
 #' 
 #' @param age.est an \code{ae} object, as returned by \code{\link{ae}} 
 #' @param subset an index vector of the samples to plot (defaults to all)
