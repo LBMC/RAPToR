@@ -7,9 +7,9 @@
 get_refTP(ref, ae_obj = NULL, ae_values = NULL, return.idx = TRUE)
 }
 \arguments{
-\item{ref}{a \code{ref} object (as returned by \link{\code{make_ref}})}
+\item{ref}{a \code{ref} object (as returned by \code{\link{make_ref}})}
 
-\item{ae_obj}{an \code{ae} object (as returned by \link{\code{ae}})}
+\item{ae_obj}{an \code{ae} object (as returned by \code{\link{ae}})}
 
 \item{ae_values}{age estimate values (used if ae_obj is NULL).}
 

@@ -9,15 +9,13 @@ ref_compare(X, ref, group, ae_obj = NULL, ae_values = NULL)
 \arguments{
 \item{X}{sample gene expression matrix (should be comparable to reference, usually log(TPM+1)).}
 
-\item{ref}{a \code{ref} object (as returned by \link{\code{make_ref}})}
+\item{ref}{a \code{ref} object (as returned by \code{\link{make_ref}})}
 
 \item{group}{a factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.}
 
-\item{ae_obj}{an \code{ae} object (as returned by \link{\code{ae}})}
+\item{ae_obj}{an \code{ae} object (as returned by \code{\link{ae}})}
 
 \item{ae_values}{age estimate values (used if ae_obj is NULL).}
-
-\item{return.idx}{if TRUE (default) returns reference indices. If FALSE, returns corresponding reference expression matrix.}
 }
 \value{
 an rcmp object.

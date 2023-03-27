@@ -31,7 +31,7 @@ make_ref(
 \item{metadata}{an optional named list with reference metadata (e.g. organism, tissue).}
 }
 \value{
-a '\code{ref}' object to use with \code{\link{ae()}} for age estimation.
+a '\code{ref}' object to use with \code{\link{ae}} for age estimation.
 }
 \description{
 Make a reference object from a geim model

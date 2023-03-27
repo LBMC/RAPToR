@@ -7,7 +7,7 @@
 get_logFC(rc, l = levels(rc$group)[2], l0 = levels(rc$group)[1], verbose = T)
 }
 \arguments{
-\item{rc}{an rcmp object, as returned by \link{\code{ref_compare}}}
+\item{rc}{an rcmp object, as returned by \code{\link{ref_compare}}}
 
 \item{l, l0}{sample groups to compare. \code{l0} and \code{l} defaults to the first and second levels of \code{group} respectively.}
 
