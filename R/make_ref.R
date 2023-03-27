@@ -11,7 +11,7 @@
 #' @param t.unit an optional string specifying the time unit and t-zero, e.g "h past egg-laying".
 #' @param metadata an optional named list with reference metadata (e.g. organism, tissue).
 #'
-#' @return a '\code{ref}' object to use with \code{\link{ae()}} for age estimation.
+#' @return a '\code{ref}' object to use with \code{\link{ae}} for age estimation.
 #' 
 #' @export
 #' 

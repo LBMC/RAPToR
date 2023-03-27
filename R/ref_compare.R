@@ -4,8 +4,8 @@
 #' Matching reference data can be used to quantify the developmental signal between 
 #' experimental groups where the variable of interest is confounded by development.
 #' 
-#' @param ref a \code{ref} object (as returned by \link{\code{make_ref}})
-#' @param ae_obj an \code{ae} object (as returned by \link{\code{ae}})
+#' @param ref a \code{ref} object (as returned by \code{\link{make_ref}})
+#' @param ae_obj an \code{ae} object (as returned by \code{\link{ae}})
 #' @param ae_values age estimate values (used if ae_obj is NULL). 
 #' @param return.idx if TRUE (default) returns reference indices. If FALSE, returns reference expression matrix
 #'
@@ -58,9 +58,9 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' 
 #' 
 #' @param X sample gene expression matrix (should be comparable to reference, usually log(TPM+1)).
-#' @param ref a \code{ref} object (as returned by \link{\code{make_ref}})
+#' @param ref a \code{ref} object (as returned by \code{\link{make_ref}})
 #' @param group a factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.
-#' @param ae_obj an \code{ae} object (as returned by \link{\code{ae}})
+#' @param ae_obj an \code{ae} object (as returned by \code{\link{ae}})
 #' @param ae_values age estimate values (used if ae_obj is NULL). 
 #'
 #' @return an rcmp object.
