@@ -2,7 +2,7 @@
 
 `RAPToR` (**R**eal **A**ge **P**rediction from **T**ranscriptome staging **o**n **R**eference) is a tool to accurately predict the developmental age of individual samples from their gene expression profiles. 
 
-We stage samples on high-resolution references that we build from existing developmental profiling time-series.
+We stage samples on high-resolution references built from existing developmental profiling time-series.
 Inferred age can then be used in multiple ways to 
 precisely estimate perturbations effects on developmental timing, 
 increase power in differential expression analyses, 
@@ -106,6 +106,8 @@ We recommend you get our data-packages with pre-built references of common organ
 ## Update info
 
 ### v1.2
+*Please also update reference data-packages to their latest version to work with this version of RAPToR*
+
  - Introduced a reference (`ref`) object and corresponding `make_ref()` and print functions. `ref` objects to
    - make reference-building more direct, from a `geim` object,
    - simplify the age estimation call (now simply `ae(samp, ref)`),
