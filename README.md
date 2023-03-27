@@ -65,7 +65,10 @@ You can access the package's main vignette from your R console with
 
 ```r
 library(RAPToR)
+
 vignette("RAPToR")
+# or
+vignette("RAPToR-pdf")
 ```
 
 ### How does it work ?
@@ -108,7 +111,7 @@ We recommend you get our data-packages with pre-built references of common organ
    - simplify the age estimation call (now simply `ae(samp, ref)`),
    - store reference metadata (such as the reference time unit) for use in subsequent plotting/printing.
  - Updated `ae` object printing to include reference metadata when available.
- - Optimized ae bootstrap correlation (over 2x faster)
+ - Optimized ae bootstrap correlation (>2x faster)
  - Rewrote `ae` plotting function to
   - display bootstrap estimates by default.
   - include reference time units when available.
