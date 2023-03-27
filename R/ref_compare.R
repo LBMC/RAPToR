@@ -62,7 +62,6 @@ get_refTP <- function(ref, ae_obj=NULL, ae_values=NULL,
 #' @param group a factor defining sample groups to compare (e.g. wild-type & mutant), the first factor level is used as control.
 #' @param ae_obj an \code{ae} object (as returned by \link{\code{ae}})
 #' @param ae_values age estimate values (used if ae_obj is NULL). 
-#' @param return.idx if TRUE (default) returns reference indices. If FALSE, returns corresponding reference expression matrix.
 #'
 #' @return an rcmp object.
 #' 
