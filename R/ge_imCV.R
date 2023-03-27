@@ -111,7 +111,7 @@ ge_imCV <- function(X, p, formula_list, cv.n = 50, cv.s = 0.8,
                   m <- RAPToR::ge_im(X = Xr, p = plist[[j]][tset,], 
                              formula = formula_list[[j]], 
                              method = method, dim_red = dim_red, drX = TRUE, nc = nc)
-                  pred <- RAPToR::predict.geim(m, newdata = plist[[j]])
+                  pred <- predict.geim(m, newdata = plist[[j]])
                   cve <- RAPToR::mperf(X[, -tset, drop=F], pred[, -tset, drop=F], 
                                        to_compute = to_compute, is.t = T)
                   mpf <- RAPToR::mperf(X[, tset, drop=F], pred[, tset, drop=F], 
