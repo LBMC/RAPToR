@@ -4,14 +4,14 @@
 \alias{prepare_refdata}
 \title{Prepare the reference data included in the package}
 \usage{
-prepare_refdata(ref, datapkg, n.inter = 200)
+prepare_refdata(ref, datapkg, n.inter = NULL, by.inter = NULL)
 }
 \arguments{
 \item{ref}{the name of the reference dataset to load (as given in \code{\link{list_refs}}).}
 
 \item{datapkg}{the name of the data-package to load the rreference from.}
 
-\item{n.inter}{the resolution of the interpolation, as in \code{seq(start, end, length.out = n.inter)}.}
+\item{n.inter, by.inter}{the resolution of the interpolation, as in \code{seq(start, end, length.out = n.inter)} or \code{seq(start, end, by = by.inter)}.}
 }
 \value{
 a list with the interpolated reference dataset and its associated time series.
