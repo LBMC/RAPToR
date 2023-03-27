@@ -17,7 +17,7 @@ This corresponds to a \code{.plot_refs} function in the data-package.
 }
 \examples{
 \donttest{
-plot_refs("wormRef")
+# plot_refs("wormRef")
 }
 
 }

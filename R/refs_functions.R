@@ -37,7 +37,7 @@ list_refs <- function(datapkg){
 #' 
 #' @examples 
 #' \donttest{
-#' plot_refs("wormRef")
+#' # plot_refs("wormRef")
 #' }
 #' 
 #' @importFrom utils data getFromNamespace

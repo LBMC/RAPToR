@@ -36,7 +36,7 @@ plot_cor.ae(
 \item{...}{additional arguments passed on to \code{\link{plot}}}
 }
 \description{
-This function has been renamed. Please use \link{\code{plot_cor}} instead.
+This function has been renamed. Please use \code{\link{plot_cor}} instead.
 }
 \examples{
 \donttest{
