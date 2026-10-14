@@ -48,7 +48,7 @@ BiocManager::install(c("GEOquery", "biomaRt"))
 ```
 
 ### System requirements
-We have verified RAPToR works with R v3.6.3, v4.1.1, and v4.1.2
+We have verified RAPToR works with R v3.6.3, v4.1, v4.4, and v4.5. 
 on Unix (Ubuntu 18.04/20.04/22.04 LTS), Windows 10, and macOS (10.14) systems.
 
 Standard datasets can easily run with 4Gb of RAM and 2 CPU cores. 
@@ -105,9 +105,14 @@ We recommend you get our data-packages with pre-built references of common organ
 
 ## Update info
 
-### v1.2
-*Please also update reference data-packages to their latest version to work with this version of RAPToR*
 
+### v1.2
+*Please also update reference data-packages to their latest version to work with version 1.2+ of RAPToR*
+
+#### v1.2.1
+- Fixed installation issues linked to missing `pryr` dependency. Removed dependency to deprecated `pryr` package (`standardise_call()` function), in favor of `rlang::call_match()`.
+
+#### v1.2.0
  - Introduced a reference (`ref`) object and corresponding `make_ref()` and print functions. `ref` objects to
    - make reference-building more direct, from a `geim` object,
    - simplify the age estimation call (now simply `ae(samp, ref)`),

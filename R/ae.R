@@ -261,7 +261,7 @@ ae <- function(samp, refdata, ref.time_series = NULL,
                 prior = prior[1])
   }
   
-  res$call <- deparse(rlang::call_match(sys.call()))
+  res$call <- deparse(rlang::call_match())
   
   class(res) <- "ae"
   
