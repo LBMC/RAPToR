@@ -20,10 +20,20 @@ Please cite our paper if you use RAPToR in your research:
 To install the latest version of RAPToR, run the following in your R console :
 
 ```r
+if (!requireNamespace("pak", quietly = TRUE))
+    install.packages("pak")
+options(pkg.build_vignettes = TRUE) # to build the vignettes
+pak::pak("LBMC/RAPToR")
+```
+
+Or alternatively :
+
+```r
 if (!requireNamespace("remotes", quietly = TRUE))
     install.packages("remotes")
-remotes::install_github("LBMC/RAPToR", build_vignettes = T)
+remotes::install_git("https://www.github.com/LBMC/RAPToR", build_vignettes = TRUE)
 ```
+
 
 When dependencies are met, installation should take under 20 seconds.
 
