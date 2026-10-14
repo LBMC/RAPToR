@@ -29,7 +29,7 @@ Imports:
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
 RdMacros: Rdpack
 Suggests:
