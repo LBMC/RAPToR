@@ -42,7 +42,7 @@ Users can choose to install the RAPToR package dependencies manually from an R c
 
 ```r
 # CRAN packages
-install.packages(c("ica", "mgcv", "parallel", "data.table", "pryr", "beeswarm", "Rdpack", "R.rsp"))
+install.packages(c("ica", "mgcv", "parallel", "data.table", "rlang", "beeswarm", "Rdpack", "R.rsp"))
 
 # Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -120,9 +120,11 @@ We recommend you get our data-packages with pre-built references of common organ
 *Please also update reference data-packages to their latest version to work with version 1.2+ of RAPToR*
 
 #### v1.2.1
-- Fixed installation issues linked to missing `pryr` dependency. Removed dependency to deprecated `pryr` package (`standardise_call()` function), in favor of `rlang::call_match()`.
+ 
+ - Fixed installation issues linked to missing `pryr` dependency. Removed dependency to deprecated `pryr` package (`standardise_call()` function), in favor of `rlang::call_match()`.
 
 #### v1.2.0
+
  - Introduced a reference (`ref`) object and corresponding `make_ref()` and print functions. `ref` objects to
    - make reference-building more direct, from a `geim` object,
    - simplify the age estimation call (now simply `ae(samp, ref)`),
@@ -150,6 +152,7 @@ We recommend you get our data-packages with pre-built references of common organ
 
 ### v1.1
 #### v1.1.6 (used in Bulteau & Francesconi 2022 publication)
+
  - Revised the main vignette.
  - Updated README info.
  - Included biocViews in `DESCRIPTION` to automatically install bioconductor dependencies (thanks @helenmiller16).
@@ -157,10 +160,12 @@ We recommend you get our data-packages with pre-built references of common organ
  - Fixed edge cases for 1-component reference building.
 
 #### v1.1.5b
+
  - Added software, hardware, and runtime info to README. 
  - Added installation instructions for dependencies. 
 
 #### v1.1.5
+
  - Added preprint citation to README and documentation.
  - Updated showcase vignettes relevant to the paper analyses
 
