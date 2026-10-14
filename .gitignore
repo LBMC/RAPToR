@@ -5,3 +5,5 @@ inst/cdoc/tool_overview.pdf
 
 .RData
 .Rhistory
+.Rproj.user
+*.Rproj
