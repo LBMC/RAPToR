@@ -196,7 +196,7 @@ plot.geim <- function(x, ref=NULL, ncs=NULL,
   }
   
   if(!is.null(ref)){ # if ref is supplied
-    if(class(ref)!="ref"){
+    if(inherits(ref, "ref")){
       stop("'ref' must be a ref object.")
     }
     ts <- ref$time
